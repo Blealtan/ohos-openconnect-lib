@@ -368,11 +368,21 @@ static int tncc_preauth(struct openconnect_info *vpninfo)
 			     _("Failed to allocate memory for communication with TNCC\n"));
 		return buf_free(buf);
 	}
+	
+#ifdef __APPLE__
+  // Equally, you cannot use SOCK_SEQPACKET with AF_UNIX on Mac OS
+  // https://stackoverflow.com/questions/13287333/sock-seqpacket-availability
+
+  const int flags = SOCK_STREAM;
+#else
+  const int flags = SOCK_SEQPACKET;
+#endif
+
 #ifdef SOCK_CLOEXEC
-	if (socketpair(AF_UNIX, SOCK_SEQPACKET | SOCK_CLOEXEC, 0, sockfd))
+	if (socketpair(AF_UNIX, flags | SOCK_CLOEXEC, 0, sockfd))
 #endif
 	{
-		if (socketpair(AF_UNIX, SOCK_SEQPACKET, 0, sockfd)) {
+		if (socketpair(AF_UNIX, flags, 0, sockfd)) {
 			buf_free(buf);
 			return -errno;
 		}
