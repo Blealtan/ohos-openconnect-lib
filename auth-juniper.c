@@ -345,6 +345,7 @@ static int tncc_preauth(struct openconnect_info *vpninfo)
 	const char *dspreauth = NULL, *dssignin = "null";
 	char recvbuf[1024], *p;
 	int len;
+	const int flags;
 
 	for (cookie = vpninfo->cookies; cookie; cookie = cookie->next) {
 		if (!strcmp(cookie->option, "DSPREAUTH"))
@@ -373,9 +374,9 @@ static int tncc_preauth(struct openconnect_info *vpninfo)
   // Equally, you cannot use SOCK_SEQPACKET with AF_UNIX on Mac OS
   // https://stackoverflow.com/questions/13287333/sock-seqpacket-availability
 
-  const int flags = SOCK_STREAM;
+  flags = SOCK_STREAM;
 #else
-  const int flags = SOCK_SEQPACKET;
+  flags = SOCK_SEQPACKET;
 #endif
 
 #ifdef SOCK_CLOEXEC
