@@ -344,8 +344,7 @@ static int tncc_preauth(struct openconnect_info *vpninfo)
 	struct oc_vpn_option *cookie;
 	const char *dspreauth = NULL, *dssignin = "null";
 	char recvbuf[1024], *p;
-	int len;
-	const int flags;
+	int len, flags;
 
 	for (cookie = vpninfo->cookies; cookie; cookie = cookie->next) {
 		if (!strcmp(cookie->option, "DSPREAUTH"))
