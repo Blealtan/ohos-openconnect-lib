@@ -1156,7 +1156,8 @@ retry:
 				if (!strcmp(grp->choices[i]->name, vpninfo->authgroup))
 					form->authgroup_selection = i;
 		}
-		auth_choice = grp->choices[form->authgroup_selection];
+		if (form->authgroup_selection >= 0)
+			auth_choice = grp->choices[form->authgroup_selection];
 	}
 
 	for (opt = form->opts; opt; opt = opt->next) {

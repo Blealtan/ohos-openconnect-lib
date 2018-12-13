@@ -188,8 +188,11 @@ static int parse_select_node(struct openconnect_info *vpninfo, struct oc_auth_fo
 	xmlnode_get_prop(node, "name", &opt->form.name);
 	opt->form.label = strdup(opt->form.name);
 	opt->form.type = OC_FORM_OPT_SELECT;
-	if (!strcmp(opt->form.name, "realm"))
+
+	if (!strcmp(opt->form.name, "realm")) {
 		form->authgroup_opt = opt;
+		form->authgroup_selection = -1;
+	}
 
 	for (child = node->children; child; child = child->next) {
 		struct oc_choice **new_choices;
@@ -209,6 +212,13 @@ static int parse_select_node(struct openconnect_info *vpninfo, struct oc_auth_fo
 			free(choice);
 			return -ENOMEM;
 		}
+		/* Juniper server doesn't explicitly tell us which authgroup is currently
+		 * selected, and in fact doesn't really even need the NEWGROUP behaviour
+		 * at all. But users like using the --authgroup option for the realm, so
+		 * support it this way, by setting authgroup_selection accordingly. */
+		if (opt == form->authgroup_opt && vpninfo->authgroup && !strcmp(choice->name, vpninfo->authgroup))
+			form->authgroup_selection = opt->nr_choices;
+
 		opt->choices = new_choices;
 		opt->choices[opt->nr_choices++] = choice;
 	}
