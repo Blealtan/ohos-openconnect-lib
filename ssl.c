@@ -914,7 +914,11 @@ int udp_sockaddr(struct openconnect_info *vpninfo, int port)
 		struct sockaddr_in6 *sin = (void *)vpninfo->dtls_addr;
 		sin->sin6_port = htons(port);
 		vpninfo->dtls_tos_proto = IPPROTO_IPV6;
+#if defined(IPV6_TCLASS)
 		vpninfo->dtls_tos_optname = IPV6_TCLASS;
+#else
+		vpninfo->dtls_tos_optname = 0;
+#endif
 	} else {
 		vpn_progress(vpninfo, PRG_ERR,
 			     _("Unknown protocol family %d. Cannot create UDP server address\n"),
