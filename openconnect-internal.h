@@ -867,6 +867,7 @@ int oncp_esp_catch_probe(struct openconnect_info *vpninfo, struct pkt *pkt);
 int gpst_obtain_cookie(struct openconnect_info *vpninfo);
 void gpst_common_headers(struct openconnect_info *vpninfo, struct oc_text_buf *buf);
 int gpst_bye(struct openconnect_info *vpninfo, const char *reason);
+const char *gpst_os_name(struct openconnect_info *vpninfo);
 
 /* gpst.c */
 int gpst_xml_or_error(struct openconnect_info *vpninfo, char *response,
