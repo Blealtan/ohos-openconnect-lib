@@ -98,7 +98,22 @@ static int process_split_xxclude(struct openconnect_info *vpninfo,
 	int masklen;
 
 	slash = strchr(route, '/');
-	if (!slash) {
+	if (slash) {
+		*slash = 0;
+	} else if (inet_aton(route, &addr)) {
+		envname[79] = 0;
+		snprintf(envname, 79, "CISCO_SPLIT_%sC_%d_ADDR", in_ex, *v4_incs);
+		script_setenv(vpninfo, envname, route, 0);
+
+		snprintf(envname, 79, "CISCO_SPLIT_%sC_%d_MASK", in_ex, *v4_incs);
+		script_setenv(vpninfo, envname, "255.255.255.255", 0);
+
+		snprintf(envname, 79, "CISCO_SPLIT_%sC_%d_MASKLEN", in_ex, *v4_incs);
+		script_setenv_int(vpninfo, envname, 32);
+
+		(*v4_incs)++;
+		return 0;
+	} else {
 	badinc:
 		if (include)
 			vpn_progress(vpninfo, PRG_ERR,
@@ -110,8 +125,6 @@ static int process_split_xxclude(struct openconnect_info *vpninfo,
 				     route);
 		return -EINVAL;
 	}
-
-	*slash = 0;
 
 	if (strchr(route, ':')) {
 		snprintf(envname, 79, "CISCO_IPV6_SPLIT_%sC_%d_ADDR", in_ex,
