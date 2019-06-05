@@ -1,6 +1,6 @@
 #!/system/bin/sh
 
-# These value may need to be extracted from the official HIP report, if made-up values are not accepted.
+# These values may need to be extracted from the official HIP report, if made-up values are not accepted.
 PLATFORM_VERSION="4.3"
 PLATFORM_NAME="Android-x86"
 HOSTID="deadbeef-dead-beef-dead-beefdeadbeef"

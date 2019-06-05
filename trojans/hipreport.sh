@@ -19,8 +19,8 @@
 #
 # This hipreport.sh does not work as-is on Android. The large here-doc
 # (cat <<EOF) does not appear to work with Android's /system/bin/sh,
-# likely due to an insufficient read buffer size. Try
-# hipreport-minimal.sh instead.
+# likely due to an insufficient read buffer size.
+# Try hipreport-android.sh instead.
 
 # Read command line arguments into variables
 COOKIE=
