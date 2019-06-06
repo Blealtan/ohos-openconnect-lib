@@ -423,6 +423,14 @@ static int process_attr(struct openconnect_info *vpninfo, uint16_t type,
 			     vpninfo->esp_ssl_fallback);
 		break;
 
+	case 0x4018:
+		if (attrlen != 4)
+			goto badlen;
+		vpninfo->ssl_times.dpd = load_be32(data);
+		vpn_progress(vpninfo, PRG_DEBUG, _("ESP keepalive time: %d seconds\n"),
+		             vpninfo->ssl_times.dpd);
+		break;
+
 	case 0x401a:
 		if (attrlen != 1)
 			goto badlen;
