@@ -1254,8 +1254,7 @@ int pulse_connect(struct openconnect_info *vpninfo)
 	if (ret < 0)
 		return ret;
 
-
-	/* Example config packet:
+	/* Example main config packet:
 
 	   < 0000: 00 00 0a 4c 00 00 00 01  00 00 01 80 00 00 01 fb  |...L............|
 	   < 0010: 00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00  |................|
@@ -1315,12 +1314,12 @@ int pulse_connect(struct openconnect_info *vpninfo)
 	if (ret < 0x50 ||
 	    /* IF-T/TLS header */
 	    load_be32(bytes) != VENDOR_JUNIPER ||
-	    load_be32(bytes + 4) != 1 ||
-	    load_be32(bytes + 8) != ret ||
+	    load_be32(bytes + 4) != 1 || /* packet type config */
+	    load_be32(bytes + 8) != ret || /* packet length */
 	    /* This appears to indicate the packet type (vs. ESP config) */
 	    load_be32(bytes + 0x20) != 0x2c20f000 ||
 	    /* A length field */
-	    load_be32(bytes + 0x28) != ret - 0x10 ||
+	    load_be32(bytes + 0x28) != ret - 0x10 || /* "inner" packet length */
 	    /* Start of routing information */
 	    load_be16(bytes + 0x2c) != 0x2e00 ||
 	    /* Routing length makes sense */
@@ -1423,6 +1422,69 @@ int pulse_connect(struct openconnect_info *vpninfo)
 		vpn_progress(vpninfo, PRG_ERR, "Insufficient configuration found\n");
 		goto bad_config;
 	}
+
+
+
+	ret = recv_ift_packet(vpninfo, (void *)bytes, sizeof(bytes));
+	if (ret < 0)
+		return ret;
+
+	/* Example ESP config packet:
+
+	   < 00000000  00 00 0a 4c 00 00 00 01  00 00 00 80 00 00 01 fd  |...L............|
+	   < 00000010  00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00  |................|
+	   < 00000020  21 20 24 00 00 00 00 00  00 00 00 70 00 00 00 54  |! $........p...T|
+	   < 00000030  01 00 00 00 50 02 7b 66  00 40 92 f9 20 51 8d d1  |....P.{f.@.. Q..|
+	   < 00000040  7c 0c fd 08 01 e3 f4 ca  25 86 8f 81 b1 ae 93 31  ||.......%......1|
+	   < 00000050  1a a4 f8 8c 6e 74 cd 74  59 bc 59 89 d5 66 38 83  |....nt.tY.Y..f8.|
+	   < 00000060  2e ae 0d 08 8e 09 d1 73  66 86 98 07 76 a6 17 2b  |.......sf...v..+|
+	   < 00000070  04 21 74 a1 94 4e 23 e9  65 13 00 00 00 00 00 00  |.!t..N#.e.......|
+
+	   It starts as an IF-T/TLS packet of type Juniper/1.
+
+	   Lots of zeroes at the start, and at 0x20 there is a distinctive 0x21202400
+	   signature which appears to be in all config packets.
+
+	   At 0x28 it has the payload length (0x10 less than the full IF-T length).
+	   The 00 00 00 54 at 0x2c and 01 00 00 00 at 0x30 aways seem to be fixed.
+
+	   The 4 bytes at 0x34 are the ESP SPI (bidirectional), followed by the length of the
+	   ESP secrets (normally 0x40) followed by the ESP secrets.
+	*/
+
+	if (ret < 0x50 ||
+	    /* IF-T/TLS header */
+	    load_be32(bytes) != VENDOR_JUNIPER ||
+	    load_be32(bytes + 4) != 1 || /* packet type config */
+	    load_be32(bytes + 8) != ret || /* packet length */
+	    /* This appears to indicate the packet type (vs. main config) */
+	    load_be32(bytes + 0x20) != 0x21202400 ||
+	    /* A length field */
+	    load_be32(bytes + 0x28) != ret - 0x10 || /* "inner" packet length */
+	    /* Fixed values */
+	    load_be32(bytes + 0x2c) != 0x00000054 ||
+	    load_be32(bytes + 0x30) != 0x01000000 ||
+	    /* Secrets length makes sense */
+	    ((routes_len = load_be16(bytes + 0x38)) < vpninfo->enc_key_len + vpninfo->hmac_key_len) ||
+		/* Long enough for secrets */
+		ret < 0x3a + routes_len) {
+		vpn_progress(vpninfo, PRG_ERR,
+			     _("Unexpected Pulse ESP config packet:\n"));
+		dump_buf_hex(vpninfo, PRG_ERR, '<', (void *)bytes, ret);
+		return -EINVAL;
+	}
+	p = bytes + 0x34;
+	memcpy(&vpninfo->esp_out.spi, p, 4);
+	vpn_progress(vpninfo, PRG_DEBUG, _("ESP SPI (outbound): %x\n"), load_be32(p));
+	/* The encryption and HMAC keys are sent concatenated together in a block of bytes;
+	   we split them apart. */
+	p += 6;
+	memcpy(vpninfo->esp_out.enc_key, p, vpninfo->enc_key_len);
+	vpn_progress(vpninfo, PRG_DEBUG, _("%d bytes of ESP encryption key (outbound)\n"), vpninfo->enc_key_len);
+	p += vpninfo->enc_key_len;
+	vpn_progress(vpninfo, PRG_DEBUG, _("%d bytes of ESP HMAC key (outbound)\n"), vpninfo->hmac_key_len);
+	memcpy(vpninfo->esp_out.hmac_key, p, vpninfo->hmac_key_len);
+
 
 	ret = 0;
 	monitor_fd_new(vpninfo, ssl);
