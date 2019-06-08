@@ -34,21 +34,24 @@ int print_esp_keys(struct openconnect_info *vpninfo, const char *name, struct es
 	char enckey[256], mackey[256];
 
 	switch(vpninfo->esp_enc) {
-	case 0x02:
+	case ENC_AES_128_CBC:
 		enctype = "AES-128-CBC (RFC3602)";
 		break;
-	case 0x05:
+	case ENC_AES_256_CBC:
 		enctype = "AES-256-CBC (RFC3602)";
 		break;
 	default:
 		return -EINVAL;
 	}
 	switch(vpninfo->esp_hmac) {
-	case 0x01:
+	case HMAC_MD5:
 		mactype = "HMAC-MD5-96 (RFC2403)";
 		break;
-	case 0x02:
+	case HMAC_SHA1:
 		mactype = "HMAC-SHA-1-96 (RFC2404)";
+		break;
+	case HMAC_SHA256:
+		mactype = "HMAC-SHA-256-128 (RFC4868)";
 		break;
 	default:
 		return -EINVAL;
@@ -140,10 +143,10 @@ int esp_mainloop(struct openconnect_info *vpninfo, int *timeout, int readable)
 		work_done = 1;
 
 		/* both supported algos (SHA1 and MD5) have 12-byte MAC lengths (RFC2403 and RFC2404) */
-		if (len <= sizeof(pkt->esp) + 12)
+		if (len <= sizeof(pkt->esp) + vpninfo->hmac_out_len)
 			continue;
 
-		len -= sizeof(pkt->esp) + 12;
+		len -= sizeof(pkt->esp) + vpninfo->hmac_out_len;
 		pkt->len = len;
 
 		if (pkt->esp.spi == esp->spi) {
