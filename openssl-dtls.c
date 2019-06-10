@@ -348,7 +348,7 @@ int start_dtls_handshake(struct openconnect_info *vpninfo, int dtls_fd)
 #endif
 
 	if (!vpninfo->dtls_ctx) {
-#ifdef HAVE_DTLS12
+#if OPENSSL_VERSION_NUMBER >= 0x10020000L || defined(LIBRESSL_VERSION_NUMBER)
 		dtls_method = DTLS_client_method();
 #endif
 #if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
