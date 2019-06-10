@@ -30,6 +30,24 @@
 #include <libp11.h>
 #include <p11-kit/pkcs11.h>
 
+#ifndef ERR_LIB_PKCS11
+#	if defined(ERR_LIB_CKR)
+#		define ERR_LIB_PKCS11 ERR_LIB_CKR
+#	elif defined(ERR_LIB_USER)
+#		define ERR_LIB_PKCS11 ERR_LIB_USER
+#	else
+#		error undefined macro ERR_LIB_PKCS11
+#	endif
+#endif
+
+#ifndef PKCS11_F_PKCS11_LOGIN
+#	if defined(CKR_F_PKCS11_LOGIN)
+#		define PKCS11_F_PKCS11_LOGIN CKR_F_PKCS11_LOGIN
+#	else
+#		error undefined macro PKCS11_F_PKCS11_LOGIN
+#	endif
+#endif
+
 static PKCS11_CTX *pkcs11_ctx(struct openconnect_info *vpninfo)
 {
 	PKCS11_CTX *ctx;
