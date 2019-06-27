@@ -542,6 +542,14 @@ static int start_cstp_connection(struct openconnect_info *vpninfo)
 					break;
 				}
 			}
+		} else if (!strcmp(buf + 7, "DNS-IP6")) {
+			int j;
+			for (j = 0; j < 3; j++) {
+				if (!vpninfo->ip_info.dns6[j]) {
+					vpninfo->ip_info.dns6[j] = new_option->value;
+					break;
+				}
+			}
 		} else if (!strcmp(buf + 7, "NBNS")) {
 			int j;
 			for (j = 0; j < 3; j++) {

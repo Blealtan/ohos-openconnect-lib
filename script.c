@@ -265,6 +265,15 @@ void prepare_script_env(struct openconnect_info *vpninfo)
 	if (vpninfo->ip_info.dns[2])
 		script_setenv(vpninfo, "INTERNAL_IP4_DNS", vpninfo->ip_info.dns[2], 0, 1);
 
+	if (vpninfo->ip_info.dns6[0])
+		script_setenv(vpninfo, "INTERNAL_IP6_DNS", vpninfo->ip_info.dns6[0], 0, 0);
+	else
+		script_setenv(vpninfo, "INTERNAL_IP6_DNS", NULL, 0, 0);
+	if (vpninfo->ip_info.dns6[1])
+		script_setenv(vpninfo, "INTERNAL_IP6_DNS", vpninfo->ip_info.dns6[1], 0, 1);
+	if (vpninfo->ip_info.dns6[2])
+		script_setenv(vpninfo, "INTERNAL_IP6_DNS", vpninfo->ip_info.dns6[2], 0, 1);
+
 	if (vpninfo->ip_info.nbns[0])
 		script_setenv(vpninfo, "INTERNAL_IP4_NBNS", vpninfo->ip_info.nbns[0], 0, 0);
 	else
