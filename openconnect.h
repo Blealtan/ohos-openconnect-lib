@@ -276,6 +276,7 @@ struct oc_ip_info {
 	const char *addr6;
 	const char *netmask6;
 	const char *dns[3];
+	const char *dns6[3];
 	const char *nbns[3];
 	const char *domain;
 	const char *proxy_pac;
