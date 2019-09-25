@@ -248,6 +248,14 @@ void prepare_script_env(struct openconnect_info *vpninfo)
 	if (vpninfo->ip_info.addr6) {
 		script_setenv(vpninfo, "INTERNAL_IP6_ADDRESS", vpninfo->ip_info.addr6, 0, 0);
 		script_setenv(vpninfo, "INTERNAL_IP6_NETMASK", vpninfo->ip_info.netmask6, 0, 0);
+		if (vpninfo->ip_info.dns6[0])
+			script_setenv(vpninfo, "INTERNAL_IP6_DNS", vpninfo->ip_info.dns[0], 0, 0);
+		else
+			script_setenv(vpninfo, "INTERNAL_IP6_DNS", NULL, 0, 0);
+		if (vpninfo->ip_info.dns6[1])
+			script_setenv(vpninfo, "INTERNAL_IP6_DNS", vpninfo->ip_info.dns[1], 0, 1);
+		if (vpninfo->ip_info.dns6[2])
+			script_setenv(vpninfo, "INTERNAL_IP6_DNS", vpninfo->ip_info.dns[2], 0, 1);
 	} else if (vpninfo->ip_info.netmask6) {
                char *slash = strchr(vpninfo->ip_info.netmask6, '/');
                script_setenv(vpninfo, "INTERNAL_IP6_NETMASK", vpninfo->ip_info.netmask6, 0, 0);
