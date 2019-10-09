@@ -61,6 +61,13 @@ ssize_t read_file_into_string(struct openconnect_info *vpninfo, const char *fnam
 		close(fd);
 		return -ENOENT;
 	}
+	/* Not that we'd be likely to succeed in allocating and reading anyway, but... */
+	if (st.st_size >= INT_MAX) {
+		vpn_progress(vpninfo, PRG_INFO, _("XML file %s is too large\n"),
+			     vpninfo->xmlconfig);
+		close(fd);
+		return -ENOENT;
+	}
 	len = st.st_size;
 	buf = malloc(len + 1);
 	if (!buf) {
