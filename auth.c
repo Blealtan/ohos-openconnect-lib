@@ -1038,9 +1038,85 @@ int set_csd_user(struct openconnect_info *vpninfo)
 #endif
 }
 
+static int win32_csd_script(struct openconnect_info *vpninfo)
+{
+	wchar_t *script_w;
+	wchar_t *script_env;
+	int nr_chars;
+	int ret;
+	char *cmd;
+	PROCESS_INFORMATION pi;
+	STARTUPINFOW si;
+	DWORD cpflags;
+
+	memset(&si, 0, sizeof(si));
+	si.cb = sizeof(si);
+	/* probably superfluous */
+	si.dwFlags = STARTF_USESHOWWINDOW;
+	si.wShowWindow = SW_HIDE;
+
+	//%1=host
+	//%2=token
+	if (asprintf(&cmd, "\"%s\" \"%s\" \"%s\"", vpninfo->csd_wrapper, openconnect_get_hostname(vpninfo), vpninfo->csd_token) == -1)
+		return 0;
+
+	nr_chars = MultiByteToWideChar(CP_UTF8, 0, cmd, -1, NULL, 0);
+	script_w = malloc(nr_chars * sizeof(wchar_t));
+
+	if (!script_w) {
+		free(cmd);
+		return -ENOMEM;
+	}
+
+	MultiByteToWideChar(CP_UTF8, 0, cmd, -1, script_w, nr_chars);
+
+	free(cmd);
+
+	//passing variables via command line vs environment
+	//since all we need are host and token
+	//script_env = create_script_env(vpninfo);
+
+	cpflags = CREATE_UNICODE_ENVIRONMENT;
+	/* If we're running from a console, let the script use it too. */
+	if (!GetConsoleWindow())
+		cpflags |= CREATE_NO_WINDOW;
+
+	vpn_progress(vpninfo, PRG_INFO, 
+		_("Trying to launch CSD wrapper script: %s.\n"),
+		vpninfo->csd_wrapper);
+
+	if (CreateProcessW(NULL, script_w, NULL, NULL, FALSE, cpflags,
+			   NULL /*script_env*/, NULL, &si, &pi)) {
+		ret = WaitForSingleObject(pi.hProcess,10000);
+		CloseHandle(pi.hThread);
+		CloseHandle(pi.hProcess);
+		if (ret == WAIT_TIMEOUT)
+			ret = -ETIMEDOUT;
+		else
+			ret = 0;
+	} else {
+		ret = -EIO;
+	}
+
+	//free(script_env);
+
+	if (ret < 0) {
+		char *errstr = openconnect__win32_strerror(GetLastError());
+		vpn_progress(vpninfo, PRG_ERR,
+			     _("Failed to spawn script '%s': %s\n"),
+			     vpninfo->csd_wrapper, errstr);
+		free(errstr);
+		goto cleanup;
+	}
+
+ cleanup:
+	free(script_w);
+	return ret;
+}
+
 static int run_csd_script(struct openconnect_info *vpninfo, char *buf, int buflen)
 {
-#if defined(_WIN32) || defined(__native_client__)
+#if /*defined(_WIN32) ||*/ defined(__native_client__)
 	vpn_progress(vpninfo, PRG_ERR,
 		     _("Error: Running the 'Cisco Secure Desktop' trojan on this platform is not yet implemented.\n"));
 	return -EPERM;
@@ -1056,17 +1132,22 @@ static int run_csd_script(struct openconnect_info *vpninfo, char *buf, int bufle
 		return -EINVAL;
 	}
 
-	if (!vpninfo->uid_csd_given && !vpninfo->csd_wrapper) {
+	if (!vpninfo->csd_wrapper 
+#ifndef _WIN32
+		&& !vpninfo->uid_csd_given
+#endif		
+	) {
 		vpn_progress(vpninfo, PRG_ERR,
 			     _("Error: Server asked us to download and run a 'Cisco Secure Desktop' trojan.\n"
 			       "This facility is disabled by default for security reasons, so you may wish to enable it.\n"));
 		return -EPERM;
 	}
 
-#ifndef __linux__
-	vpn_progress(vpninfo, PRG_INFO,
-		     _("Trying to run Linux CSD trojan script.\n"));
-#endif
+#ifdef _WIN32
+	win32_csd_script(vpninfo);
+
+#else
+	vpn_progress(vpninfo, PRG_INFO, _("Trying to run CSD trojan script.\n"));
 
 	fname[0] = 0;
 	if (buflen) {
@@ -1191,6 +1272,7 @@ static int run_csd_script(struct openconnect_info *vpninfo, char *buf, int bufle
 			exit(1);
 		}
 	}
+#endif
 
 	free(vpninfo->csd_stuburl);
 	vpninfo->csd_stuburl = NULL;

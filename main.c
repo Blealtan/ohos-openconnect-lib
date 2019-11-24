@@ -212,8 +212,8 @@ static const struct option long_options[] = {
 	OPTION("script-tun", 0, 'S'),
 	OPTION("syslog", 0, 'l'),
 	OPTION("csd-user", 1, OPT_CSD_USER),
-	OPTION("csd-wrapper", 1, OPT_CSD_WRAPPER),
 #endif
+	OPTION("csd-wrapper", 1, OPT_CSD_WRAPPER),
 	OPTION("pfs", 0, OPT_PFS),
 	OPTION("certificate", 1, 'c'),
 	OPTION("sslkey", 1, 'k'),
@@ -891,11 +891,11 @@ static void usage(void)
 	printf("      --version-string=STRING     %s\n", _("reported version string during authentication"));
 	printf("                                  (%s %s)\n", _("default:"), openconnect_version_str);
 
-#ifndef _WIN32
 	printf("\n%s:\n", _("Trojan binary (CSD) execution"));
+#ifndef _WIN32
 	printf("      --csd-user=USER             %s\n", _("Drop privileges during trojan execution"));
-	printf("      --csd-wrapper=SCRIPT        %s\n", _("Run SCRIPT instead of trojan binary"));
 #endif
+	printf("      --csd-wrapper=SCRIPT        %s\n", _("Run SCRIPT instead of trojan binary"));
 
 	printf("\n%s:\n", _("Server bugs"));
 	printf("      --no-http-keepalive         %s\n", _("Disable HTTP connection re-use"));
@@ -1194,10 +1194,10 @@ int main(int argc, char **argv)
 			get_uids(config_arg, &vpninfo->uid_csd, &vpninfo->gid_csd);
 			vpninfo->uid_csd_given = 1;
 			break;
+#endif /* !_WIN32 */
 		case OPT_CSD_WRAPPER:
 			vpninfo->csd_wrapper = keep_config_arg();
 			break;
-#endif /* !_WIN32 */
 		case 'F':
 			add_form_field(keep_config_arg());
 			break;
