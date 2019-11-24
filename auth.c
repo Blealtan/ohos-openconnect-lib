@@ -1038,6 +1038,7 @@ int set_csd_user(struct openconnect_info *vpninfo)
 #endif
 }
 
+#ifdef _WIN32
 static int win32_csd_script(struct openconnect_info *vpninfo)
 {
 	wchar_t *script_w;
@@ -1113,6 +1114,7 @@ static int win32_csd_script(struct openconnect_info *vpninfo)
 	free(script_w);
 	return ret;
 }
+#endif
 
 static int run_csd_script(struct openconnect_info *vpninfo, char *buf, int buflen)
 {
