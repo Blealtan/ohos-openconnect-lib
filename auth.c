@@ -1042,7 +1042,7 @@ int set_csd_user(struct openconnect_info *vpninfo)
 static int win32_csd_script(struct openconnect_info *vpninfo)
 {
 	wchar_t *script_w;
-	wchar_t *script_env;
+	//wchar_t *script_env;
 	int nr_chars;
 	int ret;
 	char *cmd;
@@ -1073,8 +1073,8 @@ static int win32_csd_script(struct openconnect_info *vpninfo)
 
 	free(cmd);
 
-	//passing variables via command line vs environment
-	//since all we need are host and token
+	//for WIN32, just passing variables via command line vs environment
+	//since the only values needed are host and token
 	//script_env = create_script_env(vpninfo);
 
 	cpflags = CREATE_UNICODE_ENVIRONMENT;
@@ -1083,7 +1083,7 @@ static int win32_csd_script(struct openconnect_info *vpninfo)
 		cpflags |= CREATE_NO_WINDOW;
 
 	vpn_progress(vpninfo, PRG_INFO, 
-		_("Trying to launch CSD wrapper script: %s.\n"),
+		_("Launching CSD wrapper script: %s.\n"),
 		vpninfo->csd_wrapper);
 
 	if (CreateProcessW(NULL, script_w, NULL, NULL, FALSE, cpflags,
@@ -1124,8 +1124,6 @@ static int run_csd_script(struct openconnect_info *vpninfo, char *buf, int bufle
 	return -EPERM;
 #else
 	char fname[64];
-	int fd, ret;
-	pid_t child;
 
 	if (!vpninfo->csd_wrapper && !buflen) {
 		vpn_progress(vpninfo, PRG_ERR,
@@ -1149,6 +1147,9 @@ static int run_csd_script(struct openconnect_info *vpninfo, char *buf, int bufle
 	win32_csd_script(vpninfo);
 
 #else
+	int fd, ret;
+	pid_t child;
+
 	vpn_progress(vpninfo, PRG_INFO, _("Trying to run CSD trojan script.\n"));
 
 	fname[0] = 0;

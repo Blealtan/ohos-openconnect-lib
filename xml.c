@@ -32,6 +32,18 @@
 
 #include "openconnect-internal.h"
 
+//fixes using %zu format specifier warning on WIN32
+//https://stackoverflow.com/a/44383330/813599
+#ifdef _WIN32
+#  ifdef _WIN64
+#    define I_SIZET "I64u"
+#  else
+#    define I_SIZET "I32u"
+#  endif
+#else
+#  define I_SIZET "zu"
+#endif
+
 ssize_t read_file_into_string(struct openconnect_info *vpninfo, const char *fname,
 			      char **ptr)
 {
@@ -62,7 +74,7 @@ ssize_t read_file_into_string(struct openconnect_info *vpninfo, const char *fnam
 		return -ENOENT;
 	}
 	if (st.st_size >= INT_MAX || st.st_size < 0) {
-		vpn_progress(vpninfo, PRG_INFO, _("XML file %s has suspicious size %zd\n"),
+		vpn_progress(vpninfo, PRG_INFO, _("XML file %s has suspicious size %" I_SIZET "\n"),
 			     vpninfo->xmlconfig, (ssize_t)st.st_size);
 		close(fd);
 		return -EIO;

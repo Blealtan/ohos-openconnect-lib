@@ -553,14 +553,13 @@ int openconnect_passphrase_from_fsid(struct openconnect_info *vpninfo)
 }
 #elif defined(_WIN32)
 #include <fileapi.h>
-typedef BOOL WINAPI (*GVIBH)(HANDLE, LPWSTR, DWORD, LPDWORD, LPDWORD, LPDWORD, LPWSTR, DWORD);
 
 int openconnect_passphrase_from_fsid(struct openconnect_info *vpninfo)
 {
 	HANDLE h;
 	DWORD serial;
 	HINSTANCE kernlib;
-	GVIBH func = NULL;
+	FARPROC func = NULL;
 	int success;
 	int fd;
 
@@ -573,7 +572,7 @@ int openconnect_passphrase_from_fsid(struct openconnect_info *vpninfo)
 			     _("Could not obtain file system ID for passphrase\n"));
 		return -EOPNOTSUPP;
 	}
-	func = (GVIBH)GetProcAddress(kernlib, "GetVolumeInformationByHandleW");
+	func = GetProcAddress(kernlib, "GetVolumeInformationByHandleW");
 	FreeLibrary(kernlib);
 	if (!func)
 		goto notsupp;

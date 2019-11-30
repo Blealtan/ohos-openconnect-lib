@@ -721,29 +721,6 @@ static void read_stdin(char **string, int hidden, int allow_fail)
 
 	*string = convert_to_utf8(buf, 1);
 }
-
-static void handle_signal(int sig)
-{
-	char cmd;
-
-	switch (sig) {
-	case SIGTERM:
-	case SIGINT:
-		cmd = OC_CMD_CANCEL;
-		break;
-	case SIGHUP:
-		cmd = OC_CMD_DETACH;
-		break;
-	case SIGUSR2:
-	default:
-		cmd = OC_CMD_PAUSE;
-		break;
-	}
-
-	if (write(sig_cmd_fd, &cmd, 1) < 0) {
-	/* suppress warn_unused_result */
-	}
-}
 #else /* _WIN32 */
 static const char *default_vpncscript;
 static void set_default_vpncscript(void)
@@ -756,7 +733,7 @@ static void set_default_vpncscript(void)
 			exit(1);
 		}
 		if (asprintf((char **)&default_vpncscript, "%.*s%s",
-			     (c - _pgmptr + 1), _pgmptr, DEFAULT_VPNCSCRIPT) < 0) {
+			     (int)(c - _pgmptr + 1), _pgmptr, DEFAULT_VPNCSCRIPT) < 0) {
 			fprintf(stderr, _("Allocation for vpnc-script path failed\n"));
 			exit(1);
 		}
@@ -765,6 +742,40 @@ static void set_default_vpncscript(void)
 	}
 }
 #endif
+
+static void handle_signal(int sig)
+{
+	char cmd;
+    int sendResult;
+
+	switch (sig) {
+	case SIGTERM:
+	case SIGINT:
+		cmd = OC_CMD_CANCEL;
+		break;
+#ifndef _WIN32
+	case SIGHUP:
+		cmd = OC_CMD_DETACH;
+		break;
+	case SIGUSR2:
+	default:
+		cmd = OC_CMD_PAUSE;
+		break;
+#endif
+	}
+
+#ifdef _WIN32
+    //https://stackoverflow.com/questions/4778043/winsock-not-supporting-read-write/12608707#12608707
+    sendResult = send(sig_cmd_fd, &cmd, 1, 0);
+#else
+    sendResult = write(sig_cmd_fd, &cmd, 1);
+#endif
+
+    if (sendResult < 0) {
+        printf("error: %d, sending '%s' to command pipe", sendResult, &cmd);
+        /* suppress warn_unused_result */
+    }
+}
 
 static struct oc_vpn_option *gai_overrides;
 
@@ -1548,6 +1559,10 @@ int main(int argc, char **argv)
 	sigaction(SIGINT, &sa, NULL);
 	sigaction(SIGHUP, &sa, NULL);
 	sigaction(SIGUSR2, &sa, NULL);
+#else 
+    //win32 signal vs sigaction: https://stackoverflow.com/a/32390101/813599
+    signal(SIGINT, handle_signal);
+    signal(SIGTERM, handle_signal);
 #endif /* !_WIN32 */
 
 	sig_cmd_fd = openconnect_setup_cmd_pipe(vpninfo);
