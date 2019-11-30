@@ -70,3 +70,4 @@ openconnect.exe --os=win --csd-wrapper=hostscan-bypass.cmd hostname
 
 # Misc Tips
 - we can browse to WSL filesystem with Windows File Explorer by `explorer.exe .` from our WSL bash terminal
+- I had to run openconnect.exe elevated (as Admin) for the tunnel to be active
