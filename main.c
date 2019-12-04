@@ -1123,6 +1123,7 @@ int main(int argc, char **argv)
 	oc_token_mode_t token_mode = OC_TOKEN_MODE_NONE;
 	int reconnect_timeout = 300;
 	int ret;
+	char* passLastChar;
 #ifdef HAVE_NL_LANGINFO
 	char *charset;
 #endif
@@ -1305,8 +1306,8 @@ int main(int argc, char **argv)
 			read_stdin(&password, 0, 0);
 			allow_stdin_read = 1;
             //trim off any ending CRLF we got from stdin since Windows in particular only has echo with linefeed
-            char* last = password+strlen(password)-1;
-            for(; *last == '\n' || *last == '\r'; ) { *last--=0; }
+            passLastChar = password+strlen(password)-1;
+            for(; *passLastChar == '\n' || *passLastChar == '\r'; ) { *passLastChar--=0; }
 			break;
 		case OPT_NO_PASSWD:
 			vpninfo->nopasswd = 1;
