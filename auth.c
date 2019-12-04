@@ -1118,6 +1118,11 @@ static int win32_csd_script(struct openconnect_info *vpninfo)
 
 static int run_csd_script(struct openconnect_info *vpninfo, char *buf, int buflen)
 {
+#if !defined(_WIN32) && !defined(__native_client__)
+    int fd, ret;
+    pid_t child;
+#endif
+
 #if /*defined(_WIN32) ||*/ defined(__native_client__)
 	vpn_progress(vpninfo, PRG_ERR,
 		     _("Error: Running the 'Cisco Secure Desktop' trojan on this platform is not yet implemented.\n"));
@@ -1147,9 +1152,6 @@ static int run_csd_script(struct openconnect_info *vpninfo, char *buf, int bufle
 	win32_csd_script(vpninfo);
 
 #else
-	int fd, ret;
-	pid_t child;
-
 	vpn_progress(vpninfo, PRG_INFO, _("Trying to run CSD trojan script.\n"));
 
 	fname[0] = 0;
