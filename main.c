@@ -1305,7 +1305,8 @@ int main(int argc, char **argv)
 			read_stdin(&password, 0, 0);
 			allow_stdin_read = 1;
             //trim off any ending CRLF we got from stdin since Windows in particular only has echo with linefeed
-            for(char* last = password+strlen(password)-1; *last == '\n' || *last == '\r'; ) { *last--=0; }
+            char* last = password+strlen(password)-1;
+            for(; *last == '\n' || *last == '\r'; ) { *last--=0; }
 			break;
 		case OPT_NO_PASSWD:
 			vpninfo->nopasswd = 1;
