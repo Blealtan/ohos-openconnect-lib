@@ -101,8 +101,8 @@ Fedora/Coverity:
     java-devel-openjdk glibc-langpack-cs iproute iputils nuttcp
     'pkgconfig(tss2-esys)' 'pkgconfig(krb5-gssapi)' 'pkgconfig(libp11)'
     ant
-  - echo COVERITY_SCAN_PROJECT_NAME: $COVERITY_SCAN_PROJECT_NAME
-  - echo COVERITY_SCAN_TOKEN: $COVERITY_SCAN_TOKEN
+  - 'echo COVERITY_SCAN_PROJECT_NAME: $COVERITY_SCAN_PROJECT_NAME'
+  - 'echo COVERITY_SCAN_TOKEN: $COVERITY_SCAN_TOKEN'
   - curl -o /tmp/cov-analysis-linux64.tgz https://scan.coverity.com/download/linux64
     --form project=$COVERITY_SCAN_PROJECT_NAME --form token=$COVERITY_SCAN_TOKEN
   - tar xfz /tmp/cov-analysis-linux64.tgz
