@@ -13,8 +13,8 @@ CentOS7/GnuTLS:
     vpnc-script 'pkgconfig(libpskc)' 'pkgconfig(libpcsclite)' tss2-devel
     java-devel-openjdk iproute iputils nuttcp
   - ./autogen.sh
-  - ./configure --with-java CFLAGS=-g
-  - make -j4 -std=c99
+  - ./configure --with-java CFLAGS='-g -std=c99'
+  - make -j4
 # UTF-8 support is not available
   - make VERBOSE=1 XFAIL_TESTS="auth-nonascii" -j4 check
   tags:
@@ -40,8 +40,8 @@ CentOS7/OpenSSL:
     vpnc-script 'pkgconfig(libpskc)' 'pkgconfig(libpcsclite)'
     java-devel-openjdk 'pkgconfig(libp11)' iproute iputils nuttcp
   - ./autogen.sh
-  - ./configure --without-gnutls --with-openssl --with-java --without-openssl-version-check --enable-dtls-xfail --disable-dsa-tests CFLAGS=-g
-  - make -j4 -std=c99
+  - ./configure --without-gnutls --with-openssl --with-java --without-openssl-version-check --enable-dtls-xfail --disable-dsa-tests CFLAGS='-g -std=c99'
+  - make -j4
 # UTF-8 support is not available
   - make VERBOSE=1 XFAIL_TESTS="auth-nonascii" -j4 check
   tags:
@@ -71,8 +71,8 @@ CentOS6/OpenSSL:
     java-devel-openjdk vpnc 'pkgconfig(libp11)' 'pkgconfig(p11-kit-1)'
     iproute iputils nuttcp
   - ./autogen.sh
-  - ./configure --with-java --without-openssl-version-check --enable-dtls-xfail CFLAGS=-g
-  - make -j4 -std=c99
+  - ./configure --with-java --without-openssl-version-check --enable-dtls-xfail CFLAGS='-g -std=c99'
+  - make -j4
 # UTF-8 support is not available
   - make VERBOSE=1 XFAIL_TESTS="bad_dtls_test auth-nonascii" -j4 check
   tags:
@@ -108,11 +108,11 @@ Fedora/Coverity:
   - cd java
   - ../cov-analysis-linux64-*/bin/cov-build --dir ../cov-int ant
   - cd ..
-  - ./configure --with-java --without-gnutls --with-openssl --disable-dsa-tests
-  - cov-analysis-linux64-*/bin/cov-build --dir cov-int make -j4 -std=c99
+  - ./configure --with-java --without-gnutls --with-openssl --disable-dsa-tests CFLAGS='-std=c99'
+  - cov-analysis-linux64-*/bin/cov-build --dir cov-int make -j4
   - make clean
-  - ./configure --with-java --disable-dsa-tests
-  - cov-analysis-linux64-*/bin/cov-build --dir cov-int make -j4 -std=c99
+  - ./configure --with-java --disable-dsa-tests CFLAGS='-std=c99'
+  - cov-analysis-linux64-*/bin/cov-build --dir cov-int make -j4
   - tar cfz cov-int.tar.gz cov-int
   - curl https://scan.coverity.com/builds?project=$COVERITY_SCAN_PROJECT_NAME
     --form token=$COVERITY_SCAN_TOKEN --form email=dwmw2@infradead.org
