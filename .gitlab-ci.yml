@@ -14,7 +14,7 @@ CentOS7/GnuTLS:
     java-devel-openjdk iproute iputils nuttcp
   - ./autogen.sh
   - ./configure --with-java CFLAGS=-g
-  - make -j4
+  - make -j4 -std=c99
 # UTF-8 support is not available
   - make VERBOSE=1 XFAIL_TESTS="auth-nonascii" -j4 check
   tags:
@@ -41,7 +41,7 @@ CentOS7/OpenSSL:
     java-devel-openjdk 'pkgconfig(libp11)' iproute iputils nuttcp
   - ./autogen.sh
   - ./configure --without-gnutls --with-openssl --with-java --without-openssl-version-check --enable-dtls-xfail --disable-dsa-tests CFLAGS=-g
-  - make -j4
+  - make -j4 -std=c99
 # UTF-8 support is not available
   - make VERBOSE=1 XFAIL_TESTS="auth-nonascii" -j4 check
   tags:
@@ -72,7 +72,7 @@ CentOS6/OpenSSL:
     iproute iputils nuttcp
   - ./autogen.sh
   - ./configure --with-java --without-openssl-version-check --enable-dtls-xfail CFLAGS=-g
-  - make -j4
+  - make -j4 -std=c99
 # UTF-8 support is not available
   - make VERBOSE=1 XFAIL_TESTS="bad_dtls_test auth-nonascii" -j4 check
   tags:
@@ -109,10 +109,10 @@ Fedora/Coverity:
   - ../cov-analysis-linux64-*/bin/cov-build --dir ../cov-int ant
   - cd ..
   - ./configure --with-java --without-gnutls --with-openssl --disable-dsa-tests
-  - cov-analysis-linux64-*/bin/cov-build --dir cov-int make -j4
+  - cov-analysis-linux64-*/bin/cov-build --dir cov-int make -j4 -std=c99
   - make clean
   - ./configure --with-java --disable-dsa-tests
-  - cov-analysis-linux64-*/bin/cov-build --dir cov-int make -j4
+  - cov-analysis-linux64-*/bin/cov-build --dir cov-int make -j4 -std=c99
   - tar cfz cov-int.tar.gz cov-int
   - curl https://scan.coverity.com/builds?project=$COVERITY_SCAN_PROJECT_NAME
     --form token=$COVERITY_SCAN_TOKEN --form email=dwmw2@infradead.org
