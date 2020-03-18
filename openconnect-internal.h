@@ -424,6 +424,7 @@ struct openconnect_info {
 	int proxy_close_during_auth;
 	int retry_on_auth_fail;
 	int try_http_auth;
+	int legacy_headers;
 	struct http_auth_state http_auth[MAX_AUTH_TYPES];
 	struct http_auth_state proxy_auth[MAX_AUTH_TYPES];
 
@@ -668,10 +669,17 @@ struct openconnect_info {
 
 	const char *quit_reason;
 
+	char *sso_login;
+	char *sso_login_final;
+	char *sso_token_cookie;
+	char *sso_error_cookie;
+	char *sso_cookie_value;
+
 	int verbose;
 	void *cbdata;
 	openconnect_validate_peer_cert_vfn validate_peer_cert;
 	openconnect_write_new_config_vfn write_new_config;
+	openconnect_open_webview_vfn open_webview;
 	openconnect_process_auth_form_vfn process_auth_form;
 	openconnect_progress_vfn progress;
 	openconnect_protect_socket_vfn protect_socket;

@@ -226,6 +226,8 @@ static int parse_form(struct openconnect_info *vpninfo, struct oc_auth_form *for
 			opt->_value = (char *)xmlGetProp(xml_node, (unsigned char *)"value");
 		} else if (!strcmp(input_type, "text")) {
 			opt->type = OC_FORM_OPT_TEXT;
+		} else if (!strcmp(input_type, "sso")) {
+			opt->type = OC_FORM_OPT_SSO;
 		} else if (!strcmp(input_type, "password")) {
 			if (!cstp_can_gen_tokencode(vpninfo, form, opt))
 				opt->type = OC_FORM_OPT_TOKEN;
@@ -398,6 +400,10 @@ static int parse_auth_node(struct openconnect_info *vpninfo, xmlNode *xml_node,
 		xmlnode_get_text(xml_node, "banner", &form->banner);
 		xmlnode_get_text(xml_node, "message", &form->message);
 		xmlnode_get_text(xml_node, "error", &form->error);
+		xmlnode_get_text(xml_node, "sso-v2-login", &vpninfo->sso_login);
+		xmlnode_get_text(xml_node, "sso-v2-login-final", &vpninfo->sso_login_final);
+		xmlnode_get_text(xml_node, "sso-v2-token-cookie-name", &vpninfo->sso_token_cookie);
+		xmlnode_get_text(xml_node, "sso-v2-error-cookie-name", &vpninfo->sso_error_cookie);
 
 		if (xmlnode_is_named(xml_node, "form")) {
 
@@ -719,7 +725,7 @@ static xmlDocPtr xmlpost_new_query(struct openconnect_info *vpninfo, const char 
 				   xmlNodePtr *rootp)
 {
 	xmlDocPtr doc;
-	xmlNodePtr root, node;
+	xmlNodePtr root, node, capabilities;
 
 	doc = xmlNewDoc(XCAST("1.0"));
 	if (!doc)
@@ -733,6 +739,8 @@ static xmlDocPtr xmlpost_new_query(struct openconnect_info *vpninfo, const char 
 	if (!xmlNewProp(root, XCAST("client"), XCAST("vpn")))
 		goto bad;
 	if (!xmlNewProp(root, XCAST("type"), XCAST(type)))
+		goto bad;
+	if (!xmlNewProp(root, XCAST("aggregate-auth-version"), XCAST("2")))
 		goto bad;
 
 	node = xmlNewTextChild(root, NULL, XCAST("version"),
@@ -751,6 +759,17 @@ static xmlDocPtr xmlpost_new_query(struct openconnect_info *vpninfo, const char 
 		    !xmlNewProp(node, XCAST("unique-id"), XCAST(vpninfo->mobile_device_uniqueid)))
 			goto bad;
 	}
+
+	capabilities = xmlNewNode(NULL, XCAST("capabilities"));
+	if (!capabilities)
+		goto bad;
+	capabilities = xmlAddChild(root, capabilities);
+	if (!capabilities)
+		goto bad;
+
+	node = xmlNewTextChild(capabilities, NULL, XCAST("auth-method"), XCAST("single-sign-on-v2"));
+	if (!node)
+		goto bad;
 
 	*rootp = root;
 	return doc;
