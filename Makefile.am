@@ -34,9 +34,11 @@ lib_srcs_pulse = pulse.c
 lib_srcs_globalprotect = gpst.c auth-globalprotect.c
 lib_srcs_oath = oath.c
 lib_srcs_oidc = oidc.c
+lib_srcs_anyconnect_sso = anyconnect-sso.c
 
 library_srcs += $(lib_srcs_juniper) $(lib_srcs_cisco) $(lib_srcs_oath) \
-		$(lib_srcs_globalprotect) $(lib_srcs_pulse) $(lib_srcs_oidc)
+		$(lib_srcs_globalprotect) $(lib_srcs_pulse) $(lib_srcs_oidc) \
+		$(lib_srcs_anyconnect_sso)
 
 lib_srcs_gnutls = gnutls.c gnutls_tpm.c gnutls_tpm2.c
 lib_srcs_openssl = openssl.c openssl-pkcs11.c
@@ -53,7 +55,7 @@ POTFILES = $(openconnect_SOURCES) gnutls-esp.c gnutls-dtls.c openssl-esp.c opens
 	   $(lib_srcs_esp) $(lib_srcs_dtls) gnutls_tpm2_esys.c gnutls_tpm2_ibm.c \
 	   $(lib_srcs_openssl) $(lib_srcs_gnutls) $(library_srcs) \
 	   $(lib_srcs_win32) $(lib_srcs_posix) $(lib_srcs_gssapi) $(lib_srcs_iconv) \
-	   $(lib_srcs_yubikey) $(lib_srcs_stoken) $(lib_srcs_oidc)
+	   $(lib_srcs_yubikey) $(lib_srcs_stoken) $(lib_srcs_oidc) $(lib_srcs_anyconnect_sso)
 
 if OPENCONNECT_LIBPCSCLITE
 library_srcs += $(lib_srcs_yubikey)

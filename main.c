@@ -823,8 +823,8 @@ static void usage(void)
 	printf("  -g, --usergroup=GROUP           %s\n", _("Set login usergroup"));
 	printf("  -p, --key-password=PASS         %s\n", _("Set key passphrase or TPM SRK PIN"));
 	printf("      --key-password-from-fsid    %s\n", _("Key passphrase is fsid of file system"));
-	printf("      --token-mode=MODE           %s\n", _("Software token type: rsa, totp, hotp or oidc"));
-	printf("      --token-secret=STRING       %s\n", _("Software token secret or oidc token"));
+	printf("      --token-mode=MODE           %s\n", _("Software token type: rsa, totp, hotp, oidc, or anyconnect-sso"));
+	printf("      --token-secret=STRING       %s\n", _("Software token secret, oidc token, or anyconnect sso cookie"));
 #ifndef HAVE_LIBSTOKEN
 	printf("                                  %s\n", _("(NOTE: libstoken (RSA SecurID) disabled in this build)"));
 #endif
@@ -1304,7 +1304,7 @@ static int autocomplete(int argc, char **argv)
 				break;
 
 			case OPT_TOKEN_MODE: /* --token-mode */
-				complete_words(comp_opt, prefixlen, "totp", "hotp", "oidc", NULL);
+				complete_words(comp_opt, prefixlen, "totp", "hotp", "oidc", "anyconnect-sso", NULL);
 				if (openconnect_has_stoken_support())
 					complete_words(comp_opt, prefixlen, "rsa", NULL);
 				if (openconnect_has_yubioath_support())
@@ -1751,6 +1751,8 @@ int main(int argc, char **argv)
 				token_mode = OC_TOKEN_MODE_YUBIOATH;
 			} else if (strcasecmp(config_arg, "oidc") == 0) {
 				token_mode = OC_TOKEN_MODE_OIDC;
+			} else if (strcasecmp(config_arg, "anyconnect-sso") == 0) {
+				token_mode = OC_TOKEN_MODE_ANYCONNECT_SSO;
 			} else {
 				fprintf(stderr, _("Invalid software token mode \"%s\"\n"),
 					config_arg);
@@ -2409,6 +2411,19 @@ static int process_auth_form_cb(void *_vpninfo,
 			 * automatically generated then don't treat it as an
 			 * empty form for the purpose of loop avoidance. */
 			empty = 0;
+		} else if (opt->type == OC_FORM_OPT_SSO) {
+			if (vpninfo->sso_cookie_value) {
+				opt->_value = vpninfo->sso_cookie_value;
+				vpninfo->sso_cookie_value = NULL;
+			} else {
+				// TODO: implement saved_form_field
+				if (!opt->_value)
+				opt->_value = prompt_for_input("SSO Cookie:", vpninfo, 0);
+			}
+
+			if (!opt->_value)
+				goto err;
+			empty = 0;
 		}
 	}
 
@@ -2572,6 +2587,21 @@ static void init_token(struct openconnect_info *vpninfo,
 		}
 
 		break;
+
+	case OC_TOKEN_MODE_ANYCONNECT_SSO:
+		switch (ret) {
+		case 0:
+			return;
+		case -ENOENT:
+			fprintf(stderr, _("Can't open anyconnect sso file\n"));
+			exit(1);
+		default:
+			fprintf(stderr, _("General failure in anyconnect sso token\n"));
+			exit(1);
+		}
+
+		break;
+
 	case OC_TOKEN_MODE_NONE:
 		/* No-op */
 		break;

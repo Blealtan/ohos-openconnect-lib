@@ -496,6 +496,11 @@ void openconnect_vpninfo_free(struct openconnect_info *vpninfo)
 	free(vpninfo->dtls_pkt);
 	free(vpninfo->cstp_pkt);
 	free(vpninfo->bearer_token);
+	free(vpninfo->sso_login);
+	free(vpninfo->sso_login_final);
+	free(vpninfo->sso_token_cookie);
+	free(vpninfo->sso_error_cookie);
+	free(vpninfo->sso_cookie_value);
 	free(vpninfo);
 }
 
@@ -907,6 +912,8 @@ int openconnect_set_token_mode(struct openconnect_info *vpninfo,
 #endif
 	case OC_TOKEN_MODE_OIDC:
 		return set_oidc_token(vpninfo, token_str);
+	case OC_TOKEN_MODE_ANYCONNECT_SSO:
+		return set_anyconnect_sso_token(vpninfo, token_str);
 	default:
 		return -EOPNOTSUPP;
 	}
@@ -1219,11 +1226,12 @@ retry:
 		int second_auth = opt->flags & OC_FORM_OPT_SECOND_AUTH;
 		opt->flags &= ~OC_FORM_OPT_IGNORE;
 
-		if (opt->type == OC_FORM_OPT_SSO && vpninfo->open_webview) {
-		    vpninfo->sso_cookie_value = NULL;
-		    vpninfo->open_webview(vpninfo, vpninfo->sso_login);
-		    opt->_value = vpninfo->sso_cookie_value;
-		    vpninfo->sso_cookie_value = NULL;
+		if (opt->type == OC_FORM_OPT_SSO) {
+			if(vpninfo->sso_cookie_value) continue;
+			if(vpninfo->open_webview){
+				vpninfo->sso_cookie_value = NULL;
+				vpninfo->open_webview(vpninfo, vpninfo->sso_login);
+			}
 		}
 
 		if (!auth_choice ||
