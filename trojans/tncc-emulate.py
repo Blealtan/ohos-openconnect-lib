@@ -475,10 +475,8 @@ class tncc(object):
         if dspreauth is None or dssignin is None:
             self.r = self.br.open('https://' + self.vpn_host)
         else:
-            try:
-                self.cj.set_cookie(dspreauth)
-            except:
-                self.set_cookie('DSPREAUTH', dspreauth)
+            self.set_cookie('DSPREAUTH', dspreauth)
+            # self.cj.set_cookie is used when dssignin is a Cookie instance (ie: at the setcookie command)
             try:
                 self.cj.set_cookie(dssignin)
             except:
@@ -597,6 +595,7 @@ class tncc_server(object):
         cmd, buf = buf.split('\n', 1)
         cmd = cmd.strip()
         args = dict()
+        logging.debug('Command received %s', buf)
         for n in buf.split('\n'):
             n = n.strip()
             if len(n):

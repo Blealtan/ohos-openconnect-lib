@@ -903,7 +903,21 @@ int oncp_mainloop(struct openconnect_info *vpninfo, int *timeout, int readable)
 
 	/* Periodic TNCC */
 	if (trojan_check_deadline(vpninfo, timeout)) {
-		oncp_send_tncc_command(vpninfo, 0);
+		ret = oncp_send_tncc_command(vpninfo, 0) ;
+		if (ret != 0) {
+			vpninfo->quit_reason = "TNCC command failed";
+			return ret;
+		}
+		return 1;
+	}
+
+	/* Verify if TNCC script has response */
+	if (oncp_has_tncc_resp(vpninfo) > 0) {
+		ret = oncp_recv_tncc_resp(vpninfo);
+		if (ret != 0) {
+			vpninfo->quit_reason = "TNCC fetch response failed";
+			return ret;
+		}
 		return 1;
 	}
 
