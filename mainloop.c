@@ -206,12 +206,14 @@ int openconnect_mainloop(struct openconnect_info *vpninfo,
 		else
 			timeout = 1000;
 
+		/* XX: reset delay_tunnel_reason so this can't spin forever */
+		const char *delay_tunnel_reason = vpninfo->delay_tunnel_reason;
+		vpninfo->delay_tunnel_reason = NULL;
+
 		if (!tun_is_up(vpninfo)) {
-			if (vpninfo->delay_tunnel_reason) {
+			if (delay_tunnel_reason) {
 				vpn_progress(vpninfo, PRG_TRACE, _("Delaying tunnel with reason: %s\n"),
-					     vpninfo->delay_tunnel_reason);
-				/* XX: don't let this spin forever */
-				vpninfo->delay_tunnel_reason = NULL;
+					     delay_tunnel_reason);
 			} else {
 				/* No DTLS, or DTLS failed; setup TUN device unconditionally */
 				ret = setup_tun_device(vpninfo);
@@ -238,16 +240,18 @@ int openconnect_mainloop(struct openconnect_info *vpninfo,
 		if (vpninfo->quit_reason)
 			break;
 
+		/* XX: reset delay_close so this can't spin forever */
+		int delay_close = vpninfo->delay_close;
+		vpninfo->delay_close = NO_DELAY_CLOSE;
+
 		poll_cmd_fd(vpninfo, 0);
 		if (vpninfo->got_cancel_cmd) {
-			if (vpninfo->delay_close != NO_DELAY_CLOSE) {
-				if (vpninfo->delay_close == DELAY_CLOSE_IMMEDIATE_CALLBACK) {
+			if (delay_close != NO_DELAY_CLOSE) {
+				if (delay_close == DELAY_CLOSE_IMMEDIATE_CALLBACK) {
 					vpn_progress(vpninfo, PRG_TRACE, _("Delaying cancel (immediate callback).\n"));
 					did_work++;
 				} else
 					vpn_progress(vpninfo, PRG_TRACE, _("Delaying cancel.\n"));
-				/* XX: don't let this spin forever */
-				vpninfo->delay_close = NO_DELAY_CLOSE;
 			} else if (vpninfo->cancel_type == OC_CMD_CANCEL) {
 				vpninfo->quit_reason = "Aborted by caller";
 				vpninfo->got_cancel_cmd = 0;
@@ -261,15 +265,13 @@ int openconnect_mainloop(struct openconnect_info *vpninfo,
 		}
 
 		if (vpninfo->got_pause_cmd) {
-			if (vpninfo->delay_close != NO_DELAY_CLOSE) {
+			if (delay_close != NO_DELAY_CLOSE) {
 				 /* XX: don't let this spin forever */
-				if (vpninfo->delay_close == DELAY_CLOSE_IMMEDIATE_CALLBACK) {
+				if (delay_close == DELAY_CLOSE_IMMEDIATE_CALLBACK) {
 					vpn_progress(vpninfo, PRG_TRACE, _("Delaying pause (immediate callback).\n"));
 					did_work++;
 				} else
 					vpn_progress(vpninfo, PRG_TRACE, _("Delaying pause.\n"));
-				/* XX: don't let this spin forever */
-				vpninfo->delay_close = NO_DELAY_CLOSE;
 			} else {
 				/* close all connections and wait for the user to call
 				   openconnect_mainloop() again */
