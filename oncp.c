@@ -63,7 +63,8 @@ static const char authpkt_tail[] = { 0xbb, 0x01, 0x00, 0x00, 0x00, 0x00 };
 
 static int process_attr(struct openconnect_info *vpninfo,
 			struct oc_vpn_option **new_opts, struct oc_ip_info *new_ip_info,
-			int group, int attr, unsigned char *data, int attrlen)
+			int group, int attr, unsigned char *data, int attrlen,
+			int *split_route_is_default_route, char **deferred_netmask)
 {
 	char buf[80];
 	int i;
@@ -124,7 +125,7 @@ static int process_attr(struct openconnect_info *vpninfo,
 		snprintf(buf, sizeof(buf), "%d.%d.%d.%d", data[0], data[1], data[2], data[3]);
 
 		vpn_progress(vpninfo, PRG_DEBUG, _("Received netmask %s\n"), buf);
-		new_ip_info->netmask = add_option_dup(new_opts, "netmask", buf, -1);
+		*deferred_netmask = strdup(buf);
 		break;
 
 	case GRP_ATTR(1, 3):
@@ -146,8 +147,13 @@ static int process_attr(struct openconnect_info *vpninfo,
 			 data[0], data[1], data[2], data[3],
 			 data[4], data[5], data[6], data[7]);
 		vpn_progress(vpninfo, PRG_DEBUG, _("Received split include route %s\n"), buf);
-		if (!data[4] && !data[5] && !data[6] && !data[7])
+		if (!data[4] && !data[5] && !data[6] && !data[7]) {
+			/* XX: if this is a default Legacy IP route jammed into the split-include
+			 * routes, just mark it for now.
+			 */
+			*split_route_is_default_route = 1;
 			break;
+		}
 		inc = malloc(sizeof(*inc));
 		if (inc) {
 			inc->route = add_option_dup(new_opts, "split-include", buf, -1);
@@ -168,8 +174,6 @@ static int process_attr(struct openconnect_info *vpninfo,
 			 data[0], data[1], data[2], data[3],
 			 data[4], data[5], data[6], data[7]);
 		vpn_progress(vpninfo, PRG_DEBUG, _("Received split exclude route %s\n"), buf);
-		if (!data[4] && !data[5] && !data[6] && !data[7])
-			break;
 		exc = malloc(sizeof(*exc));
 		if (exc) {
 			exc->route = add_option_dup(new_opts, "split-exclude", buf, -1);
@@ -400,7 +404,8 @@ static int parse_conf_pkt(struct openconnect_info *vpninfo, unsigned char *bytes
 {
 	int kmplen, kmpend, grouplen, groupend, group, attr, attrlen;
 	int ofs = 0;
-	int split_enc_hmac_keys = 0;
+	int split_enc_hmac_keys = 0, split_route_is_default_route = 0;
+	char *deferred_netmask = NULL;
 	struct oc_vpn_option *new_opts = NULL;
 	struct oc_ip_info new_ip_info = {};
 
@@ -448,7 +453,8 @@ static int parse_conf_pkt(struct openconnect_info *vpninfo, unsigned char *bytes
 			if (attrlen + ofs > groupend)
 				goto eparse;
 			if (process_attr(vpninfo, &new_opts, &new_ip_info,
-					 group, attr, bytes + ofs, attrlen))
+					 group, attr, bytes + ofs, attrlen,
+					 &split_route_is_default_route, &deferred_netmask))
 				goto eparse;
 			if (GRP_ATTR(group, attr)==GRP_ATTR(7, 2))
 				split_enc_hmac_keys = 1;
@@ -461,7 +467,13 @@ static int parse_conf_pkt(struct openconnect_info *vpninfo, unsigned char *bytes
 	if (split_enc_hmac_keys)
 		memcpy(vpninfo->esp_out.hmac_key, vpninfo->esp_out.enc_key + vpninfo->enc_key_len, vpninfo->hmac_key_len);
 
-	int ret = install_vpn_opts(vpninfo, new_opts, &new_ip_info);
+	/* Fix the issue of a 0.0.0.0/0 "split"-include route by swapping the "split" route with the default netmask. */
+	int ret = finalize_netmask_fixing_default_route_as_split(new_opts, &new_ip_info, split_route_is_default_route, deferred_netmask);
+	if (ret)
+		goto out;
+
+	ret = install_vpn_opts(vpninfo, new_opts, &new_ip_info);
+ out:
 	if (ret) {
 		free_optlist(new_opts);
 		free_split_routes(&new_ip_info);

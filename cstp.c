@@ -368,6 +368,7 @@ static int start_cstp_connection(struct openconnect_info *vpninfo)
 	struct oc_vpn_option **next_dtls_option = &new_dtls_opts;
 	struct oc_vpn_option **next_cstp_option = &new_cstp_opts;
 	struct oc_ip_info new_ip_info = {};
+	char *deferred_netmask = NULL;
 	int ret = 0;
 
 	while ((ret = vpninfo->ssl_gets(vpninfo, buf, sizeof(buf)))) {
@@ -570,7 +571,7 @@ static int start_cstp_connection(struct openconnect_info *vpninfo)
 				if (!vpninfo->disable_ipv6)
 					new_ip_info.netmask6 = new_option->value;
 			} else
-				new_ip_info.netmask = new_option->value;
+				deferred_netmask = new_option->value;
 		} else if (!strcmp(buf + 7, "DNS") ||
 			   !strcmp(buf + 7, "DNS-IP6")) {
 			int j;
@@ -596,22 +597,25 @@ static int start_cstp_connection(struct openconnect_info *vpninfo)
 			banner = new_option->value;
 		} else if (!strcmp(buf + 7, "Split-DNS")) {
 			struct oc_split_include *dns = malloc(sizeof(*dns));
-			if (!dns)
-				continue;
+			if (!dns) {
+			nomem:
+				ret = -ENOMEM;
+				goto err;
+			}
 			dns->route = new_option->value;
 			dns->next = new_ip_info.split_dns;
 			new_ip_info.split_dns = dns;
 		} else if (!strcmp(buf + 7, "Split-Include") || !strcmp(buf + 7, "Split-Include-IP6")) {
 			struct oc_split_include *inc = malloc(sizeof(*inc));
 			if (!inc)
-				continue;
+				goto nomem;
 			inc->route = new_option->value;
 			inc->next = new_ip_info.split_includes;
 			new_ip_info.split_includes = inc;
 		} else if (!strcmp(buf + 7, "Split-Exclude") || !strcmp(buf + 7, "Split-Exclude-IP6")) {
 			struct oc_split_include *exc = malloc(sizeof(*exc));
 			if (!exc)
-				continue;
+				goto nomem;
 			exc->route = new_option->value;
 			exc->next = new_ip_info.split_excludes;
 			new_ip_info.split_excludes = exc;
@@ -625,6 +629,20 @@ static int start_cstp_connection(struct openconnect_info *vpninfo)
 		goto err;
 	}
 	new_ip_info.mtu = mtu;
+
+	/* If we have no split-includes, we're expected to set a default Legacy IP route;
+	 * we believe that this is true even if we've received a Legacy IP netmask in
+	 * X-CSTP-Netmask. [XX: What if all the split-includes are IPv6?]
+	 *
+	 * Otherwise stated: the lack of split-includes for CSTP is equivalent to having
+	 * encountered (but not yet saved) "0.0.0.0/0" in the list of split-include routes
+	 * for other protocols.
+	 */
+	ret = finalize_netmask_fixing_default_route_as_split(new_cstp_opts, &new_ip_info,
+							     !new_ip_info.split_includes,
+							     deferred_netmask);
+	if (ret < 0)
+		goto err;
 
 	ret = install_vpn_opts(vpninfo, new_cstp_opts, &new_ip_info);
 	if (ret) {

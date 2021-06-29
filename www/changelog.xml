@@ -26,7 +26,7 @@
        <li>SIGUSR1 causes OpenConnect to log detailed connection information and statistics (<a href="https://gitlab.com/openconnect/openconnect/-/merge_requests/154">!154</a>)</li>
        <li>Allow <tt>--servercert</tt> to be specified multiple times in order to accept server certificates matching more than one possible fingerprint (<a href="https://gitlab.com/openconnect/openconnect/-/merge_requests/162">!162</a>, <a href="https://gitlab.com/openconnect/openconnect/-/issues/25">#25</a>)</li>
        <li>Add insecure debugging build mode for developers (<a href="https://gitlab.com/openconnect/openconnect/-/merge_requests/112">!112</a>)</li>
-       <li>Demangle default routes sent as split routes by GlobalProtect (<a href="https://gitlab.com/openconnect/openconnect/-/merge_requests/118">!118</a>)</li>
+       <li>Demangle default routes sent as split routes by GlobalProtect (<a href="https://gitlab.com/openconnect/openconnect/-/merge_requests/118">!118</a>) and oNCP and Pulse (<a href="https://gitlab.com/openconnect/openconnect/-/merge_requests/198">!198</a>)</li>
        <li>Improve GlobalProtect login argument decoding (<a href="https://gitlab.com/openconnect/openconnect/-/merge_requests/143">!143</a>)</li>
        <li>Add detection of authentication expiration date, intended to allow front-ends to cache and reuse authentication cookies/sessions (<a href="https://gitlab.com/openconnect/openconnect/-/merge_requests/156">!156</a>)</li>
        <li>Small bug fixes and clarification of many logging messages.</li>

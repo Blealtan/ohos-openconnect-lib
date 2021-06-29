@@ -1147,6 +1147,8 @@ int gpst_xml_or_error(struct openconnect_info *vpninfo, char *response,
 					  int (*xml_cb)(struct openconnect_info *, xmlNode *xml_node, void *cb_data),
 					  int (*challenge_cb)(struct openconnect_info *, char *prompt, char *inputStr, void *cb_data),
 					  void *cb_data);
+int finalize_netmask_fixing_default_route_as_split(struct oc_vpn_option *new_opts, struct oc_ip_info *new_ip_info,
+						   int split_route_is_default_route, char *original_netmask);
 int gpst_setup(struct openconnect_info *vpninfo);
 int gpst_mainloop(struct openconnect_info *vpninfo, int *timeout, int readable);
 int gpst_esp_send_probes(struct openconnect_info *vpninfo);

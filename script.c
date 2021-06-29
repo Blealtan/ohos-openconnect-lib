@@ -308,32 +308,37 @@ void prepare_script_env(struct openconnect_info *vpninfo)
 		script_setenv(vpninfo, "IDLE_TIMEOUT", NULL, 0, 0);
 
 	if (vpninfo->ip_info.addr) {
-		script_setenv(vpninfo, "INTERNAL_IP4_ADDRESS", vpninfo->ip_info.addr, 0, 0);
-		if (vpninfo->ip_info.netmask) {
-			struct in_addr addr;
-			struct in_addr mask;
+		struct in_addr addr;
+		if (!inet_aton(vpninfo->ip_info.addr, &addr))
+			vpn_progress(vpninfo, PRG_ERR,
+				     _("Ignoring legacy network because address \"%s\" is invalid.\n"),
+				     vpninfo->ip_info.addr);
+		else {
+			script_setenv(vpninfo, "INTERNAL_IP4_ADDRESS", vpninfo->ip_info.addr, 0, 0);
+			if (vpninfo->ip_info.netmask) {
+				struct in_addr mask;
 
-			if (!inet_aton(vpninfo->ip_info.addr, &addr))
-				vpn_progress(vpninfo, PRG_ERR,
-					     _("Ignoring legacy network because address \"%s\" is invalid.\n"),
-					     vpninfo->ip_info.addr);
-			else if (!inet_aton(vpninfo->ip_info.netmask, &mask))
-			bad_netmask:
-				vpn_progress(vpninfo, PRG_ERR,
-					     _("Ignoring legacy network because netmask \"%s\" is invalid.\n"),
-					     vpninfo->ip_info.netmask);
-			else {
-				char netaddr[INET_ADDRSTRLEN];
-				int masklen = netmasklen(mask);
+				if (!inet_aton(vpninfo->ip_info.netmask, &mask)) {
+				bad_netmask:
+					vpn_progress(vpninfo, PRG_ERR,
+						     _("Setting legacy network to 0.0.0.0/0.0.0.0 because netmask \"%s\" is invalid.\n"),
+						     vpninfo->ip_info.netmask);
+					script_setenv(vpninfo, "INTERNAL_IP4_NETADDR", "0.0.0.0", 0, 0);
+					script_setenv(vpninfo, "INTERNAL_IP4_NETMASK", "0.0.0.0", 0, 0);
+					script_setenv_int(vpninfo, "INTERNAL_IP4_NETMASKLEN", 0);
+				} else {
+					char netaddr[INET_ADDRSTRLEN];
+					int masklen = netmasklen(mask);
 
-				if (netmaskbits(masklen) != mask.s_addr)
-					goto bad_netmask;
-				addr.s_addr &= mask.s_addr;
-				inet_ntop(AF_INET, &addr, netaddr, sizeof(netaddr));
+					if (netmaskbits(masklen) != mask.s_addr)
+						goto bad_netmask;
+					addr.s_addr &= mask.s_addr;
+					inet_ntop(AF_INET, &addr, netaddr, sizeof(netaddr));
 
-				script_setenv(vpninfo, "INTERNAL_IP4_NETADDR", netaddr, 0, 0);
-				script_setenv(vpninfo, "INTERNAL_IP4_NETMASK", vpninfo->ip_info.netmask, 0, 0);
-				script_setenv_int(vpninfo, "INTERNAL_IP4_NETMASKLEN", masklen);
+					script_setenv(vpninfo, "INTERNAL_IP4_NETADDR", netaddr, 0, 0);
+					script_setenv(vpninfo, "INTERNAL_IP4_NETMASK", vpninfo->ip_info.netmask, 0, 0);
+					script_setenv_int(vpninfo, "INTERNAL_IP4_NETMASKLEN", masklen);
+				}
 			}
 		}
 	}
@@ -345,10 +350,15 @@ void prepare_script_env(struct openconnect_info *vpninfo)
 	/* The 'netmask6' is actually the address *and* netmask. From which we
 	 * obtain just the address on its own, if we don't have it separately */
 	if (vpninfo->ip_info.netmask6 && !vpninfo->ip_info.addr6) {
-		char *slash = strchr(vpninfo->ip_info.netmask6, '/');
-		if (slash)
-                       script_setenv(vpninfo, "INTERNAL_IP6_ADDRESS", vpninfo->ip_info.netmask6,
-				     slash - vpninfo->ip_info.netmask6, 0);
+		char *slash = strchr(vpninfo->ip_info.netmask6, '/') ? : vpninfo->ip_info.netmask6;
+		script_setenv(vpninfo, "INTERNAL_IP6_ADDRESS", vpninfo->ip_info.netmask6,
+			      slash - vpninfo->ip_info.netmask6, 0);
+	}
+	/* Likewise, if we have only 'addr6', we set 'netmask6' to addr6 + "/128" */
+	else if (vpninfo->ip_info.addr6 && !vpninfo->ip_info.netmask6) {
+		char netmask6[INET6_ADDRSTRLEN + 4];
+		snprintf(netmask6, sizeof(netmask6), "%s/128", vpninfo->ip_info.addr6);
+		script_setenv(vpninfo, "INTERNAL_IP6_NETMASK", netmask6, 0, 0);
 	}
 
 	if (vpninfo->ip_info.dns[0])
