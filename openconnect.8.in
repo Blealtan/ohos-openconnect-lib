@@ -353,7 +353,7 @@ or as an URL containing the
 . I HOST
 and optionally the
 .I PORT
-number and the login 
+number and the login
 .I GROUP
 or realm.
 

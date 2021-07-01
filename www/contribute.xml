@@ -3,7 +3,7 @@
 
 	<VAR match="VAR_SEL_CONTRIBUTE" replace="selected" />
 	<PARSE file="menu1.xml" />
-	
+
 	<INCLUDE file="inc/content.tmpl" />
 
 <h1>Contributing to OpenConnect</h1>

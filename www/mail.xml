@@ -3,7 +3,7 @@
 
 	<VAR match="VAR_SEL_MAIL" replace="selected" />
 	<PARSE file="menu1.xml" />
-	
+
 	<INCLUDE file="inc/content.tmpl" />
 
 	<h1>Getting help</h1>

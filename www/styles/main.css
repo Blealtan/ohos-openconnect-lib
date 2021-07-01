@@ -14,7 +14,7 @@ body {
 	border-left-style: double;
 	border-bottom-style: double;
 	border-color: #1414a6;
-	border-left-width: 5px;	
+	border-left-width: 5px;
 	border-bottom-width: 5px;
 	min-width: 70em;
 }
@@ -82,7 +82,7 @@ body {
     height: 2.3em;
     border-bottom-style: solid;
     border-color: #1414a6;
-    border-bottom-width: 1px;	
+    border-bottom-width: 1px;
 }
 
 #menu2 .nonsel a {
@@ -126,10 +126,10 @@ body {
     margin-bottom: 20px;
     margin-right: 20px;
     margin-top: 20px;
-    padding-top: 20px;	
+    padding-top: 20px;
     padding-left: 20px;
-    padding-right: 120px;	
-    padding-bottom: 20px;	
+    padding-right: 120px;
+    padding-bottom: 20px;
     font-size: 14px;
 }
 

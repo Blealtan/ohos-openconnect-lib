@@ -264,6 +264,17 @@ static const struct vpn_proto openconnect_protos[] = {
 		.udp_close = dtls_close,
 		.udp_shutdown = dtls_shutdown,
 #endif
+	}, {
+		.name = "cp",
+		.pretty_name = N_("CheckPoint VPN"),
+		.description = N_("Compatible with CheckPoint VPN"),
+		.proto = PROTO_CP,
+		.flags = OC_PROTO_PROXY | OC_PROTO_AUTH_CERT,
+		.vpn_close_session = cp_bye,
+		.tcp_connect = cp_connect,
+		.tcp_mainloop = cp_mainloop,
+		.add_http_headers = http_common_headers,
+		.obtain_cookie = cp_obtain_cookie,
 	},
 };
 

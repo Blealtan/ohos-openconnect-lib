@@ -5,7 +5,7 @@
 	<VAR match="VAR_SEL_BUILDING" replace="selected" />
 	<PARSE file="menu1.xml" />
 	<PARSE file="menu2-started.xml" />
-	
+
 	<INCLUDE file="inc/content.tmpl" />
 
     	<h1>Building OpenConnect</h1>
@@ -122,4 +122,3 @@ Note that for IPv6 support, the Solaris tun/tap driver from 16th Nov 2009 or new
 
 	<INCLUDE file="inc/footer.tmpl" />
 </PAGE>
-

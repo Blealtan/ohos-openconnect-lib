@@ -5,7 +5,7 @@
 	<VAR match="VAR_SEL_DOWNLOAD" replace="selected" />
 	<PARSE file="menu1.xml" />
 	<PARSE file="menu2.xml" />
-	
+
 	<INCLUDE file="inc/content.tmpl" />
 
     	<h1>Download</h1>

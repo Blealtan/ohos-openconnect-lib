@@ -190,6 +190,10 @@ struct pkt {
 			uint16_t proto;
 			unsigned char hdr[18];
 		} ppp;
+		struct {
+			unsigned char pad[16];
+			unsigned char hdr[8];
+		} cpsnx;
 	};
 	unsigned char data[];
 };
@@ -221,6 +225,7 @@ struct pkt {
 #define PROTO_FORTINET		5
 #define PROTO_NULLPPP		6
 #define PROTO_ARRAY		7
+#define PROTO_CP		8
 
 /* All supported PPP packet framings/encapsulations */
 #define PPP_ENCAP_RFC1661	1	/* Plain/synchronous/pre-framed PPP (RFC1661) */
@@ -1221,6 +1226,12 @@ int array_connect(struct openconnect_info *vpninfo);
 int array_mainloop(struct openconnect_info *vpninfo, int *timeout, int readable);
 int array_dtls_mainloop(struct openconnect_info *vpninfo, int *timeout, int readable);
 int array_bye(struct openconnect_info *vpninfo, const char *reason);
+
+/* cp.c */
+int cp_obtain_cookie(struct openconnect_info *vpninfo);
+int cp_connect(struct openconnect_info *vpninfo);
+int cp_mainloop(struct openconnect_info *vpninfo, int *timeout, int readable);
+int cp_bye(struct openconnect_info *vpninfo, const char *reason);
 
 /* auth-globalprotect.c */
 int gpst_obtain_cookie(struct openconnect_info *vpninfo);
