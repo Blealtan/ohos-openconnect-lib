@@ -19,6 +19,7 @@
   <li><a href="globalprotect.html">Palo Alto Networks GlobalProtect SSL VPN</a> (<tt>--protocol=gp</tt>)</li>
   <li><a href="f5.html">F5 Big-IP SSL VPN</a> (<tt>--protocol=f5</tt>)</li>
   <li><a href="fortinet.html">Fortinet Fortigate SSL VPN</a> (<tt>--protocol=fortinet</tt>)</li>
+  <li><a href="cp.html">CheckPoint VPN</a> (<tt>--protocol=checkpoint</tt>)</li>
 </ul>
 
 <p>OpenConnect is not officially supported by, or associated in any way
