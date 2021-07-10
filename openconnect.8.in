@@ -94,7 +94,7 @@ Fortinet Fortigate VPN servers,
 Array Networks SSL VPN servers,
 .RB ( \-\-protocol=array )
 and CheckPoint SSL VPN servers,
-.RB ( \-\-protocol=cp )
+.RB ( \-\-protocol=checkpoint )
 .
 
 The connection happens in two phases. First there is a simple HTTPS
@@ -548,7 +548,7 @@ for experimental support for F5 Big-IP,
 for experimental support for Fortinet Fortigate,
 .I array
 for experimental support for Array Networks SSL VPN, and
-.I cp
+.I checkpoint
 for experimental support for CheckPoint SSL VPN.
 
 See

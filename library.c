@@ -262,7 +262,7 @@ static const struct vpn_proto openconnect_protos[] = {
 		.udp_shutdown = dtls_shutdown,
 #endif
 	}, {
-		.name = "cp",
+		.name = "checkpoint",
 		.pretty_name = N_("CheckPoint VPN"),
 		.description = N_("Compatible with CheckPoint VPN"),
 		.proto = PROTO_CP,

@@ -13,10 +13,10 @@
 <p>Experimental support for <a href="https://www.checkpoint.com/quantum/remote-access-vpn/">SSL VPN</a>
 was added to OpenConnect in June 2021. </p>
 
-<p>CheckPoint mode is requested by adding <tt>--protocol=cp</tt>
+<p>CheckPoint mode is requested by adding <tt>--protocol=checkpoint</tt>
 to the command line:
 <pre>
-  openconnect --protocol=cp snx.example.com
+  openconnect --protocol=checkpoint snx.example.com
 </pre></p>
 
 <h2>Quirks and Issues</h2>

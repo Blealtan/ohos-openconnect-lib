@@ -32,7 +32,7 @@ See <a href="manual.xml">the <tt>--protocol</tt> option</a> for how to use a dif
   <a href="https://www.fortinet.com/products/vpn">Fortinet Fortigate SSL VPN</a> (<tt>--protocol=fortinet</tt>; PPP-based)</li>
   <li><a href="array.html">Details</a> on support for <a href="https://arraynetworks.com/products-secure-access-gateways-ag-series.html">Array Networks AG SSL VPN</a> (<tt>--protocol=array</tt>)</li>
   <li><a href="cp.html">Details</a> on support for
-  <a href="https://www.checkpoint.com/quantum/remote-access-vpn">CheckPoint SSL VPN</a> (<tt>--protocol=cp</tt>)</li>
+  <a href="https://www.checkpoint.com/quantum/remote-access-vpn">CheckPoint SSL VPN</a> (<tt>--protocol=checkpoint</tt>)</li>
 </ul>
 
 	<INCLUDE file="inc/footer.tmpl" />
