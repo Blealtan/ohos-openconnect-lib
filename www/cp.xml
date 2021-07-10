@@ -24,8 +24,52 @@ to the command line:
 <p>Currently, OpenConnect supports basic username and password, PinPad, KeyFob,
     Challenge and certificate-based authentication. Mobile Access mode is a WIP.</p>
 
-<p>Data transport over ESP is not yet supported.</p>
+<p>Please, do not specify any path part of the server URL. It is not supported in basic SNX mode.</p>
 
-<p>Please, do not specify any path part of the server URL. It is not supported.</p>
+<p>VPN features support is summarized in table below.</p>
+<table dir="auto" border="1">
+    <thead>
+        <tr>
+            <th>Client type</th>
+            <th>Authentication</th>
+            <th>Two-Factor auth.</th>
+            <th>Configuration</th>
+            <th>Transport</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>snx client (Linux)</td>
+            <td>HTTP (+)</td>
+            <td align="center">unavailable</td>
+            <td>SNX (+)</td>
+            <td>SNX (+)</td>
+        </tr>
+        <tr>
+            <td>Mobile (Web) Access</td>
+            <td>HTTP (*)</td>
+            <td align="center">*</td>
+            <td>SNX (+)</td>
+            <td>SNX (+)</td>
+        </tr>
+        <tr>
+            <td>Mobile devices (Android, iOS)</td>
+            <td>HTTP (*)</td>
+            <td align="center">*</td>
+            <td>HTTP (*)</td>
+            <td>ESP (*)</td>
+        </tr>
+        <tr>
+            <td>SecuRemote, Endpoint Security etc. (desktop)</td>
+            <td>IKE (-)</td>
+            <td align="center">-</td>
+            <td>IKE (-)</td>
+            <td>ESP (*)</td>
+        </tr>
+    </tbody>
+</table>
+<p>+ - feature supported.</p>
+<p>* - feature support is WIP(work in progress).</p>
+<p>- - feature not supported.</p>
 	<INCLUDE file="inc/footer.tmpl" />
 </PAGE>
