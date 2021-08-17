@@ -367,9 +367,7 @@ static int gen_hotp(struct openconnect_info *vpninfo, uint64_t data, char *outpu
 	return 0;
 }
 
-int do_gen_totp_code(struct openconnect_info *vpninfo,
-		     struct oc_auth_form *form,
-		     struct oc_form_opt *opt)
+char *gen_totp(struct openconnect_info *vpninfo)
 {
 	char tokencode[7];
 	uint64_t challenge;
@@ -383,10 +381,17 @@ int do_gen_totp_code(struct openconnect_info *vpninfo,
 	challenge = vpninfo->token_time / 30;
 
 	if (gen_hotp(vpninfo, challenge, tokencode))
-		return -EIO;
+		return NULL;
 
 	vpninfo->token_tries++;
-	opt->_value = strdup(tokencode);
+	return strdup(tokencode);
+}
+
+int do_gen_totp_code(struct openconnect_info *vpninfo,
+		     struct oc_auth_form *form,
+		     struct oc_form_opt *opt)
+{
+	opt->_value = gen_totp(vpninfo);
 	return opt->_value ? 0 : -ENOMEM;
 }
 
