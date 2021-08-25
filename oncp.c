@@ -509,6 +509,8 @@ int oncp_connect(struct openconnect_info *vpninfo)
 		ret = buf_error(reqbuf);
 		goto out;
 	}
+	if (vpninfo->dump_http_traffic)
+		dump_buf(vpninfo, '>', reqbuf->data);
 	ret = vpninfo->ssl_write(vpninfo, reqbuf->data, reqbuf->pos);
 	if (ret < 0)
 		goto out;
