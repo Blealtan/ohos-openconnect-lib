@@ -857,7 +857,7 @@ static int gen_ranges(struct oc_ip_info *ip_info,
 			return -ENOMEM;
 
 		char *s;
-		in_addr_t a = htonl(ip);
+		uint32_t a = htonl(ip);
 		if (asprintf(&s, "%s/%d", inet_ntop(AF_INET, &a, abuf, sizeof (abuf)), 32 - imask) <= 0) {
 			free(inc);
 			return -ENOMEM;
