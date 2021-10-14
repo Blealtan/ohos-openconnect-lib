@@ -1154,7 +1154,7 @@ int cp_mainloop(struct openconnect_info *vpninfo, int *timeout, int readable)
 			vpn_progress(vpninfo, PRG_DEBUG, _("Command packet outgoing\n%s\n"), this->data);
 #else
 			if (vpninfo->verbose >= PRG_DEBUG) {
-				char *cmd_print = hide_auth_data(this->data);
+				char *cmd_print = hide_auth_data((const char*)this->data);
 				vpn_progress(vpninfo, PRG_DEBUG, _("Command outgoing:\n%s\n"), cmd_print);
 				free(cmd_print);
 			}
