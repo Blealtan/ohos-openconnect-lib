@@ -12,142 +12,6 @@ variables:
 
 image: $CI_REGISTRY/$BUILD_IMAGES_PROJECT:$FEDORA_BUILD
 
-CentOS7/GnuTLS:
-  image: $CI_REGISTRY/$BUILD_IMAGES_PROJECT:$CENTOS7_BUILD
-  script:
-  - ./autogen.sh
-# For reasons that are not clear, OpenConnect fails to handshake a TLS connection to Python 3.6+Flask
-# (verified in https://gitlab.com/openconnect/openconnect/-/jobs/1135245618#L520), so we disable the
-# Flask-based authentication tests.
-  - ./configure --with-java --enable-ppp-tests --disable-flask-tests CFLAGS=-g
-  - make -j4
-# For reasons that are unclear, but probably also unimportant, IPv6 is disabled by default on this CI
-# image (verified in https://gitlab.com/openconnect/openconnect/-/jobs/1135199323#L335), and this will
-# cause PPP tests using IPv6 to fail. So we must explicitly enable IPv6:
-  - sysctl net.ipv6.conf.all.disable_ipv6=0
-# we don't want pppd to invoke any actual connection scripts
-  - mv /etc/ppp /etc/ppp.DISABLED
-# auth-nonascii: UTF-8 support is not available in distro's ocserv package
-# ppp-over-tls-sync: https://gitlab.com/openconnect/openconnect/-/issues/287#note_641198529)
-  - make VERBOSE=1 XFAIL_TESTS="auth-nonascii ppp-over-tls-sync" -j4 check
-  tags:
-  - shared
-  except:
-  - tags
-  - schedules
-  artifacts:
-    expire_in: 1 week
-    when: on_failure
-    paths:
-      - tests/*.log
-
-CentOS7/OpenSSL:
-  image: $CI_REGISTRY/$BUILD_IMAGES_PROJECT:$CENTOS7_BUILD
-  script:
-  - ./autogen.sh
-# For reasons that are not clear, OpenConnect fails to handshake a TLS connection to Python 3.6+Flask
-# (verified in https://gitlab.com/openconnect/openconnect/-/jobs/1135245618#L520), so we disable the
-# Flask-based authentication tests.
-  - ./configure --without-gnutls --with-openssl --with-java --without-openssl-version-check --enable-dtls-xfail --disable-dsa-tests --enable-ppp-tests --disable-flask-tests CFLAGS=-g
-  - make -j4
-# For reasons that are unclear, but probably also unimportant, IPv6 is disabled by default on this CI
-# image (verified in https://gitlab.com/openconnect/openconnect/-/jobs/1135199323#L335), and this will
-# cause PPP tests using IPv6 to fail. So we must explicitly enable IPv6:
-  - sysctl net.ipv6.conf.all.disable_ipv6=0
-# we don't want pppd to invoke any actual connection scripts
-  - mv /etc/ppp /etc/ppp.DISABLED
-# auth-nonascii: UTF-8 support is not available in distro's ocserv package
-# dtls-psk: communication with ocserv fails for undetermined reasons marking as xfail until issue is identified
-# ppp-over-tls-sync: https://gitlab.com/openconnect/openconnect/-/issues/287#note_641198529)
-  - make VERBOSE=1 XFAIL_TESTS="auth-nonascii dtls-psk ppp-over-tls-sync" -j4 check
-  tags:
-  - shared
-  except:
-  - tags
-  - schedules
-  artifacts:
-    expire_in: 1 week
-    when: on_failure
-    paths:
-      - tests/*.log
-
-CentOS8/GnuTLS:
-  image: $CI_REGISTRY/$BUILD_IMAGES_PROJECT:$CENTOS8_BUILD
-  script:
-  - ./autogen.sh
-  - ./configure --with-java --without-gnutls-version-check --disable-dsa-tests --enable-ppp-tests CFLAGS=-g
-  - make -j4
-# For reasons that are unclear, but probably also unimportant, IPv6 is disabled by default on this CI
-# image (verified in https://gitlab.com/openconnect/openconnect/-/jobs/1135199323#L335), and this will
-# cause PPP tests using IPv6 to fail. So we must explicitly enable IPv6:
-  - sysctl net.ipv6.conf.all.disable_ipv6=0
-# we don't want pppd to invoke any actual connection scripts
-  - mv /etc/ppp /etc/ppp.DISABLED
-# auth-nonascii: UTF-8 support is not available in distro's ocserv package
-# ppp-over-tls-sync: https://gitlab.com/openconnect/openconnect/-/issues/287#note_641198529)
-  - make VERBOSE=1 XFAIL_TESTS="auth-nonascii ppp-over-tls-sync" -j4 check
-  tags:
-  - shared
-  except:
-  - tags
-  - schedules
-  artifacts:
-    expire_in: 1 week
-    when: on_failure
-    paths:
-      - tests/*.log
-
-CentOS8/OpenSSL:
-  image: $CI_REGISTRY/$BUILD_IMAGES_PROJECT:$CENTOS8_BUILD
-  script:
-  - ./autogen.sh
-  - ./configure --without-gnutls --with-openssl --with-java --without-openssl-version-check --disable-dsa-tests --enable-ppp-tests CFLAGS=-g
-  - make -j4
-# For reasons that are unclear, but probably also unimportant, IPv6 is disabled by default on this CI
-# image (verified in https://gitlab.com/openconnect/openconnect/-/jobs/1135199323#L335), and this will
-# cause PPP tests using IPv6 to fail. So we must explicitly enable IPv6:
-  - sysctl net.ipv6.conf.all.disable_ipv6=0
-# we don't want pppd to invoke any actual connection scripts
-  - mv /etc/ppp /etc/ppp.DISABLED
-# auth-nonascii: UTF-8 support is not available in distro's ocserv package
-# obsolete-server-crypto: OpenSSL 1.1.0 disables 3DES and RC4 by default (https://www.openssl.org/blog/blog/2016/08/24/sweet32/)
-# ppp-over-tls-sync: https://gitlab.com/openconnect/openconnect/-/issues/287#note_641198529)
-  - make VERBOSE=1 XFAIL_TESTS="auth-nonascii obsolete-server-crypto ppp-over-tls-sync" -j4 check
-  tags:
-  - shared
-  except:
-  - tags
-  - schedules
-  artifacts:
-    expire_in: 1 week
-    when: on_failure
-    paths:
-      - tests/*.log
-
-CentOS6/OpenSSL:
-  image: $CI_REGISTRY/$BUILD_IMAGES_PROJECT:$CENTOS6_BUILD
-  script:
-  - ./autogen.sh
-# We should --enable-ppp-tests here, but they just aren't working. For reasons that are not
-# clear, OpenConnect fails to handshake a TLS connection to socat 1.7.2 (from CentOS 6 EPEL).
-  - ./configure --with-java --without-openssl-version-check --enable-dtls-xfail CFLAGS=-g
-  - make -j4
-# we don't want pppd to invoke any actual connection scripts
-  - mv /etc/ppp /etc/ppp.DISABLED
-# auth-nonascii: UTF-8 support is not available in distro's ocserv package
-# ppp-over-tls-sync: https://gitlab.com/openconnect/openconnect/-/issues/287#note_641198529)
-  - make VERBOSE=1 XFAIL_TESTS="bad_dtls_test auth-nonascii ppp-over-tls-sync" -j4 check
-  tags:
-  - shared
-  except:
-  - tags
-  - schedules
-  artifacts:
-    expire_in: 1 week
-    when: on_failure
-    paths:
-      - tests/*.log
-
 Signoff:
   script:
   # Quoted to work around https://gitlab.com/gitlab-org/gitlab-foss/-/issues/20177
@@ -187,6 +51,127 @@ Coverity:
     paths:
       - cov-int/*.txt
 
+CentOS7/GnuTLS:
+  image: $CI_REGISTRY/$BUILD_IMAGES_PROJECT:$CENTOS7_BUILD
+  script:
+  - ./autogen.sh
+# For reasons that are not clear, OpenConnect fails to handshake a TLS connection to Python 3.6+Flask
+# (verified in https://gitlab.com/openconnect/openconnect/-/jobs/1135245618#L520), so we disable the
+# Flask-based authentication tests.
+  - ./configure --with-java --enable-ppp-tests --disable-flask-tests CFLAGS=-g
+  - make -j4
+# For reasons that are unclear, but probably also unimportant, IPv6 is disabled by default on this CI
+# image (verified in https://gitlab.com/openconnect/openconnect/-/jobs/1135199323#L335), and this will
+# cause PPP tests using IPv6 to fail. So we must explicitly enable IPv6:
+  - sysctl net.ipv6.conf.all.disable_ipv6=0
+# we don't want pppd to invoke any actual connection scripts
+  - mv /etc/ppp /etc/ppp.DISABLED
+# auth-nonascii: UTF-8 support is not available in distro's ocserv package
+# ppp-over-tls-sync: https://gitlab.com/openconnect/openconnect/-/issues/287#note_641198529)
+  - make VERBOSE=1 XFAIL_TESTS="auth-nonascii ppp-over-tls-sync" -j4 check
+  tags:
+  - shared
+  artifacts:
+    expire_in: 1 week
+    when: on_failure
+    paths:
+      - tests/*.log
+
+CentOS7/OpenSSL:
+  image: $CI_REGISTRY/$BUILD_IMAGES_PROJECT:$CENTOS7_BUILD
+  script:
+  - ./autogen.sh
+# For reasons that are not clear, OpenConnect fails to handshake a TLS connection to Python 3.6+Flask
+# (verified in https://gitlab.com/openconnect/openconnect/-/jobs/1135245618#L520), so we disable the
+# Flask-based authentication tests.
+  - ./configure --without-gnutls --with-openssl --with-java --without-openssl-version-check --enable-dtls-xfail --disable-dsa-tests --enable-ppp-tests --disable-flask-tests CFLAGS=-g
+  - make -j4
+# For reasons that are unclear, but probably also unimportant, IPv6 is disabled by default on this CI
+# image (verified in https://gitlab.com/openconnect/openconnect/-/jobs/1135199323#L335), and this will
+# cause PPP tests using IPv6 to fail. So we must explicitly enable IPv6:
+  - sysctl net.ipv6.conf.all.disable_ipv6=0
+# we don't want pppd to invoke any actual connection scripts
+  - mv /etc/ppp /etc/ppp.DISABLED
+# auth-nonascii: UTF-8 support is not available in distro's ocserv package
+# dtls-psk: communication with ocserv fails for undetermined reasons marking as xfail until issue is identified
+# ppp-over-tls-sync: https://gitlab.com/openconnect/openconnect/-/issues/287#note_641198529)
+  - make VERBOSE=1 XFAIL_TESTS="auth-nonascii dtls-psk ppp-over-tls-sync" -j4 check
+  tags:
+  - shared
+  artifacts:
+    expire_in: 1 week
+    when: on_failure
+    paths:
+      - tests/*.log
+
+CentOS8/GnuTLS:
+  image: $CI_REGISTRY/$BUILD_IMAGES_PROJECT:$CENTOS8_BUILD
+  script:
+  - ./autogen.sh
+  - ./configure --with-java --without-gnutls-version-check --disable-dsa-tests --enable-ppp-tests CFLAGS=-g
+  - make -j4
+# For reasons that are unclear, but probably also unimportant, IPv6 is disabled by default on this CI
+# image (verified in https://gitlab.com/openconnect/openconnect/-/jobs/1135199323#L335), and this will
+# cause PPP tests using IPv6 to fail. So we must explicitly enable IPv6:
+  - sysctl net.ipv6.conf.all.disable_ipv6=0
+# we don't want pppd to invoke any actual connection scripts
+  - mv /etc/ppp /etc/ppp.DISABLED
+# auth-nonascii: UTF-8 support is not available in distro's ocserv package
+# ppp-over-tls-sync: https://gitlab.com/openconnect/openconnect/-/issues/287#note_641198529)
+  - make VERBOSE=1 XFAIL_TESTS="auth-nonascii ppp-over-tls-sync" -j4 check
+  tags:
+  - shared
+  artifacts:
+    expire_in: 1 week
+    when: on_failure
+    paths:
+      - tests/*.log
+
+CentOS8/OpenSSL:
+  image: $CI_REGISTRY/$BUILD_IMAGES_PROJECT:$CENTOS8_BUILD
+  script:
+  - ./autogen.sh
+  - ./configure --without-gnutls --with-openssl --with-java --without-openssl-version-check --disable-dsa-tests --enable-ppp-tests CFLAGS=-g
+  - make -j4
+# For reasons that are unclear, but probably also unimportant, IPv6 is disabled by default on this CI
+# image (verified in https://gitlab.com/openconnect/openconnect/-/jobs/1135199323#L335), and this will
+# cause PPP tests using IPv6 to fail. So we must explicitly enable IPv6:
+  - sysctl net.ipv6.conf.all.disable_ipv6=0
+# we don't want pppd to invoke any actual connection scripts
+  - mv /etc/ppp /etc/ppp.DISABLED
+# auth-nonascii: UTF-8 support is not available in distro's ocserv package
+# obsolete-server-crypto: OpenSSL 1.1.0 disables 3DES and RC4 by default (https://www.openssl.org/blog/blog/2016/08/24/sweet32/)
+# ppp-over-tls-sync: https://gitlab.com/openconnect/openconnect/-/issues/287#note_641198529)
+  - make VERBOSE=1 XFAIL_TESTS="auth-nonascii obsolete-server-crypto ppp-over-tls-sync" -j4 check
+  tags:
+  - shared
+  artifacts:
+    expire_in: 1 week
+    when: on_failure
+    paths:
+      - tests/*.log
+
+CentOS6/OpenSSL:
+  image: $CI_REGISTRY/$BUILD_IMAGES_PROJECT:$CENTOS6_BUILD
+  script:
+  - ./autogen.sh
+# We should --enable-ppp-tests here, but they just aren't working. For reasons that are not
+# clear, OpenConnect fails to handshake a TLS connection to socat 1.7.2 (from CentOS 6 EPEL).
+  - ./configure --with-java --without-openssl-version-check --enable-dtls-xfail CFLAGS=-g
+  - make -j4
+# we don't want pppd to invoke any actual connection scripts
+  - mv /etc/ppp /etc/ppp.DISABLED
+# auth-nonascii: UTF-8 support is not available in distro's ocserv package
+# ppp-over-tls-sync: https://gitlab.com/openconnect/openconnect/-/issues/287#note_641198529)
+  - make VERBOSE=1 XFAIL_TESTS="bad_dtls_test auth-nonascii ppp-over-tls-sync" -j4 check
+  tags:
+  - shared
+  artifacts:
+    expire_in: 1 week
+    when: on_failure
+    paths:
+      - tests/*.log
+
 ubsan/GnuTLS/Fedora:
   image: $CI_REGISTRY/$BUILD_IMAGES_PROJECT:$FEDORA_BUILD
   script:
@@ -201,9 +186,6 @@ ubsan/GnuTLS/Fedora:
   tags:
   - shared
   - linux
-  except:
-  - tags
-  - schedules
   artifacts:
     expire_in: 1 week
     when: on_failure
@@ -224,9 +206,6 @@ ubsan/OpenSSL/Fedora:
   tags:
   - shared
   - linux
-  except:
-  - tags
-  - schedules
   artifacts:
     expire_in: 1 week
     when: on_failure
@@ -247,9 +226,6 @@ asan/GnuTLS/Fedora:
   tags:
   - shared
   - linux
-  except:
-  - tags
-  - schedules
   artifacts:
     expire_in: 1 week
     when: on_failure
@@ -271,9 +247,6 @@ asan/OpenSSL/Fedora:
   tags:
   - shared
   - linux
-  except:
-  - tags
-  - schedules
   artifacts:
     expire_in: 1 week
     when: on_failure
@@ -306,9 +279,6 @@ Fedora/GnuTLS:
   - make VERBOSE=1 OPENSSL_ia32cap=~0x4000000000000000 XFAIL_TESTS="obsolete-server-crypto ppp-over-tls-sync" -j4 check
   tags:
   - shared
-  except:
-  - tags
-  - schedules
   artifacts:
     expire_in: 1 week
     when: on_failure
@@ -340,9 +310,6 @@ Fedora/GnuTLS/ibmtss:
   - make VERBOSE=1 OPENSSL_ia32cap=~0x4000000000000000 XFAIL_TESTS="obsolete-server-crypto ppp-over-tls-sync" -j4 check
   tags:
   - shared
-  except:
-  - tags
-  - schedules
   artifacts:
     expire_in: 1 week
     when: on_failure
@@ -373,9 +340,6 @@ Fedora/GnuTLS/clang:
   - make VERBOSE=1 OPENSSL_ia32cap=~0x4000000000000000 XFAIL_TESTS="obsolete-server-crypto ppp-over-tls-sync" -j4 check
   tags:
   - shared
-  except:
-  - tags
-  - schedules
   artifacts:
     expire_in: 1 week
     when: on_failure
@@ -407,9 +371,6 @@ Fedora/OpenSSL:
   - make VERBOSE=1 XFAIL_TESTS="obsolete-server-crypto auth-swtpm ppp-over-tls-sync" -j4 check
   tags:
   - shared
-  except:
-  - tags
-  - schedules
   artifacts:
     expire_in: 1 week
     when: on_failure
@@ -440,9 +401,6 @@ Fedora/OpenSSL/clang:
   - make VERBOSE=1 XFAIL_TESTS="obsolete-server-crypto auth-swtpm ppp-over-tls-sync" -j4 check
   tags:
   - shared
-  except:
-  - tags
-  - schedules
   artifacts:
     expire_in: 1 week
     when: on_failure
@@ -466,9 +424,6 @@ Ubuntu18.04/GnuTLS:
   - make VERBOSE=1 XFAIL_TESTS="auth-nonascii ppp-over-tls-sync" -j4 check
   tags:
   - shared
-  except:
-  - tags
-  - schedules
   artifacts:
     expire_in: 1 week
     paths:
@@ -492,9 +447,6 @@ Ubuntu18.04/OpenSSL:
   - make VERBOSE=1 XFAIL_TESTS="auth-nonascii obsolete-server-crypto ppp-over-tls-sync" -j4 check
   tags:
   - shared
-  except:
-  - tags
-  - schedules
   artifacts:
     expire_in: 1 week
     when: on_failure
@@ -514,9 +466,6 @@ MinGW32/GnuTLS:
   - make VERBOSE=1 -j4 check XFAIL_TESTS="sigterm dtls-psk"
   tags:
   - shared
-  except:
-  - tags
-  - schedules
   artifacts:
     expire_in: 1 week
     when: always
@@ -537,9 +486,6 @@ MinGW32/OpenSSL:
   - make VERBOSE=1 -j4 check XFAIL_TESTS="sigterm dtls-psk"
   tags:
   - shared
-  except:
-  - tags
-  - schedules
   artifacts:
     expire_in: 1 week
     when: always
@@ -561,9 +507,6 @@ MinGW64/GnuTLS:
   - make VERBOSE=1 -j4 check XFAIL_TESTS="sigterm dtls-psk"
   tags:
   - shared
-  except:
-  - tags
-  - schedules
   artifacts:
     expire_in: 1 week
     when: always
@@ -585,9 +528,6 @@ MinGW64/OpenSSL:
   - make VERBOSE=1 -j4 check XFAIL_TESTS="sigterm dtls-psk"
   tags:
   - shared
-  except:
-  - tags
-  - schedules
   artifacts:
     expire_in: 1 week
     when: always
@@ -652,9 +592,6 @@ static-analyzer/GnuTLS/Fedora:
   tags:
   - shared
   - linux
-  except:
-  - tags
-  - schedules
   artifacts:
     expire_in: 1 week
     when: always
@@ -670,9 +607,6 @@ static-analyzer/OpenSSL/Fedora:
   tags:
   - shared
   - linux
-  except:
-  - tags
-  - schedules
   artifacts:
     expire_in: 1 week
     when: on_failure
