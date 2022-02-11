@@ -33,6 +33,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+/* FIXME: this largely duplicates xmlnode_get_trimmed in auth-common.c */
 static char *fetch_and_trim(xmlNode *node)
 {
 	char *str = (char *)xmlNodeGetContent(node), *p;

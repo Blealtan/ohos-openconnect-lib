@@ -608,7 +608,7 @@ static int gpst_parse_config_xml(struct openconnect_info *vpninfo, xmlNode *xml_
 static int gpst_get_config(struct openconnect_info *vpninfo)
 {
 	char *orig_path;
-	int result;
+	int result, have_os_version = 0, have_app_version = 0;
 	struct oc_text_buf *request_body = buf_alloc();
 	const char *old_addr = vpninfo->ip_info.addr;
 	const char *old_addr6 = vpninfo->ip_info.addr6;
@@ -616,20 +616,39 @@ static int gpst_get_config(struct openconnect_info *vpninfo)
 	const char *method = "POST";
 	char *xml_buf = NULL;
 
-
 	/* submit getconfig request */
-	buf_append(request_body, "client-type=1&protocol-version=p1&app-version=5.1.5-8");
+	buf_append(request_body, "client-type=1&protocol-version=p1");
 	append_opt(request_body, "ipv6-support", vpninfo->disable_ipv6 ? "no" : "yes");
 	append_opt(request_body, "clientos", gpst_os_name(vpninfo));
-	append_opt(request_body, "os-version", vpninfo->platname);
 	append_opt(request_body, "hmac-algo", "sha1,md5,sha256");
 	append_opt(request_body, "enc-algo", "aes-128-cbc,aes-256-cbc");
+	/* Re-request same IP address(es) as last time */
 	if (old_addr || old_addr6) {
 		append_opt(request_body, "preferred-ip", old_addr);
 		append_opt(request_body, "preferred-ipv6", old_addr6);
 		filter_opts(request_body, vpninfo->cookie, "preferred-ip,preferred-ipv6", 0);
 	} else
 		buf_append(request_body, "&%s", vpninfo->cookie);
+	/* These fields are sent by official client software and specific values
+	 * might be required in some cases.
+	 */
+	for (struct oc_vpn_option *opt = vpninfo->id_options; opt; opt = opt->next) {
+		if (!strcmp(opt->option, "os-version")) {
+			have_os_version = 1;
+			append_opt(request_body, opt->option, opt->value);
+		} else if (!strcmp(opt->option, "app-version")) {
+			have_app_version = 1;
+			append_opt(request_body, opt->option, opt->value);
+		}
+	}
+	/* The os-version and app-version fields are required to be present, even in cases
+	 * where specific values are not required.
+	 */
+	if (!have_os_version)
+		append_opt(request_body, "os-version", vpninfo->platname);
+	if (!have_app_version)
+		append_opt(request_body, "app-version", vpninfo->csd_ticket ? : "5.1.5-8");
+
 	if ((result = buf_error(request_body)))
 		goto out;
 
@@ -884,6 +903,7 @@ static int run_hip_script(struct openconnect_info *vpninfo)
 	int pipefd[2];
 	int ret;
 	pid_t child;
+	struct oc_vpn_option *opt;
 #endif
 
 	if (!vpninfo->csd_wrapper) {
@@ -988,6 +1008,19 @@ static int run_hip_script(struct openconnect_info *vpninfo)
 			hip_argv[i++] = "--client-ipv6";
 			hip_argv[i++] = vpninfo->ip_info.addr6;
 		}
+		if (vpninfo->csd_ticket) {
+			hip_argv[i++] = "--app-version";
+			hip_argv[i++] = vpninfo->csd_ticket;
+		}
+		for (opt = vpninfo->id_options; opt; opt = opt->next) {
+			if (!strcmp(opt->option, "host-id")) {
+				if (setenv("HOST_ID", opt->value, 1))
+					goto out;
+			} else if (!strncmp(opt->option, "HIP_", 4)) {
+				if (setenv(opt->option, opt->value, 1))
+					goto out;
+			}
+		}
 		hip_argv[i++] = "--md5";
 		hip_argv[i++] = vpninfo->csd_token;
 		hip_argv[i++] = "--client-os";
@@ -995,6 +1028,7 @@ static int run_hip_script(struct openconnect_info *vpninfo)
 		hip_argv[i++] = NULL;
 		execv(hip_argv[0], (char **)hip_argv);
 
+	out:
 		vpn_progress(vpninfo, PRG_ERR,
 				 _("Failed to exec HIP script %s\n"), hip_argv[0]);
 		exit(1);

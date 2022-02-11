@@ -81,6 +81,47 @@ int xmlnode_match_prop(xmlNode *xml_node, const char *name, const char *match)
 	return ret;
 }
 
+int xmlnode_get_trimmed_val(xmlNode *xml_node, const char *name, char **var)
+{
+
+	char *p, *str;
+	int i, len;
+
+	if (name && !xmlnode_is_named(xml_node, name))
+		return -EINVAL;
+
+	str = (char *)xmlNodeGetContent(xml_node);
+	if (!str)
+		return -ENOENT;
+
+	/* Trim trailing space */
+	len = strlen(str);
+	for (i = len-1; i >= 0; i--) {
+		if (isspace((int)(unsigned char)str[i]))
+			str[i] = 0;
+		else
+			break;
+	}
+
+	/* Trim leading space */
+	for (p = str; isspace((int)(unsigned char)*p); p++)
+		;
+
+	/* Treat empty string as missing */
+	if (!*p) {
+		free(str);
+		return -ENOENT;
+	}
+
+	if (p == str)
+		*var = str;
+	else {
+		*var = strdup(p);
+		free(str);
+	}
+	return 0;
+}
+
 int append_opt(struct oc_text_buf *body, const char *opt, const char *name)
 {
 	if (buf_error(body))

@@ -20,7 +20,7 @@
        <li>Use <tt>epoll()</tt> where available.</li>
        <li>Support non-AEAD ciphersuites in DTLSv1.2 with AnyConnect. (<a href="https://gitlab.com/openconnect/openconnect/-/issues/249">#249</a>)</li>
        <li>Make <tt>tncc-emulate.py</tt> work with Python 3.7+. (<a href="https://gitlab.com/openconnect/openconnect/-/issues/152">#152</a>, <a href="https://gitlab.com/openconnect/openconnect/merge_requests/120">!120</a>)</li>
-       <li>Emulated a newer version of GlobalProtect official clients, 5.1.5-8; was 4.0.2-19 (<a href="https://gitlab.com/openconnect/openconnect/merge_requests/131">!131</a>)</li>
+       <li>Emulate a newer version of GlobalProtect official clients by default, 5.1.5-8 (was 4.0.2-19), and parrot the server's software version back if present (<a href="https://gitlab.com/openconnect/openconnect/issues/176">#176</a>, <a href="https://gitlab.com/openconnect/openconnect/merge_requests/131">!131</a>, <a href="https://gitlab.com/openconnect/openconnect/merge_requests/33">!333</a>)</li>
        <li>Support Juniper login forms containing both password and 2FA token (<a href="https://gitlab.com/openconnect/openconnect/-/merge_requests/121">!121</a>)</li>
        <li>Explicitly disable 3DES and RC4, unless enabled with <tt>--allow-insecure-crypto</tt> (<a href="https://gitlab.com/openconnect/openconnect/-/merge_requests/114">!114</a>)</li>
        <li>Add obsolete-server-crypto test (<a href="https://gitlab.com/openconnect/openconnect/-/merge_requests/114">!114</a>)</li>

@@ -182,6 +182,7 @@ static int tncc_preauth(struct openconnect_info *vpninfo)
 	const char *dspreauth = vpninfo->csd_token;
 	char recvbuf[1024];
 	int len, count, ret;
+	struct oc_vpn_option *opt;
 
 	if (!dspreauth) {
 		vpn_progress(vpninfo, PRG_ERR,
@@ -230,6 +231,14 @@ static int tncc_preauth(struct openconnect_info *vpninfo)
 			goto out;
 		if (setenv("TNCC_HOSTNAME", vpninfo->localname, 1))
 			goto out;
+		/* Additional TNCC variables can be set. See list in trojans/tncc-emulate.py:
+		 * TNCC_DEVICE_ID, TNCC_FUNK, TNCC_PLATFORM, TNCC_HWADDR, TNCC_CERTS
+		 */
+		for (opt = vpninfo->id_options; opt; opt = opt->next) {
+			if (!strncmp(opt->option, "TNCC_", 5)
+			    && setenv(opt->value, opt->value, 1))
+				goto out;
+		}
 		if (!vpninfo->trojan_interval) {
 			char is[32];
 			snprintf(is, 32, "%d", vpninfo->trojan_interval);

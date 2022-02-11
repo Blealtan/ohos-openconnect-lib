@@ -173,19 +173,24 @@ static void append_compr_types(struct oc_text_buf *buf, const char *proto, int a
 	}
 }
 
-static void append_mobile_headers(struct openconnect_info *vpninfo, struct oc_text_buf *buf)
+static void append_identifier_headers(struct openconnect_info *vpninfo, struct oc_text_buf *buf)
 {
-	if (vpninfo->mobile_platform_version) {
-		buf_append(buf, "X-AnyConnect-Identifier-ClientVersion: %s\r\n",
-			   vpninfo->version_string ? : openconnect_version_str);
-		buf_append(buf, "X-AnyConnect-Identifier-Platform: %s\r\n",
-			   vpninfo->platname);
-		buf_append(buf, "X-AnyConnect-Identifier-PlatformVersion: %s\r\n",
-			   vpninfo->mobile_platform_version);
-		buf_append(buf, "X-AnyConnect-Identifier-DeviceType: %s\r\n",
-			   vpninfo->mobile_device_type);
-		buf_append(buf, "X-AnyConnect-Identifier-Device-UniqueID: %s\r\n",
-			   vpninfo->mobile_device_uniqueid);
+	struct oc_vpn_option *opt;
+
+	for (opt = vpninfo->id_options; opt; opt = opt->next) {
+		if (!strcmp(opt->option, "platform_version")) {
+			buf_append(buf, "X-AnyConnect-Identifier-ClientVersion: %s\r\n",
+				   vpninfo->version_string ? : openconnect_version_str);
+			buf_append(buf, "X-AnyConnect-Identifier-Platform: %s\r\n",
+				   vpninfo->platname);
+			buf_append(buf, "X-AnyConnect-Identifier-PlatformVersion: %s\r\n",
+				   opt->value);
+		} else if (!strcmp(opt->option, "device_type"))
+			buf_append(buf, "X-AnyConnect-Identifier-DeviceType: %s\r\n",
+				   opt->value);
+		else if (!strcmp(opt->option, "device_uniqueid"))
+			buf_append(buf, "X-AnyConnect-Identifier-Device-UniqueID: %s\r\n",
+				   opt->value);
 	}
 }
 
@@ -236,7 +241,7 @@ static int start_cstp_connection(struct openconnect_info *vpninfo)
 	buf_append(reqbuf, "X-CSTP-Version: 1\r\n");
 	buf_append(reqbuf, "X-CSTP-Hostname: %s\r\n", vpninfo->localname);
 
-	append_mobile_headers(vpninfo, reqbuf);
+	append_identifier_headers(vpninfo, reqbuf);
 	append_compr_types(reqbuf, "CSTP", vpninfo->req_compr);
 
 	buf_append(reqbuf, "X-CSTP-Base-MTU: %d\r\n", base_mtu);
@@ -1246,5 +1251,5 @@ void cstp_common_headers(struct openconnect_info *vpninfo, struct oc_text_buf *b
 	if (vpninfo->try_http_auth)
 		buf_append(buf, "X-Support-HTTP-Auth: true\r\n");
 
-	append_mobile_headers(vpninfo, buf);
+	append_identifier_headers(vpninfo, buf);
 }

@@ -604,6 +604,8 @@ int openconnect_set_mobile_info(struct openconnect_info *vpninfo,
 				const char *mobile_platform_version,
 				const char *mobile_device_type,
 				const char *mobile_device_uniqueid);
+int openconnect_set_id_option(struct openconnect_info *vpninfo,
+			      const char *opt, const char *val);
 int openconnect_set_client_cert(struct openconnect_info *, const char *cert,
 				const char *sslkey);
 int openconnect_set_key_password(struct openconnect_info *vpninfo, const char *pass);

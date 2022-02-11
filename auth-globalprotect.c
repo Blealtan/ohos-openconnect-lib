@@ -428,9 +428,33 @@ static int parse_portal_xml(struct openconnect_info *vpninfo, xmlNode *xml_node,
 	/*
 	 * The portal contains a ton of stuff, but basically none of it is
 	 * useful to a VPN client that wishes to give control to the client
-	 * user, as opposed to the VPN administrator.  The exceptions are the
-	 * list of gateways in policy/gateways/external/list and the interval
-	 * for HIP checks in policy/hip-collection/hip-report-interval
+	 * user, as opposed to the VPN administrator.  The exception is
+	 * the list of gateways in policy/gateways/external/list.
+	 *
+	 * There are other fields which are worthless in terms of end-user
+	 * functionality, but are needed for compliance with the server's
+	 * security policies:
+	 * - Interval for HIP checks in policy/hip-collection/hip-report-interval
+	 *   (save so that we can rerun HIP on the expected interval)
+	 * - Software version (save so we can mindlessly parrot it back)
+	 *
+	 * Potentially also useful, but currently ignored:
+	 * - welcome-page/page, help-page, and help-page-2 contents might in
+	 *   principle be informative, but in practice they're either empty
+	 *   or extremely verbose multi-page boilerplate in HTML format
+	 * - hip-collection/default/category/member[] might be useful
+	 *   to report to the user as a diagnostic, so that they know what
+	 *   HIP report entries the server expects, if their HIP report
+	 *   isn't expected. In practice, servers that actually check the HIP
+	 *   report contents are so nitpicky that anything less than a
+	 *   capture from an officially-supported client is unlikely to help.
+	 * - root-ca/entry[]/cert is potentially useful because it contains
+	 *   certs that we should allow as root-of-trust for the gateway
+	 *   servers. This could prevent users from having to specify --cafile
+	 *   or repeated --servercert in order to allow non-interactive
+	 *   authentication to gateways whose certs aren't trusted by the
+	 *   system but ARE trusted by the portal (see example at
+	 *   https://github.com/dlenski/openconnect/issues/128).
 	 */
 	if (xmlnode_is_named(xml_node, "policy")) {
 		for (x = xml_node->children; x; x = x->next) {
@@ -454,6 +478,13 @@ static int parse_portal_xml(struct openconnect_info *vpninfo, xmlNode *xml_node,
 						}
 					}
 				}
+			} else if (!xmlnode_get_trimmed_val(x, "version", &vpninfo->csd_ticket)) {
+				/* We abuse csd_ticket to store the portal's software version. Parroting this back as
+				 * the client software version (app-version) appears to be the best way to prevent the
+				 * gateway server from rejecting the connection due to obsolete client software.
+				 */
+				vpn_progress(vpninfo, PRG_INFO, _("Portal reports GlobalProtect version %s; we will report the same client version.\n"),
+					     vpninfo->csd_ticket);
 			} else {
 				xmlnode_get_val(x, "portal-name", &portal);
 				if (!xmlnode_get_val(x, "portal-userauthcookie", &ctx->portal_userauthcookie)) {
@@ -482,7 +513,7 @@ static int parse_portal_xml(struct openconnect_info *vpninfo, xmlNode *xml_node,
 		buf_append(buf, "<GPPortal>\n  <ServerList>\n");
 		if (portal) {
 			buf_append(buf, "      <HostEntry><HostName>");
-			buf_append_xmlescaped(buf, portal);
+			buf_append_xmlescaped(buf, portal ? : _("unknown"));
 			buf_append(buf, "</HostName><HostAddress>%s", vpninfo->hostname);
 			if (vpninfo->port!=443)
 				buf_append(buf, ":%d", vpninfo->port);
@@ -573,10 +604,11 @@ out:
  */
 static int gpst_login(struct openconnect_info *vpninfo, int portal, struct login_context *ctx)
 {
-	int result, blind_retry = 0;
+	int result, blind_retry = 0, have_os_version = 0, have_app_version = 0;
 	struct oc_text_buf *request_body = buf_alloc();
 	const char *request_body_type = "application/x-www-form-urlencoded";
 	char *xml_buf = NULL, *orig_path;
+	struct oc_vpn_option *opt;
 
 	/* Ask the user to fill in the auth form; repeat as necessary */
 	for (;;) {
@@ -627,7 +659,6 @@ static int gpst_login(struct openconnect_info *vpninfo, int portal, struct login
 		buf_append(request_body, "jnlpReady=jnlpReady&ok=Login&direct=yes&clientVer=4100&prot=https:");
 		append_opt(request_body, "ipv6-support", vpninfo->disable_ipv6 ? "no" : "yes");
 		append_opt(request_body, "clientos", gpst_os_name(vpninfo));
-		append_opt(request_body, "os-version", vpninfo->platname);
 		append_opt(request_body, "server", vpninfo->hostname);
 		append_opt(request_body, "computer", vpninfo->localname);
 		if (ctx->portal_userauthcookie)
@@ -641,6 +672,30 @@ static int gpst_login(struct openconnect_info *vpninfo, int portal, struct login
 			append_opt(request_body, "preferred-ipv6", vpninfo->ip_info.addr);
 		if (ctx->form->action)
 			append_opt(request_body, "inputStr", ctx->form->action);
+		/* These fields are sent by official client software and specific values
+		 * might be required in some cases.
+		 */
+		for (opt = vpninfo->id_options; opt; opt = opt->next) {
+			if (!strcmp(opt->option, "os-version")) {
+				have_os_version = 1;
+				append_opt(request_body, opt->option, opt->value);
+			} else if (!strcmp(opt->option, "app-version")) {
+				have_app_version = 1;
+				append_opt(request_body, "clientgpversion", opt->value);
+			} else if (!strcmp(opt->option, "host-id"))
+				append_opt(request_body, opt->option, opt->value);
+		}
+		/* The os-version field is required to be present, even in cases
+		 * where specific values are not required.
+		 * The clientgpversion field is not required to be present in THIS request,
+		 * but it IS required to be present in the /ssl-vpn/getconfig.esp request,
+		 * where is is named app-version, so we include here also for consistency.
+		 */
+		if (!have_os_version)
+			append_opt(request_body, "os-version", vpninfo->platname);
+		if (!have_app_version)
+			append_opt(request_body, "clientgpversion", vpninfo->csd_ticket ? : "5.1.5-8");
+
 		append_form_opts(vpninfo, ctx->form, request_body);
 		if ((result = buf_error(request_body)))
 			goto out;

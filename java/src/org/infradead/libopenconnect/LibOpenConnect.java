@@ -142,6 +142,7 @@ public abstract class LibOpenConnect {
 	public synchronized native void setMobileInfo(String mobilePlatformVersion,
 						      String mobileDeviceType,
 						      String mobileDeviceUniqueID);
+	public synchronized native void setIdOption(String option, String value);
 	public synchronized native int setTokenMode(int tokenMode, String tokenString);
 	public synchronized native void setCSDWrapper(String wrapper, String TMPDIR, String PATH);
 	public synchronized native void setXMLPost(boolean isEnabled);

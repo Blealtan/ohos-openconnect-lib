@@ -21,6 +21,9 @@
 #                values are 'Linux', 'Mac' or 'Windows' ). Defaults to
 #                'Windows'.
 #
+#   --app-version: The client software version in GlobalProtect's
+#                  format. Defaults to '5.1.5-8'.
+#
 # This hipreport.sh does not work as-is on Android. The large here-doc
 # (cat <<EOF) does not appear to work with Android's /system/bin/sh,
 # likely due to an insufficient read buffer size.
@@ -32,6 +35,7 @@ IP=
 IPv6=
 MD5=
 CLIENTOS=Windows
+CLIENT_VERSION=5.1.5-8
 
 
 while [ "$1" ]; do
@@ -40,6 +44,7 @@ while [ "$1" ]; do
     if [ "$1" = "--client-ipv6" ]; then shift; IPV6="$1"; fi
     if [ "$1" = "--md5" ];         then shift; MD5="$1"; fi
     if [ "$1" = "--client-os" ];   then shift; CLIENTOS="$1"; fi
+    if [ "$1" = "--app-version" ]; then shift; CLIENT_VERSION="$1"; fi
     shift
 done
 
@@ -57,7 +62,6 @@ COMPUTER=$(echo "$COOKIE" | sed -rn 's/(.+&|^)computer=([^&]+)(&.+|$)/\2/p')
 HOSTID="deadbeef-dead-beef-dead-beefdeadbeef"
 case $CLIENTOS in
 	Linux)
-		CLIENT_VERSION="5.1.5-8"
 		OS="Linux Fedora 32"
 		OS_VENDOR="Linux"
 		NETWORK_INTERFACE_NAME="virbr0"
@@ -67,7 +71,6 @@ case $CLIENTOS in
 		;;
 
 	*)
-		CLIENT_VERSION="5.1.5-8"
 		OS="Microsoft Windows 10 Pro , 64-bit"
 		OS_VENDOR="Microsoft"
 		NETWORK_INTERFACE_NAME="{DEADBEEF-DEAD-BEEF-DEAD-BEEFDEADBEEF}"
@@ -83,6 +86,10 @@ DAY=$(date +'%d')
 MONTH=$(date +'%m')
 YEAR=$(date +'%Y')
 
+# This value may need to be extracted from the official HIP report, and set with --local-id=host-id=XXX,
+# if default/made-up values are not accepted.
+[[ -z "$HOST_ID" ]] && HOST_ID="deadbeef-dead-beef-dead-beefdeadbeef"
+
 cat <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <hip-report name="hip-report">
@@ -90,7 +97,7 @@ cat <<EOF
 	<user-name>$USER</user-name>
 	<domain>$DOMAIN</domain>
 	<host-name>$COMPUTER</host-name>
-	<host-id>$HOSTID</host-id>
+	<host-id>$HOST_ID</host-id>
 	<ip-address>$IP</ip-address>
 	<ipv6-address>$IPV6</ipv6-address>
 	<generate-time>$NOW</generate-time>
@@ -102,7 +109,7 @@ cat <<EOF
 			<os-vendor>$OS_VENDOR</os-vendor>
 			<domain>$DOMAIN.internal</domain>
 			<host-name>$COMPUTER</host-name>
-			<host-id>$HOSTID</host-id>
+			<host-id>$HOST_ID</host-id>
 			<network-interface>
 				<entry name="$NETWORK_INTERFACE_NAME">
 					<description>$NETWORK_INTERFACE_DESCRIPTION</description>

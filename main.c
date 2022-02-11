@@ -113,6 +113,7 @@ static int sig_cmd_fd;
 static struct openconnect_info *sig_vpninfo;
 
 static void add_form_field(char *field);
+static void add_local_id(struct openconnect_info *vpninfo, char *field);
 
 #ifdef __ANDROID__
 #include <android/log.h>
@@ -209,6 +210,7 @@ enum {
 	OPT_PROXY_AUTH,
 	OPT_HTTP_AUTH,
 	OPT_LOCAL_HOSTNAME,
+	OPT_LOCAL_ID,
 	OPT_PROTOCOL,
 	OPT_PASSTOS,
 	OPT_VERSION,
@@ -282,6 +284,7 @@ static const struct option long_options[] = {
 	OPTION("useragent", 1, OPT_USERAGENT),
 	OPTION("version-string", 1, OPT_VERSION),
 	OPTION("local-hostname", 1, OPT_LOCAL_HOSTNAME),
+	OPTION("local-id", 1, OPT_LOCAL_ID),
 	OPTION("disable-ipv6", 0, OPT_DISABLE_IPV6),
 	OPTION("no-proxy", 0, OPT_NO_PROXY),
 	OPTION("libproxy", 0, OPT_LIBPROXY),
@@ -1008,6 +1011,7 @@ static void usage(void)
 	printf("                                  %s\n", _("linux, linux-64, win, mac-intel, android, apple-ios"));
 	printf("      --version-string=STRING     %s\n", _("reported version string during authentication"));
 	printf("                                  (%s %s)\n", _("default:"), openconnect_version_str);
+	printf("      --local-id=OPT=VALUE        %s\n", _("Provide detailed host identification info"));
 
 	printf("\n%s:\n", _("Trojan binary (CSD) execution"));
 #ifndef _WIN32
@@ -2052,6 +2056,9 @@ int main(int argc, char **argv)
 		case OPT_LOCAL_HOSTNAME:
 			openconnect_set_localname(vpninfo, config_arg);
 			break;
+		case OPT_LOCAL_ID:
+			add_local_id(vpninfo, keep_config_arg());
+			break;
 		case OPT_FORCE_DPD:
 			assert_nonnull_config_arg("force-dpd", config_arg);
 			openconnect_set_dpd(vpninfo, atoi(config_arg));
@@ -2092,13 +2099,6 @@ int main(int argc, char **argv)
 						  "Allowed values: linux, linux-64, win, mac-intel, android, apple-ios\n"),
 					config_arg);
 				exit(1);
-			}
-			if (!strcmp(config_arg, "android") || !strcmp(config_arg, "apple-ios")) {
-				/* generic defaults */
-				openconnect_set_mobile_info(vpninfo,
-					xstrdup("1.0"),
-					dup_config_arg(),
-					xstrdup("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"));
 			}
 			break;
 		case OPT_PASSTOS:
@@ -2644,6 +2644,21 @@ static char *saved_form_field(struct openconnect_info *vpninfo, const char *form
 		ff = ff->next;
 	}
 	return NULL;
+}
+
+static void add_local_id(struct openconnect_info *vpninfo, char *arg)
+{
+	char *value = strchr(arg, '=');
+
+	if (!value || value == arg) {
+		fprintf(stderr, "Local system identifier invalid. Use --local-id=OPT_NAME=VALUE\n");
+		exit(1);
+	}
+	*(value++) = 0;
+	if (openconnect_set_id_option(vpninfo, arg, value)) {
+		fprintf(stderr, "Out of memory for local system identifier\n");
+		exit(1);
+	}
 }
 
 /* Return value:

@@ -69,6 +69,7 @@ openconnect \- Multi-protocol VPN client, for Cisco AnyConnect VPNs and others
 .OP \-\-useragent string
 .OP \-\-version\-string string
 .OP \-\-local-hostname string
+.OP \-\-local-id string
 .OP \-\-os string
 .B [\-\-server] [https://]\fIhost\fB[:\fIport\fB][/\fIgroup\fB]
 .YS
@@ -675,6 +676,28 @@ Use
 .I STRING
 as 'X\-CSTP\-Hostname:' field value in HTTP header. For example \-\-local\-hostname 'mypc',
 will advertise the value 'mypc' as the suggested hostname to point to the provided IP address.
+.TP
+.B \-\-local\-id=OPT=VALUE
+Set detailed host identification option. Valid values are protocol-specific. For Cisco AnyConnect
+compatibility, they include
+.IR platform_version ,
+.IR device_type ,
+.IR device_uniqueid ,
+and
+.IR mac_address
+(it may be useful to specify the latter multiple times in some cases).
+For GlobalProtect, they include
+.IR host-id ,
+.IR os-version ,
+and
+.IR app-version .
+
+Additionally, any option beginning with
+.IR CSD_ ,
+.IR TNCC_ ,
+or
+.IR HIP_
+will be passed as an environment variable to the relevant protocol's trojan wrapper script.
 .TP
 .B \-\-os=STRING
 OS type to report to gateway.  Recognized values are:

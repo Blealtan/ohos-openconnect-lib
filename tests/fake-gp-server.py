@@ -161,7 +161,7 @@ def portal_config():
         pc = ''
 
     return '''<?xml version="1.0" encoding="UTF-8" ?>
-    <policy><gateways><external><list>{}</list></external></gateways>
+    <policy><version> 6.7.8-9 </version><gateways><external><list>{}</list></external></gateways>
     <hip-collection><hip-report-interval>600</hip-report-interval></hip-collection>
     {}</policy>'''.format(gwlist, pc)
 

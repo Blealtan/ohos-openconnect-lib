@@ -916,6 +916,23 @@ JNIEXPORT void JNICALL Java_org_infradead_libopenconnect_LibOpenConnect_setMobil
 	release_cstring(ctx->jenv, jarg2, arg2);
 }
 
+JNIEXPORT void JNICALL Java_org_infradead_libopenconnect_LibOpenConnect_setIdOption(
+	JNIEnv *jenv, jobject jobj, jstring jarg0, jstring jarg1)
+{
+	struct libctx *ctx = getctx(jenv, jobj);
+	const char *arg0 = NULL, *arg1 = NULL;
+
+	if (!ctx)
+		return;
+
+	if (!get_cstring(ctx->jenv, jarg0, &arg0) &&
+	    !get_cstring(ctx->jenv, jarg0, &arg1))
+		openconnect_set_id_option(ctx->vpninfo, arg0, arg1);
+
+	release_cstring(ctx->jenv, jarg0, arg0);
+	release_cstring(ctx->jenv, jarg1, arg1);
+}
+
 /* class methods (general library info) */
 
 JNIEXPORT jstring JNICALL Java_org_infradead_libopenconnect_LibOpenConnect_getVersion(
