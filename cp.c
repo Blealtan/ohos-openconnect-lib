@@ -945,8 +945,11 @@ static int handle_hello_reply(const char *data, struct openconnect_info *vpninfo
 	}
 
 	opt = cpo_get(cpo, cpo_find_child(cpo, OM_idx, "dns_suffix"));
-	if (opt && opt->value && strlen(opt->value))
+	if (opt && opt->value && strlen(opt->value)) {
+		/* Multiple values are comma-separated. Replace commas with spaces if any. */
+		for (char* pos = opt->value; (pos = strchr(opt->value, ',')) != NULL; *pos = ' ');
 		new_ip_info.domain = add_option_dup(&new_cstp_opts, "search", opt->value, -1);
+	}
 
 	idx = cpo_find_child(cpo, OM_idx, "wins_servers");
 	if (idx >= 0) {
