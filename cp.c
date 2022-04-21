@@ -1096,7 +1096,7 @@ int cp_connect(struct openconnect_info *vpninfo)
 	return snx_start_tunnel(vpninfo);
 }
 
-int cp_mainloop(struct openconnect_info *vpninfo, int *timeout, int readable)
+static int handle_one_packet(struct openconnect_info *vpninfo, int *timeout, int readable)
 {
 	int ret = 0, result;
 
@@ -1222,6 +1222,21 @@ int cp_mainloop(struct openconnect_info *vpninfo, int *timeout, int readable)
 	case KA_DPD_DEAD:
 		return do_reconnect(vpninfo);
 	}
+	return ret;
+}
+
+int cp_mainloop(struct openconnect_info *vpninfo, int *timeout, int readable)
+{
+	/* Loop until we have nothing to do. */
+
+	int ret = 0, retp;
+	do {
+		retp = handle_one_packet(vpninfo, timeout, readable);
+		vpn_progress(vpninfo, PRG_TRACE, _("ret %d retp %d\n"), ret,retp);
+		if (retp < 0)
+			return retp;
+		ret += retp;
+	} while (retp && !vpninfo->got_cancel_cmd);
 	return ret;
 }
 
