@@ -335,6 +335,52 @@ out:
 }
 #endif
 
+/* Fix the issue of a 0.0.0.0/0 "split"-include route, by swapping the "split" route with the default netmask.
+ * This function steals the value of netmask.
+ */
+int finalize_netmask_fixing_default_route_as_split(struct oc_vpn_option *new_opts, struct oc_ip_info *new_ip_info,
+						   int split_route_is_default_route, char *original_netmask) {
+	char *s, *netmask;
+
+	if (!split_route_is_default_route) {
+		/* No fix needed before we save the netmask */
+		netmask = original_netmask;
+	} else {
+		/* If the original netmask wasn't /32, add it as a split route */
+		if (new_ip_info->addr && original_netmask) {
+			uint32_t nm_bits = inet_addr(original_netmask);
+			if (nm_bits != 0xffffffff) { /* 255.255.255.255 */
+				struct in_addr net_addr;
+				inet_aton(new_ip_info->addr, &net_addr);
+				net_addr.s_addr &= nm_bits; /* clear host bits */
+
+				char abuf[INET_ADDRSTRLEN];
+				struct oc_split_include *inc = malloc(sizeof(*inc));
+				if (!inc ||
+				    asprintf(&s, "%s/%s", inet_ntop(AF_INET, &net_addr, abuf, sizeof(abuf)), original_netmask) <= 0) {
+					free(original_netmask);
+					return -ENOMEM;
+				}
+				inc->route = add_option_steal(&new_opts, "split-include", &s);
+				inc->next = new_ip_info->split_includes;
+				new_ip_info->split_includes = inc;
+			}
+		}
+		free(original_netmask);
+
+		if ((netmask = strdup("0.0.0.0")) == NULL)
+			return -ENOMEM;
+	}
+
+	/* Steal the value of the netmask, and save as an option */
+	if (netmask) {
+		new_ip_info->netmask = add_option_steal(&new_opts, "netmask", &netmask);
+		if (!new_ip_info->netmask)
+			return -ENOMEM;
+	}
+	return 0;
+}
+
 /* Return value:
  *  < 0, on error
  *  = 0, on success; *form is populated
@@ -531,33 +577,9 @@ static int gpst_parse_config_xml(struct openconnect_info *vpninfo, xmlNode *xml_
 	}
 
 	/* Fix the issue of a 0.0.0.0/0 "split"-include route by swapping the "split" route with the default netmask. */
-	if (split_route_is_default_route) {
-		char *original_netmask = deferred_netmask;
-
-		if ((deferred_netmask = strdup("0.0.0.0")) == NULL)
-			return -ENOMEM;
-
-		/* If the original netmask wasn't /32, add it as a split route */
-		if (new_ip_info.addr && original_netmask) {
-			uint32_t nm_bits = inet_addr(original_netmask);
-			if (nm_bits != 0xffffffff) { /* 255.255.255.255 */
-				struct in_addr net_addr;
-				inet_aton(new_ip_info.addr, &net_addr);
-				net_addr.s_addr &= nm_bits; /* clear host bits */
-
-				char abuf[INET_ADDRSTRLEN];
-				if ((inc = malloc(sizeof(*inc))) == NULL ||
-				    asprintf(&s, "%s/%s", inet_ntop(AF_INET, &net_addr, abuf, sizeof(abuf)), original_netmask) <= 0)
-					return -ENOMEM;
-				inc->route = add_option_steal(&new_opts, "split-include", &s);
-				inc->next = new_ip_info.split_includes;
-				new_ip_info.split_includes = inc;
-			}
-		}
-		free(original_netmask);
-	}
-	if (deferred_netmask)
-		new_ip_info.netmask = add_option_steal(&new_opts, "netmask", &deferred_netmask);
+	ret = finalize_netmask_fixing_default_route_as_split(new_opts, &new_ip_info, split_route_is_default_route, deferred_netmask);
+	if (ret)
+		goto err;
 
 	/* Set 10-second DPD/keepalive (same as Windows client) unless
 	 * overridden with --force-dpd */
