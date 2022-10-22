@@ -181,7 +181,26 @@ int fortinet_obtain_cookie(struct openconnect_info *vpninfo)
 				break;
 			}
 		}
+	} else {
+		/* If no realm is passed, no HTTP redirect to /remote/login is issued.
+		 * Instead the redirect is handled via JavaScript.
+		 * Copy of the page:
+		 * <html><script type="text/javascript">
+		 *   if (window!=top) top.location=window.location;top.location="/remote/login";
+		 * </script></html>
+		 * Let's rewrite the URL accordingly, so we can fetch the actual login site.
+		 */
+		free(vpninfo->urlpath);
+		vpninfo->urlpath = strdup("remote/login");
+		if (!vpninfo->urlpath) {
+			ret = -ENOMEM;
+			goto out;
+		}
 	}
+
+	ret = do_https_request(vpninfo, "GET", NULL, NULL, &resp_buf, NULL, HTTP_REDIRECT);
+	if (ret < 0)
+		goto out;
 
 	if (is_saml_available(vpninfo, resp_buf)) {
 		// clear urlpath, so we construct a clean sso_login url
@@ -976,7 +995,7 @@ int fortinet_bye(struct openconnect_info *vpninfo, const char *reason)
 }
 
 int fortinet_sso_detect_done(struct openconnect_info *vpninfo,
-							 const struct oc_webview_result *result)
+			     const struct oc_webview_result *result)
 {
 	for (int i = 0; result->cookies[i] != NULL; i += 2) {
 		const char *cname = result->cookies[i], *cval = result->cookies[i + 1];
