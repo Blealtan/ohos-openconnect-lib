@@ -235,6 +235,7 @@ static const struct vpn_proto openconnect_protos[] = {
 		.tcp_mainloop = ppp_tcp_mainloop,
 		.add_http_headers = fortinet_common_headers,
 		.obtain_cookie = fortinet_obtain_cookie,
+		.sso_detect_done = fortinet_sso_detect_done,
 		.secure_cookie = "SVPNCOOKIE",
 		.udp_protocol = "DTLS",
 #ifdef HAVE_DTLS

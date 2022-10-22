@@ -1358,6 +1358,7 @@ int fortinet_obtain_cookie(struct openconnect_info *vpninfo);
 int fortinet_connect(struct openconnect_info *vpninfo);
 int fortinet_bye(struct openconnect_info *vpninfo, const char *reason);
 int fortinet_dtls_catch_svrhello(struct openconnect_info *vpninfo, struct pkt *pkt);
+int fortinet_sso_detect_done(struct openconnect_info *vpninfo, const struct oc_webview_result *result);
 
 /* ppp.c */
 struct oc_ppp;
