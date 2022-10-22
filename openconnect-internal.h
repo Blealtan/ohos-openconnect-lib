@@ -1308,6 +1308,7 @@ int cstp_sso_detect_done(struct openconnect_info *vpninfo, const struct oc_webvi
 /* auth-html.c */
 xmlNodePtr htmlnode_next(xmlNodePtr top, xmlNodePtr node);
 xmlNodePtr htmlnode_dive(xmlNodePtr top, xmlNodePtr node);
+xmlNodePtr find_node(xmlDocPtr doc, const char *name);
 xmlNodePtr find_form_node(xmlDocPtr doc);
 int parse_input_node(struct openconnect_info *vpninfo, struct oc_auth_form *form,
 		     xmlNodePtr node, const char *submit_button,
