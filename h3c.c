@@ -243,7 +243,7 @@ static bool check_login_success(struct openconnect_info *vpninfo, const char *xm
 	return login_success;
 }
 
-static int h3c_authenticate(struct openconnect_info *vpninfo)
+int h3c_obtain_cookie(struct openconnect_info *vpninfo)
 {
 	int ret;
 
@@ -267,7 +267,7 @@ static int h3c_authenticate(struct openconnect_info *vpninfo)
 	if (buf_error(reqbuf)) {
 		vpn_progress(vpninfo, PRG_ERR, _("Error creating H3C connection request\n"));
 		ret = buf_error(reqbuf);
-		goto out;
+		goto obtain_cookie_out;
 	}
 	if (vpninfo->dump_http_traffic) {
 		dump_buf(vpninfo, '>', reqbuf->data);
@@ -275,14 +275,14 @@ static int h3c_authenticate(struct openconnect_info *vpninfo)
 
 	ret = vpninfo->ssl_write(vpninfo, reqbuf->data, reqbuf->pos);
 	if (ret < 0) {
-		goto out;
+		goto obtain_cookie_out;
 	}
 
 	struct oc_text_buf *resp_buf = buf_alloc();
 	assert(resp_buf);
 	if (buf_error(resp_buf)) {
 		ret = buf_free(resp_buf);
-		goto out;
+		goto obtain_cookie_out;
 	}
 
 	ret = process_http_response(vpninfo, 1, h3c_store_location_action_from_headers,
@@ -428,32 +428,49 @@ do_visit_login_url:
 	bool login_success = check_login_success(vpninfo, login_resp);
 	if (!login_success) {
 		ret = -EPERM;
-		goto out;
+		goto obtain_cookie_out;
 	}
 
-	// get VPN parameter
+	for (struct oc_vpn_option *cookie = vpninfo->cookies; cookie; cookie = cookie->next) {
+		if (!strcmp(cookie->option, "svpnginfo")) {
+			free(vpninfo->cookie);
+			if (asprintf(&vpninfo->cookie, "svpnginfo=%s", cookie->value) < 0) {
+				ret = -ENOMEM;
+				goto obtain_cookie_out;
+			}
+			ret = 0;
+			goto obtain_cookie_out;
+		}
+	}
+
+	// if svpnginfo cookie is not found, make the login fail
+	ret = -EPERM;
+
+obtain_cookie_out:
+	return ret;
+}
+
+int h3c_connect(struct openconnect_info *vpninfo)
+{
+	if (!vpninfo->cookies) {
+		int ret = internal_split_cookies(vpninfo, 1, "svpnginfo");
+		if (ret)
+			return ret;
+	}
+
+	struct oc_text_buf *request_data = buf_alloc();
 	vpninfo->urlpath = (char *)"";
-	buf_truncate(reqbuf);
-	buf_truncate(request_data);
 	char *handshake_resp = NULL;
 	do_https_request(vpninfo, "NET_EXTEND", NULL, request_data, &handshake_resp,
 			 h3c_get_vpn_param_from_headers, HTTP_BODY_ON_ERROR);
-	/* ignore the error */
-	ret = 0;
 
 	monitor_fd_new(vpninfo, ssl);
 	monitor_read_fd(vpninfo, ssl);
 	monitor_except_fd(vpninfo, ssl);
 	vpninfo->ip_info.mtu = 1400;
 
-out:
-	buf_free(reqbuf);
-	return ret;
-}
-
-int h3c_connect(struct openconnect_info *vpninfo)
-{
-	return h3c_authenticate(vpninfo);
+	buf_free(request_data);
+	return 0;
 }
 
 int h3c_bye(struct openconnect_info *vpninfo, const char *reason)
@@ -572,9 +589,4 @@ void h3c_http_headers(struct openconnect_info *vpninfo, struct oc_text_buf *buf)
 	vpninfo->useragent = (char *)"SSLVPN-Client/7.0";
 	http_common_headers(vpninfo, buf);
 	vpninfo->useragent = orig_ua;
-}
-
-int h3c_obtain_cookie(struct openconnect_info *vpninfo)
-{
-	return 0;
 }
