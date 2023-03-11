@@ -1,0 +1,28 @@
+<PAGE>
+	<INCLUDE file="inc/header.tmpl" />
+
+	<VAR match="VAR_SEL_PROTOCOLS" replace="selected" />
+	<VAR match="VAR_SEL_H3C" replace="selected" />
+	<PARSE file="menu1.xml" />
+	<PARSE file="menu2-protocols.xml" />
+
+	<INCLUDE file="inc/content.tmpl" />
+
+<h1>H3C SSL VPN</h1>
+
+<p>Experimental support for <a
+href="https://www.h3c.com/cn/Service/Document_Software/Software_Download/IP_Management/iNode/iNode_PC/">H3C SSL
+VPN</a> was added to OpenConnect in March 2023.</p>
+
+<p>H3C mode is requested by adding <tt>--protocol=h3c</tt>
+to the command line:
+<pre>
+  openconnect --protocol=h3c vpn.example.com
+</pre></p>
+
+<h2>Authentication</h2>
+
+<p>OpenConnect currently supports basic username/password authentication.</p>
+
+	<INCLUDE file="inc/footer.tmpl" />
+</PAGE>
