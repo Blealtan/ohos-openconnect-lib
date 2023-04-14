@@ -791,6 +791,12 @@ static xmlDocPtr xmlpost_new_query(struct openconnect_info *vpninfo, const char 
 		} else if (!strcmp(opt->option, "device_uniqueid")) {
 			if (!xmlNewProp(node, XCAST("unique-id"), XCAST(opt->value)))
 				goto bad;
+		}  else if  (!strcmp(opt->option, "computer_name")) {
+			if (!xmlNewProp(node, XCAST("computer-name"), XCAST(opt->value)))
+				goto bad;
+		} else if  (!strcmp(opt->option, "device_uniqueid_global")) {
+			if (!xmlNewProp(node, XCAST("unique-id-global"), XCAST(opt->value)))
+				goto bad;
 		} else if (!strcmp(opt->option, "mac_address")) {
 			if (!mac_list) {
 				mac_list = xmlNewTextChild(root, NULL, XCAST("mac-address-list"), NULL);
