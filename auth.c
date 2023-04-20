@@ -791,6 +791,12 @@ static xmlDocPtr xmlpost_new_query(struct openconnect_info *vpninfo, const char 
 		} else if (!strcmp(opt->option, "device_uniqueid")) {
 			if (!xmlNewProp(node, XCAST("unique-id"), XCAST(opt->value)))
 				goto bad;
+		}  else if  (!strcmp(opt->option, "computer_name")) {
+			if (!xmlNewProp(node, XCAST("computer-name"), XCAST(opt->value)))
+				goto bad;
+		} else if  (!strcmp(opt->option, "device_uniqueid_global")) {
+			if (!xmlNewProp(node, XCAST("unique-id-global"), XCAST(opt->value)))
+				goto bad;
 		} else if (!strcmp(opt->option, "mac_address")) {
 			if (!mac_list) {
 				mac_list = xmlNewTextChild(root, NULL, XCAST("mac-address-list"), NULL);
@@ -1551,6 +1557,15 @@ newgroup:
 	/* A return value of 2 means the XML form indicated
 	   success. We _should_ have a cookie... */
 
+	struct oc_text_buf *cookie_buf = buf_alloc();
+#ifdef HAVE_HPKE_SUPPORT
+	if (vpninfo->strap_key) {
+		buf_append(cookie_buf, "openconnect_strapkey=");
+		append_strap_privkey(vpninfo, cookie_buf);
+		buf_append(cookie_buf, "; webvpn=");
+	}
+#endif
+	
 	for (opt = vpninfo->cookies; opt; opt = opt->next) {
 
 		if (!strcmp(opt->option, "webvpn")) {

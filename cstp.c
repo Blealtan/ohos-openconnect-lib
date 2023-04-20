@@ -214,7 +214,19 @@ static int parse_hex_val(const char *str, unsigned char *storage, unsigned int m
 	return len/2;
 }
 
-static int start_cstp_connection(struct openconnect_info *vpninfo)
+#ifdef HAVE_HPKE_SUPPORT
+static void append_connect_strap_headers(struct openconnect_info *vpninfo,
+					 struct oc_text_buf *buf, int rekey)
+{
+	buf_append(buf, "X-AnyConnect-STRAP-Verify: ");
+	append_strap_verify(vpninfo, buf, rekey);
+	buf_append(buf, "\r\n");
+
+	buf_append(buf, "X-AnyConnect-STRAP-Pubkey: %s\r\n", vpninfo->strap_pubkey);
+}
+#endif
+
+static int start_cstp_connection(struct openconnect_info *vpninfo, int strap_rekey)
 {
 	struct oc_text_buf *reqbuf;
 	char buf[65536];
@@ -240,6 +252,11 @@ static int start_cstp_connection(struct openconnect_info *vpninfo)
 	buf_append(reqbuf, "Cookie: webvpn=%s\r\n", vpninfo->cookie);
 	buf_append(reqbuf, "X-CSTP-Version: 1\r\n");
 	buf_append(reqbuf, "X-CSTP-Hostname: %s\r\n", vpninfo->localname);
+
+#ifdef HAVE_HPKE_SUPPORT
+	if (vpninfo->strap_pubkey)
+		append_connect_strap_headers(vpninfo, reqbuf, strap_rekey);
+#endif
 
 	append_identifier_headers(vpninfo, reqbuf);
 	append_compr_types(reqbuf, "CSTP", vpninfo->req_compr);
@@ -673,6 +690,26 @@ int cstp_connect(struct openconnect_info *vpninfo)
 	int deflate_bufsize = 0;
 	int compr_type;
 
+	int strap_rekey = 1;
+
+	if (!vpninfo->cookies) {
+		internal_split_cookies(vpninfo, 0, "webvpn");
+#ifdef HAVE_HPKE_SUPPORT
+		const char *strap_privkey = http_get_cookie(vpninfo, "openconnect_strapkey");
+		if (strap_privkey && *strap_privkey) {
+			int derlen;
+			void *der = openconnect_base64_decode(&derlen, strap_privkey);
+			if (der && !ingest_strap_privkey(vpninfo, der, derlen)) {
+				strap_rekey = 0;
+				vpn_progress(vpninfo, PRG_DEBUG,
+					     _("Ingested STRAP public key %s\n"),
+					     vpninfo->strap_pubkey);
+			}
+		}
+#endif
+		http_add_cookie(vpninfo, "openconnect_strapkey", "", 1);
+	}
+
 	/* This needs to be done before openconnect_setup_dtls() because it's
 	   sent with the CSTP CONNECT handshake. Even if we don't end up doing
 	   DTLS. */
@@ -687,7 +724,7 @@ int cstp_connect(struct openconnect_info *vpninfo)
 	if (ret)
 		return ret;
 
-	ret = start_cstp_connection(vpninfo);
+	ret = start_cstp_connection(vpninfo, strap_rekey);
 	if (ret)
 		goto out;
 
@@ -1250,6 +1287,20 @@ void cstp_common_headers(struct openconnect_info *vpninfo, struct oc_text_buf *b
 		buf_append(buf, "X-Aggregate-Auth: 1\r\n");
 	if (vpninfo->try_http_auth)
 		buf_append(buf, "X-Support-HTTP-Auth: true\r\n");
+#ifdef HAVE_HPKE_SUPPORT
+	if (!vpninfo->strap_pubkey || !vpninfo->strap_dh_pubkey) {
+		int err = generate_strap_keys(vpninfo);
+		if (err) {
+			buf->error = err;
+			return;
+		}
+	}
+
+	buf_append(buf, "X-AnyConnect-STRAP-Pubkey: %s\r\n",
+		   vpninfo->strap_pubkey);
+	buf_append(buf, "X-AnyConnect-STRAP-DH-Pubkey: %s\r\n",
+		   vpninfo->strap_dh_pubkey);
+#endif
 
 	append_identifier_headers(vpninfo, buf);
 }
