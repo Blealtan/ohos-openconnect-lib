@@ -1557,6 +1557,15 @@ newgroup:
 	/* A return value of 2 means the XML form indicated
 	   success. We _should_ have a cookie... */
 
+	struct oc_text_buf *cookie_buf = buf_alloc();
+#ifdef HAVE_HPKE_SUPPORT
+	if (vpninfo->strap_key) {
+		buf_append(cookie_buf, "openconnect_strapkey=");
+		append_strap_privkey(vpninfo, cookie_buf);
+		buf_append(cookie_buf, "; webvpn=");
+	}
+#endif
+	
 	for (opt = vpninfo->cookies; opt; opt = opt->next) {
 
 		if (!strcmp(opt->option, "webvpn")) {
