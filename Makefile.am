@@ -33,7 +33,7 @@ openconnect_LDADD = libopenconnect.la $(SSL_LIBS) $(LIBXML2_LIBS) \
 	$(LIBPROXY_LIBS) $(INTL_LIBS) $(ICONV_LIBS)
 
 if OPENCONNECT_WIN32
-openconnect_SOURCES += openconnect.rc
+openconnect_SOURCES += openconnect.rc fork.h
 endif
 library_srcs = ssl.c http.c textbuf.c http-auth.c auth-common.c \
 	auth-html.c library.c compat.c lzs.c mainloop.c script.c \
