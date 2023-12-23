@@ -246,7 +246,7 @@ sign-dist: dist
 tag: uncommitted-check
 	@if git rev-parse --verify v$(VERSION) &> /dev/null; then \
 		echo "*** ERROR: Version v$(VERSION) is already tagged"; exit 1; fi
-	@sed 's/AC_INIT.*/AC_INIT([openconnect], [$(VERSION)])/' -i $(srcdir)/configure.ac
+	@sed 's/AC_INIT.*/AC_INIT([OpenConnect], [$(VERSION)],/' -i $(srcdir)/configure.ac
 	@sed 's/^v=.*/v="v$(VERSION)"/' -i $(srcdir)/version.sh
 	@( echo '1,/<!-- latest-release-start -->/p' ;\
 	   echo '/<!-- latest-release-end -->/,$$p' ;\

@@ -1,4 +1,7 @@
-AC_INIT([openconnect], [9.12])
+AC_INIT([OpenConnect], [9.12],
+        [https://gitlab.com/openconnect/openconnect/-/issues],
+        [],
+        [https://www.infradead.org/openconnect/])
 AC_LANG([C])
 AC_CONFIG_HEADERS([config.h])
 m4_ifdef([AC_CONFIG_MACRO_DIRS], [AC_CONFIG_MACRO_DIRS([m4])])
