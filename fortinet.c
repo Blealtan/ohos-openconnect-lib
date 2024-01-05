@@ -280,7 +280,7 @@ int fortinet_obtain_cookie(struct openconnect_info *vpninfo)
 			 * including 'username', 'magic', 'reqid', 'grpid' (similar to the tokeninfo-type
 			 * 2FA bove), and a password field named 'credential'.
 			 */
-			doc = htmlReadMemory(resp_buf, strlen(resp_buf), url, NULL,
+			doc = htmlReadMemory(resp_buf, strlen(resp_buf), url, "utf-8",
 					     HTML_PARSE_RECOVER|HTML_PARSE_NOERROR|HTML_PARSE_NOWARNING|HTML_PARSE_NONET);
 			free(url);
 

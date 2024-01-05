@@ -55,6 +55,15 @@ echo -n "frmLogin with username/password/authgroup"
 
 echo ok
 
+echo "Configuring fake server to present a choice of 2 non-ASCII realms."
+curl -sk $SERVURL/CONFIGURE -d 'realms=Çà%26Là,Zugäng,¡Hola!'
+
+echo -n "frmLogin with username/password/non-ASCII-authgroup"
+( echo "test" | $CLIENT $SERVURL --authgroup='Zugäng' --cookieonly >/dev/null 2>&1) ||
+    fail $PID "Could not receive cookie from fake Juniper server"
+
+echo ok
+
 echo "Configuring fake server to require token as 2nd password in default frmLogin form."
 curl -sk $SERVURL/CONFIGURE -d token_form=frmLogin
 

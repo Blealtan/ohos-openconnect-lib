@@ -490,7 +490,7 @@ int oncp_obtain_cookie(struct openconnect_info *vpninfo)
 			break;
 		}
 
-		doc = htmlReadMemory(form_buf, ret, url, NULL,
+		doc = htmlReadMemory(form_buf, ret, url, "utf-8",
 				     HTML_PARSE_RECOVER|HTML_PARSE_NOERROR|HTML_PARSE_NOWARNING|HTML_PARSE_NONET);
 		free(url);
 		free(form_buf);

@@ -381,6 +381,39 @@ int process_http_response(struct openconnect_info *vpninfo, int connect,
 				goto err;
 			}
 		}
+		if (!strcasecmp(hdrline, "Content-Type")) {
+			/* XX: Reject HTML documents which specify encodings other than UTF-8 or US-ASCII
+			 * via Content-Type header, because we cannot convey the correct encoding to the
+			 * caller in this case.
+			 *
+			 * See https://gitlab.gnome.org/GNOME/libxml2/-/issues/570 and
+			 * https://gitlab.com/openconnect/openconnect/-/issues/642.
+			 */
+			if (!strncasecmp(colon, "text/html", 9)) {
+				const char *field = colon;
+				for (;;) {
+					field = strchr(field, ';');
+					if (!field)
+						break;
+					field++;                     /* Skip semicolon */
+					while (isspace(*field))      /* Skip space */
+						field++;
+					if (!strncasecmp(field, "charset=", 8)) {
+						const char *p = field + 8, *end = p;
+						while (*end && *end != ';' && !isspace(*end))
+							end++;
+						int l = end - p;
+						if (strncasecmp(p, "utf-8", l) && strncasecmp(p, "us-ascii", l)) {
+							vpn_progress(vpninfo, PRG_ERR,
+								     _("Content-type is HTML with unsupported charset '%.*s'\n"),
+								     l, p);
+							ret = -EINVAL;
+							goto err;
+						}
+					}
+				}
+			}
+		}
 		if (header_cb)
 			header_cb(vpninfo, hdrline, colon);
 	}

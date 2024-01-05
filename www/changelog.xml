@@ -18,6 +18,7 @@
        <li>Fix ASN.1 encoding of TPMv2 ECDSA signatures with GnuTLS &amp;lt; 3.6.0</li>
        <li>Handle Pulse configuration packets that cannot fit in a single TLS frame (<a href="https://gitlab.com/openconnect/openconnect/-/issues/617">#617</a>, <a href="https://gitlab.com/openconnect/openconnect/-/merge_requests/480">!480</a>).</li>
        <li>Send operating system information to Pulse servers (<a href="https://gitlab.com/openconnect/openconnect/-/merge_requests/481">!481</a>).</li>
+       <li>Explicitly specify UTF-8 encoding for HTML parsing (<a href="https://gitlab.com/openconnect/openconnect/-/issues/642">#642</a>, <a href="https://gitlab.com/openconnect/openconnect/-/merge_requests/488">!488</a>).</li>
      </ul><br/>
   </li>
   <li><b><a href="https://www.infradead.org/openconnect/download/openconnect-9.12.tar.gz">OpenConnect v9.12</a></b>

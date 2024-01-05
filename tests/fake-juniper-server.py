@@ -25,6 +25,7 @@
 import sys
 import ssl
 import base64
+from html import escape
 from json import dumps
 from functools import wraps
 from flask import Flask, request, abort, redirect, url_for, make_response, session
@@ -119,7 +120,7 @@ def frmLogin():
     sel = token = ''
     if C.realms:
         sel = '<select name="realm">%s</select>' % ''.join(
-            '<option value="%d">%s</option>' % nv for nv in enumerate(C.realms))
+            '<option value="%s">%s</option>' % (escape(r, quote=True), escape(r)) for r in C.realms)
     if C.token_form == 'frmLogin':
         token = '<input type="password" name="token_as_second_password"/>'
 
@@ -138,7 +139,7 @@ def frmLogin():
 def frmLogin_post():
     global C
     if C.realms:
-        assert 0 <= int(request.form.get('realm', -1)) < len(C.realms)
+        assert request.form.get('realm', None) in C.realms
     session.update(step='POST-login', username=request.form.get('username'),
                    password=request.form.get('password'),
                    realm=request.form.get('realm'))
