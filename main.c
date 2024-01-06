@@ -41,6 +41,8 @@
 #include LIBPROXY_HDR
 #endif
 
+#define MAX_READ_STDIN_SIZE 4096
+
 #ifdef _WIN32
 #include <shlwapi.h>
 #include <wtypes.h>
@@ -95,8 +97,6 @@ static int allow_stdin_read;
 
 static char *token_filename;
 static int allowed_fingerprints;
-
-static char *ext_browser;
 
 struct accepted_cert {
 	struct accepted_cert *next;
@@ -189,6 +189,7 @@ enum {
 	OPT_LIBPROXY,
 	OPT_NO_CERT_CHECK,
 	OPT_NO_DTLS,
+	OPT_NO_EXTERNAL_AUTH,
 	OPT_NO_HTTP_KEEPALIVE,
 	OPT_NO_SYSTEM_TRUST,
 	OPT_NO_PASSWD,
@@ -246,6 +247,7 @@ static const struct option long_options[] = {
 #ifdef HAVE_POSIX_SPAWN
 	OPTION("external-browser", 1, OPT_EXT_BROWSER),
 #endif
+	OPTION("no-external-auth", 0, OPT_NO_EXTERNAL_AUTH),
 	OPTION("pfs", 0, OPT_PFS),
 	OPTION("allow-insecure-crypto", 0, OPT_ALLOW_INSECURE_CRYPTO),
 	OPTION("certificate", 1, 'c'),
@@ -438,7 +440,7 @@ static void read_stdin(char **string, int hidden, int allow_fail)
 	CONSOLE_READCONSOLE_CONTROL rcc = { sizeof(rcc), 0, 13, 0 };
 	HANDLE stdinh = GetStdHandle(STD_INPUT_HANDLE);
 	DWORD cmode, nr_read, last_error;
-	wchar_t wbuf[1024];
+	wchar_t wbuf[MAX_READ_STDIN_SIZE];
 	char *buf;
 
 	if (GetConsoleMode(stdinh, &cmode)) {
@@ -767,7 +769,7 @@ static void print_supported_protocols_usage(void)
 static const char default_vpncscript[] = DEFAULT_VPNCSCRIPT;
 static void read_stdin(char **string, int hidden, int allow_fail)
 {
-	char *c, *got, *buf = malloc(1025);
+	char *c, *got, *buf = malloc(MAX_READ_STDIN_SIZE+1);
 	int fd = fileno(stdin);
 	struct termios t;
 
@@ -782,7 +784,7 @@ static void read_stdin(char **string, int hidden, int allow_fail)
 		tcsetattr(fd, TCSANOW, &t);
 	}
 
-	got = fgets(buf, 1025, stdin);
+	got = fgets(buf, MAX_READ_STDIN_SIZE+1, stdin);
 
 	if (hidden) {
 		t.c_lflag |= ECHO;
@@ -868,7 +870,7 @@ static void set_default_vpncscript(void)
 			exit(1);
 		}
 	} else {
-		default_vpncscript = "cscript " DEFAULT_VPNCSCRIPT;
+		default_vpncscript = DEFAULT_VPNCSCRIPT;
 	}
 }
 
@@ -902,34 +904,6 @@ static BOOL WINAPI console_ctrl_handler(DWORD dwCtrlType)
 }
 #endif
 
-#ifdef HAVE_POSIX_SPAWN
-static int spawn_browser(struct openconnect_info *vpninfo, const char *url, void *cbdata)
-{
-	vpn_progress(vpninfo, PRG_TRACE,
-		     _("Main Spawning external browser '%s'\n"),
-		     ext_browser);
-
-	pid_t pid = 0;
-	char *browser_argv[3] = { ext_browser, (char *)url, NULL };
-	posix_spawn_file_actions_t file_actions, *factp = NULL;
-	int ret = 0;
-
-	if (!posix_spawn_file_actions_init(&file_actions)) {
-		factp = &file_actions;
-
-		posix_spawn_file_actions_adddup2(&file_actions, STDERR_FILENO, STDOUT_FILENO);
-	}
-
-	if (posix_spawn(&pid, ext_browser, factp, NULL, browser_argv, environ)) {
-		ret = -errno;
-		vpn_perror(vpninfo, _("Spawn browser"));
-	}
-
-	if (factp)
-		posix_spawn_file_actions_destroy(factp);
-	return ret;
-}
-#endif
 static void print_default_vpncscript(void)
 {
 	printf("%s %s\n", _("Default vpnc-script (override with --script):"),
@@ -1074,6 +1048,7 @@ static void usage(void)
 	printf("      --force-trojan=INTERVAL     %s\n", _("Set minimum interval between trojan runs (in seconds)"));
 
 	printf("\n%s:\n", _("Server bugs"));
+	printf("      --no-external-auth          %s\n", _("Do not offer or use auth methods requiring external browser"));
 	printf("      --no-http-keepalive         %s\n", _("Disable HTTP connection re-use"));
 	printf("      --no-xmlpost                %s\n", _("Do not attempt XML POST authentication"));
 	printf("      --allow-insecure-crypto     %s\n", _("Allow use of the ancient, insecure 3DES and RC4 ciphers"));
@@ -1613,9 +1588,14 @@ static void print_connection_info(struct openconnect_info *vpninfo)
 		     ssl_state,
 		     vpninfo->proto->udp_protocol ? : "UDP", udp_compr ? " + " : "", udp_compr ? : "",
 		     dtls_state);
-	if (vpninfo->auth_expiration != 0)
-		vpn_progress(vpninfo, PRG_INFO, _("Session authentication will expire at %s\n"),
-			     ctime(&vpninfo->auth_expiration));
+	if (vpninfo->auth_expiration != 0) {
+		char buf[80];
+		struct tm *tm = localtime(&vpninfo->auth_expiration);
+		strftime(buf, 80, "%a, %d %b %Y %H:%M:%S %Z", tm);
+		vpn_progress(vpninfo, PRG_INFO,
+			     _("Session authentication will expire at %s\n"),
+			     buf);
+	}
 }
 
 static void print_connection_stats(void *_vpninfo, const struct oc_stats *stats)
@@ -1727,6 +1707,7 @@ int main(int argc, char **argv)
 	int opt;
 	char *config_arg;
 	char *config_filename;
+	const char *server_url = NULL;
 	char *token_str = NULL;
 	oc_token_mode_t token_mode = OC_TOKEN_MODE_NONE;
 	int reconnect_timeout = 300;
@@ -1802,7 +1783,7 @@ int main(int argc, char **argv)
 
 	openconnect_init_ssl();
 
-	vpninfo = openconnect_vpninfo_new("Open AnyConnect VPN Agent",
+	vpninfo = openconnect_vpninfo_new("AnyConnect-compatible OpenConnect VPN Agent",
 		validate_peer_cert, NULL, process_auth_form_cb, write_progress, NULL);
 	if (!vpninfo) {
 		fprintf(stderr, _("Failed to allocate vpninfo structure\n"));
@@ -2089,7 +2070,11 @@ int main(int argc, char **argv)
 			vpnc_script = dup_config_arg();
 			break;
 		case OPT_EXT_BROWSER:
-			ext_browser = dup_config_arg();
+			vpninfo->external_browser = dup_config_arg();
+			break;
+		case OPT_NO_EXTERNAL_AUTH:
+			/* XX: Is this a workaround for a server bug, or a "normal" authentication option? */
+			vpninfo->no_external_auth = 1;
 			break;
 		case 'u':
 			free(username);
@@ -2233,8 +2218,7 @@ int main(int argc, char **argv)
 			vpninfo->certinfo[1].password = dup_config_arg();
 			break;
 		case OPT_SERVER:
-			if (openconnect_parse_url(vpninfo, config_arg))
-				exit(1);
+			server_url = keep_config_arg();
 			break;
 		default:
 			usage();
@@ -2244,11 +2228,15 @@ int main(int argc, char **argv)
 	if (gai_overrides)
 		openconnect_override_getaddrinfo(vpninfo, gai_override_cb);
 
-	if (optind < argc - (vpninfo->hostname ? 0 : 1)) {
+	if (!server_url) {
+		if (optind >= argc) {
+			fprintf(stderr, _("No server specified\n"));
+			usage();
+		}
+		server_url = argv[optind++];
+	}
+	if (optind < argc) {
 		fprintf(stderr, _("Too many arguments on command line\n"));
-		usage();
-	} else if (optind > argc - (vpninfo->hostname ? 0 : 1)) {
-		fprintf(stderr, _("No server specified\n"));
 		usage();
 	}
 
@@ -2276,11 +2264,6 @@ int main(int argc, char **argv)
 
 	if (proxy && openconnect_set_http_proxy(vpninfo, strdup(proxy)))
 		exit(1);
-
-#ifdef HAVE_POSIX_SPAWN
-	if (ext_browser)
-		openconnect_set_external_browser_callback(vpninfo, spawn_browser);
-#endif
 
 #ifndef _WIN32
 	memset(&sa, 0, sizeof(sa));
@@ -2314,11 +2297,12 @@ int main(int argc, char **argv)
 	if (vpninfo->certinfo[0].key && do_passphrase_from_fsid)
 		openconnect_passphrase_from_fsid(vpninfo);
 
-	if (config_lookup_host(vpninfo, argv[optind]))
+	if (config_lookup_host(vpninfo, server_url))
 		exit(1);
 
+	/* If config_lookup_host() didn't set it, it'd better be a URL */
 	if (!vpninfo->hostname) {
-		char *url = strdup(argv[optind]);
+		char *url = strdup(server_url);
 
 		if (openconnect_parse_url(vpninfo, url))
 			exit(1);
@@ -3001,11 +2985,8 @@ static void init_token(struct openconnect_info *vpninfo,
 		case -EINVAL:
 			fprintf(stderr, _("Soft token string is invalid\n"));
 			exit(1);
-		case -EOPNOTSUPP:
-			fprintf(stderr, _("OpenConnect was not built with liboath support\n"));
-			exit(1);
 		default:
-			fprintf(stderr, _("General failure in liboath\n"));
+			fprintf(stderr, _("General failure in TOTP/HOTP support\n"));
 			exit(1);
 		}
 

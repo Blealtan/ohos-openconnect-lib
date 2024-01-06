@@ -186,13 +186,27 @@ intptr_t os_setup_tun(struct openconnect_info *vpninfo)
 
 #else /* !__sun__ && !__native_client__ */
 
-static void ifreq_set_ifname(struct openconnect_info *vpninfo, struct ifreq *ifr)
+static int ifreq_set_ifname(struct openconnect_info *vpninfo, struct ifreq *ifr,
+			    char *ifname_utf8)
 {
-	char *ifname = openconnect_utf8_to_legacy(vpninfo, vpninfo->ifname);
-	strncpy(ifr->ifr_name, ifname, sizeof(ifr->ifr_name) - 1);
-	if (ifname != vpninfo->ifname)
+	char *ifname = openconnect_utf8_to_legacy(vpninfo, ifname_utf8);
+	int ret = 0;
+
+	if (strlen(ifname) >= sizeof(ifr->ifr_name)) {
+		vpn_progress(vpninfo, PRG_ERR,
+			     _("Requested tun device name '%s' is too long\n"),
+			     vpninfo->ifname);
+		ret = -ENAMETOOLONG;
+	} else {
+		memcpy(ifr->ifr_name, ifname, strlen(ifname));
+	}
+
+	if (ifname != ifname_utf8)
 		free(ifname);
+
+	return ret;
 }
+
 
 #ifdef IFF_TUN /* Linux */
 intptr_t os_setup_tun(struct openconnect_info *vpninfo)
@@ -200,6 +214,12 @@ intptr_t os_setup_tun(struct openconnect_info *vpninfo)
 	int tun_fd = -1;
 	struct ifreq ifr;
 	int tunerr;
+
+	memset(&ifr, 0, sizeof(ifr));
+	ifr.ifr_flags = IFF_TUN | IFF_NO_PI;
+
+	if (vpninfo->ifname && ifreq_set_ifname(vpninfo, &ifr, vpninfo->ifname))
+		return -EINVAL;
 
 	tun_fd = open("/dev/net/tun", O_RDWR);
 	if (tun_fd < 0) {
@@ -220,10 +240,7 @@ intptr_t os_setup_tun(struct openconnect_info *vpninfo)
 			     strerror(tunerr));
 		return -EIO;
 	}
-	memset(&ifr, 0, sizeof(ifr));
-	ifr.ifr_flags = IFF_TUN | IFF_NO_PI;
-	if (vpninfo->ifname)
-		ifreq_set_ifname(vpninfo, &ifr);
+
 	if (ioctl(tun_fd, TUNSETIFF, (void *) &ifr) < 0) {
 		int err = errno;
 		vpn_progress(vpninfo, PRG_ERR,
@@ -246,7 +263,7 @@ intptr_t os_setup_tun(struct openconnect_info *vpninfo)
 #else /* BSD et al, including OS X */
 
 #ifdef SIOCIFCREATE
-static int bsd_open_tun(char *tun_name)
+static int bsd_open_tun(struct openconnect_info *vpninfo, char *tun_name)
 {
 	int fd;
 	int s;
@@ -254,12 +271,14 @@ static int bsd_open_tun(char *tun_name)
 
 	fd = open(tun_name, O_RDWR);
 	if (fd == -1) {
+		memset(&ifr, 0, sizeof(ifr));
+		if (ifreq_set_ifname(vpninfo, &ifr, tun_name))
+			return -1;
+
 		s = socket(AF_INET, SOCK_DGRAM, 0);
 		if (s < 0)
 			return -1;
 
-		memset(&ifr, 0, sizeof(ifr));
-		strncpy(ifr.ifr_name, tun_name + 5, sizeof(ifr.ifr_name) - 1);
 		if (!ioctl(s, SIOCIFCREATE, &ifr))
 			fd = open(tun_name, O_RDWR);
 
@@ -268,7 +287,7 @@ static int bsd_open_tun(char *tun_name)
 	return fd;
 }
 #else
-#define bsd_open_tun(tun_name) open(tun_name, O_RDWR)
+#define bsd_open_tun(vpninfo, tun_name) open(tun_name, O_RDWR)
 #endif
 
 intptr_t os_setup_tun(struct openconnect_info *vpninfo)
@@ -366,7 +385,7 @@ intptr_t os_setup_tun(struct openconnect_info *vpninfo)
 		}
 		snprintf(tun_name, sizeof(tun_name),
 			 "/dev/%s", vpninfo->ifname);
-		tun_fd = bsd_open_tun(tun_name);
+		tun_fd = bsd_open_tun(vpninfo, tun_name);
 		if (tun_fd < 0) {
 			vpn_progress(vpninfo, PRG_ERR,
 				     _("Cannot open '%s': %s\n"),
@@ -393,7 +412,7 @@ intptr_t os_setup_tun(struct openconnect_info *vpninfo)
 	if (tun_fd < 0) {
 		for (unit_nr = 0; unit_nr < 255; unit_nr++) {
 			sprintf(tun_name, "/dev/tun%d", unit_nr);
-			tun_fd = bsd_open_tun(tun_name);
+			tun_fd = bsd_open_tun(vpninfo, tun_name);
 			if (tun_fd >= 0)
 				break;
 		}

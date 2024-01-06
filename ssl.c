@@ -114,10 +114,11 @@ static int cancellable_connect(struct openconnect_info *vpninfo, int sockfd,
 		FD_SET(sockfd, &ex_set);
 #endif
 		cmd_fd_set(vpninfo, &rd_set, &maxfd);
-		if (select(maxfd + 1, &rd_set, &wr_set, &ex_set, NULL) < 0 &&
-		    errno != EINTR) {
-			vpn_perror(vpninfo, _("Failed select() for socket connect"));
-			return -EIO;
+		while (select(maxfd + 1, &rd_set, &wr_set, &ex_set, NULL) < 0) {
+			if (errno != EINTR) {
+				vpn_perror(vpninfo, _("Failed select() for socket connect"));
+				return -EIO;
+			}
 		}
 
 		if (is_cancel_pending(vpninfo, &rd_set)) {
@@ -186,10 +187,11 @@ int cancellable_accept(struct openconnect_info *vpninfo, int sockfd)
 		FD_SET(sockfd, &rd_set);
 
 		cmd_fd_set(vpninfo, &rd_set, &maxfd);
-		if (select(maxfd + 1, &rd_set, &wr_set, &ex_set, NULL) < 0 &&
-		    errno != EINTR) {
-			vpn_perror(vpninfo, _("Failed select() for socket accept"));
-			return -EIO;
+		while (select(maxfd + 1, &rd_set, &wr_set, &ex_set, NULL) < 0) {
+			if (errno != EINTR) {
+				vpn_perror(vpninfo, _("Failed select() for socket accept"));
+				return -EIO;
+			}
 		}
 
 		if (is_cancel_pending(vpninfo, &rd_set)) {
@@ -880,6 +882,7 @@ void check_cmd_fd(struct openconnect_info *vpninfo, fd_set *fds)
 		return;
 	if (vpninfo->cmd_fd_write == -1) {
 		/* legacy openconnect_set_cancel_fd() users */
+		vpn_progress(vpninfo, PRG_TRACE, _("Got cancel on legacy fd\n"));
 		vpninfo->got_cancel_cmd = 1;
 		return;
 	}
@@ -894,10 +897,12 @@ void check_cmd_fd(struct openconnect_info *vpninfo, fd_set *fds)
 	switch (cmd) {
 	case OC_CMD_CANCEL:
 	case OC_CMD_DETACH:
+		vpn_progress(vpninfo, PRG_TRACE, _("Got cancel command\n"));
 		vpninfo->got_cancel_cmd = 1;
 		vpninfo->cancel_type = cmd;
 		break;
 	case OC_CMD_PAUSE:
+		vpn_progress(vpninfo, PRG_TRACE, _("Got pause command\n"));
 		vpninfo->got_pause_cmd = 1;
 		break;
 	case OC_CMD_STATS:
@@ -931,9 +936,12 @@ void poll_cmd_fd(struct openconnect_info *vpninfo, int timeout)
 
 		FD_ZERO(&rd_set);
 		cmd_fd_set(vpninfo, &rd_set, &maxfd);
-		if (select(maxfd + 1, &rd_set, NULL, NULL, &tv) < 0 &&
-		    errno != EINTR) {
+		if (select(maxfd + 1, &rd_set, NULL, NULL, &tv) < 0) {
+			if (errno == EINTR)
+				continue;
+
 			vpn_perror(vpninfo, _("Failed select() for command socket"));
+			return;
 		}
 		if (FD_ISSET(vpninfo->cmd_fd, &rd_set)) {
 			vpninfo->need_poll_cmd_fd = 1; /* Until it's *empty */
@@ -1285,10 +1293,11 @@ int cancellable_send(struct openconnect_info *vpninfo, int fd,
 		FD_SET(fd, &wr_set);
 		cmd_fd_set(vpninfo, &rd_set, &maxfd);
 
-		if (select(maxfd + 1, &rd_set, &wr_set, NULL, NULL) < 0 &&
-		    errno != EINTR) {
-			vpn_perror(vpninfo, _("Failed select() for socket send"));
-			return -EIO;
+		while (select(maxfd + 1, &rd_set, &wr_set, NULL, NULL) < 0) {
+			if (errno != EINTR) {
+				vpn_perror(vpninfo, _("Failed select() for socket send"));
+				return -EIO;
+			}
 		}
 
 		if (is_cancel_pending(vpninfo, &rd_set))
@@ -1325,10 +1334,11 @@ int cancellable_recv(struct openconnect_info *vpninfo, int fd,
 		FD_SET(fd, &rd_set);
 		cmd_fd_set(vpninfo, &rd_set, &maxfd);
 
-		if (select(maxfd + 1, &rd_set, NULL, NULL, NULL) < 0 &&
-		    errno != EINTR) {
-			vpn_perror(vpninfo, _("Failed select() for socket recv"));
-			return -EIO;
+		if (select(maxfd + 1, &rd_set, NULL, NULL, NULL) < 0) {
+			if (errno != EINTR) {
+				vpn_perror(vpninfo, _("Failed select() for socket recv"));
+				return -EIO;
+			}
 		}
 
 		if (is_cancel_pending(vpninfo, &rd_set))

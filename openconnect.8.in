@@ -20,6 +20,7 @@ openconnect \- Multi-protocol VPN client, for Cisco AnyConnect VPNs and others
 .OP \-g,\-\-usergroup group
 .OP \-h,\-\-help
 .OP \-\-http\-auth methods
+.OP \-\-external\-browser browser
 .OP \-i,\-\-interface ifname
 .OP \-l,\-\-syslog
 .OP \-\-timestamp
@@ -85,9 +86,9 @@ It was originally written to support Cisco "AnyConnect" VPN servers,
 and has since been extended with experimental support for Juniper
 Network Connect
 .RB ( \-\-protocol=nc ),
-Junos/Ivanti Pulse VPN servers
+Pulse/Ivanti Connect Secure VPN servers
 .RB ( \-\-protocol=pulse ),
-PAN GlobalProtect VPN servers
+Palo Alto Networks GlobalProtect VPN servers
 .RB ( \-\-protocol=gp ),
 F5 Big-IP VPN servers
 .RB ( \-\-protocol=f5 ),
@@ -111,7 +112,7 @@ may be disabled with
 but is preferred when correctly supported by the server and network
 for performance reasons. (TCP performs poorly and unreliably over
 TCP-based tunnels; see
-.IR http://sites.inka.de/~W1011/devel/tcp-tcp.html .)
+.IR https://web.archive.org/web/20230228035749/https://sites.inka.de/~W1011/devel/tcp-tcp.html .)
 
 .SH OPTIONS
 .TAG opt-config
@@ -270,12 +271,34 @@ Display help text
 .TP
 .B \-\-http\-auth=METHODS
 Use only the specified methods for HTTP authentication to a server.  By default,
-only Negotiate, NTLM and Digest authentication are enabled. Basic authentication
-is also supported but because it is insecure it must be explicitly enabled. The
-argument is a comma-separated list of methods to be enabled. Note that the order
-does not matter: OpenConnect will use Negotiate, NTLM, Digest and Basic
+only
+.IR Negotiate ,
+.I NTLM
+and
+.I Digest
+authentication are enabled.
+.I Basic
+authentication is also supported but because it is insecure it must be
+explicitly enabled. The argument is a comma-separated list of methods
+to be enabled. Note that the order does not matter: OpenConnect will use
+.IR Negotiate ,
+.IR NTLM ,
+.I Digest
+and
+.I Basic
 authentication in that order, if each is enabled, regardless of the order
-specified in the METHODS string.
+specified in the
+.I METHODS
+string.
+.TAG opt-external-browser
+.TP
+.B \-\-external\-browser=BROWSER
+Set
+.I BROWSER
+as the executable used by OpenConnect to handle the authentication process with
+gateways that support the
+.B single-sign-on-external-browser
+authentication method.
 .TAG opt-interface
 .TP
 .B \-i,\-\-interface=IFNAME
@@ -340,8 +363,7 @@ Provide passphrase for certificate file, or SRK (System Root Key) PIN for TPM
 
 .B \-\-mca\-key\-password
 provides the passphrase for the secondary certificate (see
-.B \-\-mca\-certificate
-).
+.BR \-\-mca\-certificate ).
 .TAG opt-proxy
 .TP
 .B \-P,\-\-proxy=PROXYURL
@@ -634,6 +656,15 @@ mailing list.
 .TP
 .B \-\-no\-passwd
 Never attempt password (or SecurID) authentication.
+.TAG opt-no-external-auth
+.TP
+.B \-\-no\-external\-auth
+Prevent OpenConnect from advertising to the server that it supports
+any kind of authentication mode that requires an external browser.
+
+Some servers will force the client to use such an authentication mode
+if the client advertises it, but fallback to a more "scriptable"
+authentication mode if the client doesn't appear to support it.
 .TAG opt-no-xmlpost
 .TP
 .B \-\-no\-xmlpost
@@ -675,11 +706,11 @@ to be used for the connection. Supported protocols are
 for Cisco AnyConnect (the default),
 .I nc
 for experimental support for Juniper Network Connect (also supported
-by most Junos/Ivanti Pulse servers),
+by most Ivanti/Pulse Connect Secure servers),
 .I pulse
-for experimental support for Junos/Ivanti Pulse,
+for experimental support for Ivanti/Pulse Connect Secure,
 .I gp
-for experimental support for PAN GlobalProtect,
+for experimental support for Palo Alto Networks GlobalProtect,
 .I f5
 for experimental support for F5 Big-IP,
 .I fortinet
@@ -708,12 +739,13 @@ algorithm.
 .B \-\-token\-mode=rsa
 will call libstoken to generate an RSA SecurID tokencode,
 .B \-\-token\-mode=totp
-will call liboath to generate an RFC 6238 time-based password, and
+will generate an RFC 6238 time-based password, and
 .B \-\-token\-mode=hotp
-will call liboath to generate an RFC 4226 HMAC-based password. Yubikey
+will generate an RFC 4226 HMAC-based password. Yubikey
 tokens which generate OATH codes in hardware are supported with
-.B \-\-token\-mode=yubioath. \-\-token\-mode=oidc will use the provided
-OpenIDConnect token as an RFC 6750 bearer token.
+.BR \-\-token\-mode=yubioath .
+.B \-\-token\-mode=oidc
+will use the provided OpenIDConnect token as an RFC 6750 bearer token.
 .TAG opt-token-secret
 .TP
 .B \-\-token\-secret={ SECRET[,COUNTER] | @FILENAME }

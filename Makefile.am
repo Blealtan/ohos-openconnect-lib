@@ -128,10 +128,10 @@ endif
 
 libopenconnect_la_SOURCES = version.c $(library_srcs)
 libopenconnect_la_CFLAGS = $(AM_CFLAGS) $(SSL_CFLAGS) $(DTLS_SSL_CFLAGS) \
-	$(LIBXML2_CFLAGS) $(LIBPROXY_CFLAGS) $(ZLIB_CFLAGS) $(P11KIT_CFLAGS) \
-	$(TSS_CFLAGS) $(LIBSTOKEN_CFLAGS) $(LIBPSKC_CFLAGS) $(GSSAPI_CFLAGS) \
-	$(INTL_CFLAGS) $(ICONV_CFLAGS) $(LIBPCSCLITE_CFLAGS) $(LIBP11_CFLAGS) \
-	$(LIBLZ4_CFLAGS) $(JSON_CFLAGS)
+	$(LIBXML2_CFLAGS) $(JSON_CFLAGS) $(LIBPROXY_CFLAGS) $(ZLIB_CFLAGS) \
+	$(P11KIT_CFLAGS) $(TSS_CFLAGS) $(LIBSTOKEN_CFLAGS) $(LIBPSKC_CFLAGS) \
+	$(GSSAPI_CFLAGS) $(INTL_CFLAGS) $(ICONV_CFLAGS) $(LIBPCSCLITE_CFLAGS) \
+	$(LIBP11_CFLAGS) $(LIBLZ4_CFLAGS)
 libopenconnect_la_LIBADD = $(SSL_LIBS) $(DTLS_SSL_LIBS) \
 	$(LIBXML2_LIBS) $(LIBPROXY_LIBS) $(ZLIB_LIBS) $(P11KIT_LIBS) \
 	$(TSS_LIBS) $(LIBSTOKEN_LIBS) $(LIBPSKC_LIBS) $(GSSAPI_LIBS) \
@@ -173,10 +173,15 @@ list_system_keys_CFLAGS = $(GNUTLS_CFLAGS)
 list_system_keys_LDADD = $(GNUTLS_LIBS)
 endif
 
+if !OPENCONNECT_WIN32
+noinst_PROGRAMS += os-tcp-mtu
+os_tcp_mtu_SOURCES = os-tcp-mtu.c
+endif
+
 pkgconfig_DATA = openconnect.pc
 
 EXTRA_DIST = AUTHORS version.sh COPYING.LGPL openconnect.ico $(POTFILES) openconnect.nsi.in
-EXTRA_DIST += json/AUTHORS json/LICENSE json/json.c json/json.h
+EXTRA_DIST += json/AUTHORS json/LICENSE json/json.c json/json.h libopenconnect5.symbols gensymbols.sed
 EXTRA_DIST += $(shell cd "$(top_srcdir)" && \
 		git ls-tree HEAD -r --name-only -- android/ java/ trojans/ bash/ 2>/dev/null)
 
@@ -248,8 +253,10 @@ tag: uncommitted-check
 		sed -f - -i $(srcdir)/www/changelog.xml
 	@echo '/API version [0-9]\+\.[0-9]\+:$$/s/:/ (v$(VERSION); $(shell date +%Y-%m-%d)):/' | \
 		sed -f - -i $(srcdir)/openconnect.h
+	@sed -Enf $(srcdir)/gensymbols.sed $(srcdir)/openconnect.h | \
+	  sed -Enf- $(srcdir)/libopenconnect.map.in > $(srcdir)/libopenconnect5.symbols
 # stupid syntax highlighting '
-	@cd $(srcdir) && git commit -s -m "Tag version $(VERSION)" configure.ac version.sh www/download.xml www/changelog.xml openconnect.h
+	@cd $(srcdir) && git commit -s -m "Tag version $(VERSION)" configure.ac version.sh www/download.xml www/changelog.xml openconnect.h libopenconnect5.symbols
 	@git tag v$(VERSION)
 	@cd $(srcdir) && ./autogen.sh
 
@@ -417,7 +424,7 @@ WINTUNDRIVER = wintun-0.14.1.zip
 WINTUNSHA256 = 07c256185d6ee3652e09fa55c0b673e2624b565e02c4b9091c79ca7d2f24ef51
 
 $(WINTUNDRIVER):
-	curl https://www.wintun.net/builds/$(WINTUNDRIVER) -o $@
+	( test -f "/opt/$(WINTUNDRIVER)" && cp "/opt/$(WINTUNDRIVER)" ./ ) || curl https://www.wintun.net/builds/$(WINTUNDRIVER) -o $@
 
 .libs/wintun.dll: $(WINTUNDRIVER)
 	echo $(WINTUNSHA256) $< | sha256sum -c
@@ -454,9 +461,9 @@ uninstfiles.nsh: file-list.txt file-list-vpnc-script-win.js.txt file-list-extra.
 openconnect.nsi: version.c
 	$(AM_V_GEN) VERSION=$$(cut -f2 -d\" version.c); \
 	PROD_VERSION=$$(echo "$$VERSION" | perl -ne 'm|v(\d+)\.(\d+)(?:\.git\.\|\-)?(\d+)?(?:-g.+\|.*)|; printf("%1d.%1d.%1d.0",$$1,$$2,$$3)'); \
-	if egrep -q '^#define OPENCONNECT_GNUTLS' config.h; then \
+	if grep -E -q '^#define OPENCONNECT_GNUTLS' config.h; then \
 	    TLS_LIBRARY=GnuTLS; \
-	elif egrep -q '^#define OPENCONNECT_OPENSSL' config.h; then \
+	elif grep -E -q '^#define OPENCONNECT_OPENSSL' config.h; then \
 	    TLS_LIBRARY=OpenSSL; \
 	else \
 	    TLS_LIBRARY="Unknown_TLS_library"; \
@@ -475,6 +482,6 @@ am__v_MAKENSIS_1 =
 
 openconnect-installer-$(INSTALLER_SUFFIX).exe: openconnect.nsi instfiles.nsh uninstfiles.nsh $(srcdir)/openconnect.nsi.in html-recursive
 	$(AM_V_MAKENSIS) $(MAKENSIS) $<
-	ln -f "$$(egrep '^OutFile' openconnect.nsi | cut -f2 -d\")" $@
+	ln -f "$$(grep -E '^OutFile' openconnect.nsi | cut -f2 -d\")" $@
 
 endif

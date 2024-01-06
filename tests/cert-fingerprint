@@ -49,18 +49,18 @@ expect_cert_success() {
     echo "ok (accepted)"
 }
 
-expect_cert_success d66b507ae074d03b02eafca40d35f87dd81049d3
-expect_cert_success D66B507AE074D03B02EAFCA40D35F87DD81049D3
-expect_cert_fail    d66b507ae074d03b02eafca40d35f87dd81049d34
-expect_cert_fail    D66B507AE074D03B02EAFCA40D35F87DD81049D34
-expect_cert_fail    d66b507ae074d03b02eafca41d35f87dd81049d3
-expect_cert_fail    D66B507AE074D03B02EAFCA41D35F87DD81049D3
-expect_cert_success d66b507ae074d03b0
-expect_cert_success D66B507AE074D03B0
-expect_cert_fail    d66
-expect_cert_fail    D66
-expect_cert_success d66B
-expect_cert_success D66b
+expect_cert_success e597837de5390ba6eaa0f9d656f035c8be6ec02b
+expect_cert_success E597837DE5390BA6EAA0F9D656F035C8BE6EC02B
+expect_cert_fail    e597837de5390ba6eaa0f9d656f035c8be6ec02b4
+expect_cert_fail    E597837DE5390BA6EAA0F9D656F035C8BE6EC02B4
+expect_cert_fail    e597837de5390ba6eaa1f9d656f035c8be6ec02b
+expect_cert_fail    E597837DE5390BA6EAA1F9D656F035C8BE6EC02B
+expect_cert_success e597837de5390ba6e
+expect_cert_success E597837DE5390BA6E
+expect_cert_fail    e59
+expect_cert_fail    E59
+expect_cert_success e597
+expect_cert_success E597
 
 expect_cert_success sha1:a82547f68f44d6351bef6cacd1d7b96e84f9dfa3
 expect_cert_success sha1:A82547F68F44D6351BEF6CACD1D7B96E84F9DFA3

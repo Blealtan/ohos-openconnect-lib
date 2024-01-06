@@ -15,6 +15,48 @@
 <ul>
    <li><b>OpenConnect HEAD</b>
      <ul>
+       <li>Fix ASN.1 encoding of TPMv2 ECDSA signatures with GnuTLS &amp;lt; 3.6.0</li>
+       <li>Handle Pulse configuration packets that cannot fit in a single TLS frame (<a href="https://gitlab.com/openconnect/openconnect/-/issues/617">#617</a>, <a href="https://gitlab.com/openconnect/openconnect/-/merge_requests/480">!480</a>).</li>
+       <li>Send operating system information to Pulse servers (<a href="https://gitlab.com/openconnect/openconnect/-/merge_requests/481">!481</a>).</li>
+       <li>Change default user-agent string to be compatible with newer Cisco servers (
+         <a href="https://gitlab.com/openconnect/openconnect/-/issues/544">#544</a>,
+         <a href="https://gitlab.com/openconnect/openconnect/-/issues/593">#593</a>,
+         <a href="https://gitlab.com/openconnect/openconnect/-/issues/602">#602</a>,
+         <a href="https://gitlab.com/openconnect/openconnect/-/issues/618">#618</a>,
+         <a href="https://gitlab.com/openconnect/openconnect/-/issues/635">#635</a>,
+         <a href="https://gitlab.com/openconnect/openconnect/-/issues/657">#657</a>,
+         <a href="https://gitlab.com/openconnect/openconnect/-/issues/662">#662</a>,
+         <a href="https://gitlab.com/openconnect/openconnect/-/issues/665">#665</a>,
+         <a href="https://gitlab.com/openconnect/openconnect/-/merge_requests/497">!497</a>).</li>
+     </ul><br/>
+  </li>
+  <li><b><a href="https://www.infradead.org/openconnect/download/openconnect-9.12.tar.gz">OpenConnect v9.12</a></b>
+     <i>(<a href="https://www.infradead.org/openconnect/download/openconnect-9.12.tar.gz.asc">PGP signature</a>)</i> &#8212; 2023-05-20
+     <ul>
+       <li>Fix FreeBSD build and tests.</li>
+       <li>Add <tt>libopenconnect5.symbols</tt> file for Debian-style packaging (<i><a href="https://gitlab.com/openconnect/openconnect/-/issues/611#note_1395003963">discussion</a></i>).</li>
+       <li>Explicitly reject overly long tun device names.</li>
+       <li>Work around ambiguity between <tt>&amp;lt;json.h&amp;gt;</tt> from json-parser vs json-c (<a href="https://gitlab.com/openconnect/openconnect/-/merge_requests/476">!476</a>).</li>
+       <li>Fix symbol versioning for <tt>openconnect_set_sni()</tt>.</li>
+       <li>Increase maximum input size from <tt>stdin</tt> (<a href="https://gitlab.com/openconnect/openconnect/-/issues/579">#579</a>).</li>
+       <li>Ignore 0.0.0.0 as NBNS address (<a href="https://gitlab.com/openconnect/openconnect/-/merge_requests/446">!446</a>, <a href="https://gitlab.com/openconnect/vpnc-scripts/-/issues/58">vpnc-scripts#58</a>).</li>
+       <li>Fix Mac OS build of <tt>os-tcp-mtu</tt> tool (<a href="https://gitlab.com/openconnect/openconnect/-/issues/612">#612</a>).</li>
+     </ul><br/>
+  </li>
+  <li><b><a href="https://www.infradead.org/openconnect/download/openconnect-9.11.tar.gz">OpenConnect v9.11</a></b>
+     <i>(<a href="https://www.infradead.org/openconnect/download/openconnect-9.11.tar.gz.asc">PGP signature</a>)</i> &#8212; 2023-05-17
+     <ul>
+       <li>Rebuild test suite certificate chains (which had expired: <a href="https://gitlab.com/openconnect/openconnect/-/issues/609">#609</a>) </li>
+       <li>Fix stray <tt>(null)</tt> in URL path after Pulse authentication (<a href="https://gitlab.com/openconnect/openconnect/-/commit/4023bd95c3dd6b273462e0782132f70a608dc721">4023bd95</a>).</li>
+       <li>Fix config XML parsing mistake that left GlobalProtect ESP non-working in v9.10 (<a href="https://gitlab.com/openconnect/openconnect/-/merge_requests/475">!475</a>).</li>
+       <li>Fix case sensitivity in GPST header matching (<a href="https://gitlab.com/openconnect/openconnect/-/merge_requests/474">!474</a>).</li>
+       <li>Add external browser support for Windows ((<a href="https://gitlab.com/openconnect/openconnect/-/issues/553">#553</a>).</li>
+     </ul><br/>
+  </li>
+  <li><b><a href="https://www.infradead.org/openconnect/download/openconnect-9.10.tar.gz">OpenConnect v9.10</a></b>
+     <i>(<a href="https://www.infradead.org/openconnect/download/openconnect-9.10.tar.gz.asc">PGP signature</a>)</i> &#8212; 2023-05-04
+     <ul>
+       <li>Fix external browser authentication with KDE plasma-nm &amp;lt; 5.26.</li>
        <li>Always redirect <tt>stdout</tt> to <tt>stderr</tt> when spawning external browser.</li>
        <li>Increase default queue length to 32 packets (<a href="https://gitlab.com/openconnect/openconnect/-/issues/582">#582</a>).</li>
        <li>Make the <a href="https://www.wintun.net/">Wintun</a> Layer 3 TUN driver the default on Windows (<a href="https://gitlab.com/openconnect/openconnect/-/merge_requests/427">!427</a>).</li>
@@ -36,6 +78,8 @@
        <li>Support simultaneous IPv6 and Legacy IP ("dual-stack") for Fortinet (<a href="https://gitlab.com/openconnect/openconnect/-/issues/568">#568</a>, <a href="https://gitlab.com/openconnect/openconnect/-/merge_requests/456">!456</a>).</li>
        <li>Support "FTM-push" token mode for Fortinet VPNs (<a href="https://gitlab.com/openconnect/openconnect/-/issues/555">#555</a>, <a href="https://gitlab.com/openconnect/openconnect/-/merge_requests/450">!450</a>).</li>
        <li>Send IPv6-compatible version string in Pulse IF/T session establishment, and avoid its ESP/IP version layering idiocy on newer servers (<a href="https://gitlab.com/openconnect/openconnect/-/issues/506">#506</a>, <a href="https://gitlab.com/openconnect/openconnect/-/merge_requests/414">!414</a>)</li>
+       <li>Add <tt>--no-external-auth</tt> option to not advertise external-browser authentication, as a workaround for servers which behave differently when it is advertised (<a href="https://gitlab.com/openconnect/openconnect/-/issues/470">#470</a>, <a href="https://gitlab.com/openconnect/openconnect/-/merge_requests/398">!398</a>)</li>
+       <li>Emulate MacOS-specific contents in the HIP report for GlobalProtect (<a href="https://gitlab.com/openconnect/openconnect/-/merge_requests/471">!471</a>).</li>
        <li>Many small improvements in server response parsing, and better logging messages and documentation.</li>
      </ul><br/>
   </li>
@@ -227,7 +271,7 @@
        <li>Relax requirements for Juniper hostname packet response to support old gateways.</li>
        <li>Add API functions to query the supported protocols.</li>
        <li>Verify ESP sequence numbers and warn even if replay protection is disabled.</li>
-       <li>Add support for PAN GlobalProtect VPN protocol (<tt>--protocol=gp</tt>).</li>
+       <li>Add support for Palo Alto Networks (PAN) GlobalProtect VPN protocol (<tt>--protocol=gp</tt>).</li>
        <li>Reorganize listing of command-line options, and include information on supported protocols.</li>
        <li>SIGTERM cleans up the session similarly to SIGINT.</li>
      </ul><br/>

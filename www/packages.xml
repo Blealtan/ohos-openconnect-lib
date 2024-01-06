@@ -64,12 +64,12 @@
   </li>
   <li><h2>FreeBSD</h2>
     <p>
-      An <tt>openconnect</tt> <a href="https://www.freebsd.org/cgi/cvsweb.cgi/ports/security/openconnect/">port</a> is available for FreeBSD.
+      An <tt>openconnect</tt> <a href="https://cgit.freebsd.org/ports/tree/security/openconnect/Makefile">port</a> is available for FreeBSD.
     </p>
   </li>
   <li><h2>OpenBSD</h2>
     <p>
-      The OpenBSD ports collection contains an <a href="https://openports.se/net/openconnect">OpenConnect</a> package.
+      The OpenBSD ports collection contains an <a href="https://openports.pl/path/net/openconnect">OpenConnect</a> package.
     </p>
   </li>
   <li><h2>Mac OS X</h2>
@@ -84,16 +84,18 @@
       for OpenConnect are automatically built with each
       commit pushed to GitLab CI. Download the most recent build from
       the <tt>master</tt>
-      branch <a href="https://gitlab.com/openconnect/openconnect/-/jobs/artifacts/master/raw/openconnect-installer.exe?job=MinGW32/GnuTLS">for 32-bit Windows</a>
-      or <a href="https://gitlab.com/openconnect/openconnect/-/jobs/artifacts/master/raw/openconnect-installer.exe?job=MinGW64/GnuTLS">for 64-bit Windows</a>.
+      branch <a href="https://gitlab.com/openconnect/openconnect/-/jobs/artifacts/master/raw/openconnect-installer-MinGW32-GnuTLS.exe?job=MinGW32/GnuTLS">for 32-bit Windows</a>
+      or <a href="https://gitlab.com/openconnect/openconnect/-/jobs/artifacts/master/raw/openconnect-installer-MinGW64-GnuTLS.exe?job=MinGW64/GnuTLS">for 64-bit Windows</a>.
       Note that this is the OpenConnect <b>command-line application</b>;
       see <a href="gui.html">GUI Tools</a> for other possibilities.
     </p>
     <p>
       The Fedora
       <a href="https://copr.fedorainfracloud.org/coprs/dwmw2/openconnect/">dwmw2/openconnect</a>
-      COPR mentioned above contains <tt>mingw-openconnect</tt> packages built for 32-bit and
-      64-bit Windows.
+      COPR mentioned above contains
+      <tt><a href="https://copr.fedorainfracloud.org/coprs/dwmw2/openconnect/package/mingw-openconnect/">mingw-openconnect</a></tt>
+      packages built for 32-bit and 64-bit Windows. These are in the form of Fedora RPM packages, which can be extracted via
+      <tt>rpm2cpio</tt> to obtain the installer executable.
     </p>
   </li>
 </ul>

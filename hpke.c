@@ -52,6 +52,53 @@ static const char response_200[] =
 	"Content-Type: text/html\r\n\r\n"
 	"<html><title>Success</title><body>Success</body></html>\r\n";
 
+#ifdef HAVE_POSIX_SPAWN
+static int spawn_browser(struct openconnect_info *vpninfo)
+{
+	vpn_progress(vpninfo, PRG_TRACE, _("Spawning external browser '%s'\n"),
+		     vpninfo->external_browser);
+
+	int ret = 0;
+	pid_t pid = 0;
+	char *browser_argv[3] = { (char *)vpninfo->external_browser, vpninfo->sso_login, NULL };
+	posix_spawn_file_actions_t file_actions, *factp = NULL;
+
+	if (!posix_spawn_file_actions_init(&file_actions)) {
+		factp = &file_actions;
+		posix_spawn_file_actions_adddup2(&file_actions, STDERR_FILENO, STDOUT_FILENO);
+	}
+
+	if (posix_spawn(&pid, vpninfo->external_browser, factp, NULL, browser_argv, environ)) {
+		ret = -errno;
+		vpn_perror(vpninfo, _("Spawn browser"));
+	}
+	if (factp)
+		posix_spawn_file_actions_destroy(factp);
+
+	return ret;
+}
+#elif defined(_WIN32)
+static int spawn_browser(struct openconnect_info *vpninfo)
+{
+	HINSTANCE rv;
+	char *errstr;
+
+	vpn_progress(vpninfo, PRG_TRACE, _("Spawning external browser '%s'\n"),
+		     vpninfo->external_browser);
+
+	rv = ShellExecute(NULL, vpninfo->external_browser, vpninfo->sso_login,
+			  NULL, NULL, SW_SHOWNORMAL);
+
+	if ((intptr_t)rv > 32)
+		return 0;
+
+	errstr = openconnect__win32_strerror(GetLastError());
+	vpn_progress(vpninfo, PRG_ERR, "Failed to spawn browser: %s\n",
+		     errstr);
+	free(errstr);
+	return -EIO;
+}
+#endif
 
 /*
  * If we use an external browser where we can't just snoop for cookies
@@ -69,7 +116,12 @@ int handle_external_browser(struct openconnect_info *vpninfo)
 	sin6.sin6_port = htons(29786);
 	sin6.sin6_addr = in6addr_loopback;
 
-	int listen_fd = socket(AF_INET6, SOCK_STREAM, IPPROTO_TCP);
+	int listen_fd;
+#ifdef SOCK_CLOEXEC
+	listen_fd = socket(AF_INET6, SOCK_STREAM | SOCK_CLOEXEC, IPPROTO_TCP);
+	if (listen_fd < 0)
+#endif
+	listen_fd = socket(AF_INET6, SOCK_STREAM, IPPROTO_TCP);
 	if (listen_fd < 0) {
 		char *errstr;
 	sockerr:
@@ -105,31 +157,12 @@ int handle_external_browser(struct openconnect_info *vpninfo)
 	/* Now that we are listening on the socket, we can spawn the browser */
 	if (vpninfo->open_ext_browser) {
 		ret = vpninfo->open_ext_browser(vpninfo, vpninfo->sso_login, vpninfo->cbdata);
-#if defined(HAVE_POSIX_SPAWN) && defined(DEFAULT_EXTERNAL_BROWSER)
-	} else {
-		vpn_progress(vpninfo, PRG_TRACE, _("Spawning external browser '%s'\n"),
-			     DEFAULT_EXTERNAL_BROWSER);
-
-		pid_t pid = 0;
-		char *browser_argv[3] = { (char *)DEFAULT_EXTERNAL_BROWSER, vpninfo->sso_login, NULL };
-		posix_spawn_file_actions_t file_actions, *factp = NULL;
-
-		if (!posix_spawn_file_actions_init(&file_actions)) {
-			factp = &file_actions;
-			posix_spawn_file_actions_adddup2(&file_actions, STDERR_FILENO, STDOUT_FILENO);
-		}
-
-		if (posix_spawn(&pid, DEFAULT_EXTERNAL_BROWSER, factp, NULL, browser_argv, environ)) {
-			ret = -errno;
-			vpn_perror(vpninfo, _("Spawn browser"));
-		}
-		if (factp)
-			posix_spawn_file_actions_destroy(factp);
-
-#else
+#if defined(HAVE_POSIX_SPAWN) || defined(_WIN32)
+	} else if (vpninfo->external_browser) {
+		ret = spawn_browser(vpninfo);
+#endif
 	} else {
 		ret = -EINVAL;
-#endif
 	}
 	if (ret)
 		vpn_progress(vpninfo, PRG_ERR,

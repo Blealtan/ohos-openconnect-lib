@@ -28,7 +28,7 @@
 Name:		openconnect
 Version:	8.20+git20220220
 Release:	0
-Summary:	Open client for SSL VPNs
+Summary:	Open multi-protocol SSL VPN client
 
 License:	LGPL-2.1
 URL:		https://www.infradead.org/openconnect.html
@@ -44,8 +44,9 @@ BuildRequires:	pkgconfig(uid_wrapper) pkgconfig(socket_wrapper)
 %if 0%{?fedora}
 BuildRequires:  pkgconfig(json-parser)
 %endif
-%if 0%{?fedora} || 0%{?suse_version} > 1500
+%if 0%{?fedora}
 # SoftHSM doesn't install on EPEL8: https://bugzilla.redhat.com/show_bug.cgi?id=1829480
+# and it is not available on SUSE
 BuildRequires:  softhsm
 %endif
 Obsoletes:	openconnect-lib-compat < %{version}-%{release}

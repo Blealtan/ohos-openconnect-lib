@@ -22,3 +22,7 @@ override_dh_installchangelogs:
 
 override_dh_compress:
 	dh_compress -Xhtml/changelog.html
+
+override_dh_makeshlibs:
+	dh_makeshlibs
+	dpkg-gensymbols -plibopenconnect5 -Pdebian/libopenconnect5 -Ilibopenconnect5.symbols

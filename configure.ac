@@ -1,4 +1,4 @@
-AC_INIT([openconnect], [9.01])
+AC_INIT([openconnect], [9.12])
 AC_LANG([C])
 AC_CONFIG_HEADERS([config.h])
 m4_ifdef([AC_CONFIG_MACRO_DIRS], [AC_CONFIG_MACRO_DIRS([m4])])
@@ -73,7 +73,7 @@ case $host_os in
     system_pcsc_cflags=
     AC_CHECK_TOOL([WINDRES], [windres], [])
     AC_CHECK_TOOL([MAKENSIS], [makensis], [])
-    default_browser=
+    default_browser=open
 
     case $host_cpu in
 	x86_64|amd64)
@@ -135,7 +135,9 @@ AC_ARG_WITH([external-browser],
 	  [command to use for spawning external web browser])])
 
 if test "$with_external_browser" = "yes" || test "$with_external_browser" = ""; then
-   if test "$default_browser" != ""; then
+   if test "$have_win" != ""; then
+      with_external_browser=${default_browser}
+   elif test "$default_browser" != ""; then
       AC_MSG_CHECKING([for ${default_browser}])
       AC_PATH_PROG(with_external_browser, ${default_browser}, no)
    else
@@ -143,7 +145,7 @@ if test "$with_external_browser" = "yes" || test "$with_external_browser" = ""; 
    fi
 fi
 if test "$with_external_browser" != "no"; then
-   if test -x "${with_external_browser}"; then
+   if test -x "${with_external_browser}" -o -n "$have_win"; then
       AC_DEFINE_UNQUOTED(DEFAULT_EXTERNAL_BROWSER, "${with_external_browser}", [External browser executable])
    else
       AC_MSG_ERROR([${with_external_browser} does not seem to be executable.])

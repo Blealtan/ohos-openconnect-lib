@@ -111,10 +111,11 @@ static int _openconnect_gnutls_write(gnutls_session_t ses, int fd, struct openco
 				FD_SET(fd, &rd_set);
 
 			cmd_fd_set(vpninfo, &rd_set, &maxfd);
-			if (select(maxfd + 1, &rd_set, &wr_set, NULL, NULL) < 0 &&
-			    errno != EINTR) {
-				vpn_perror(vpninfo, _("Failed select() for TLS"));
-				return -EIO;
+			while (select(maxfd + 1, &rd_set, &wr_set, NULL, NULL) < 0) {
+				if (errno != EINTR) {
+					vpn_perror(vpninfo, _("Failed select() for TLS"));
+					return -EIO;
+				}
 			}
 			if (is_cancel_pending(vpninfo, &rd_set)) {
 				vpn_progress(vpninfo, PRG_ERR, _("TLS/DTLS write cancelled\n"));
@@ -165,10 +166,11 @@ static int _openconnect_gnutls_read(gnutls_session_t ses, int fd, struct opencon
 				FD_SET(fd, &rd_set);
 
 			cmd_fd_set(vpninfo, &rd_set, &maxfd);
-			ret = select(maxfd + 1, &rd_set, &wr_set, NULL, tv);
-			if (ret < 0 && errno != EINTR) {
-				vpn_perror(vpninfo, _("Failed select() for TLS/DTLS"));
-				return -EIO;
+			while ((ret = select(maxfd + 1, &rd_set, &wr_set, NULL, tv)) < 0) {
+				if (errno != EINTR) {
+					vpn_perror(vpninfo, _("Failed select() for TLS/DTLS"));
+					return -EIO;
+				}
 			}
 
 			if (is_cancel_pending(vpninfo, &rd_set)) {
@@ -262,10 +264,11 @@ static int openconnect_gnutls_gets(struct openconnect_info *vpninfo, char *buf, 
 				FD_SET(vpninfo->ssl_fd, &rd_set);
 
 			cmd_fd_set(vpninfo, &rd_set, &maxfd);
-			if (select(maxfd + 1, &rd_set, &wr_set, NULL, NULL) < 0 &&
-			    errno != EINTR) {
-				vpn_perror(vpninfo, _("Failed select() for TLS"));
-				return -EIO;
+			while (select(maxfd + 1, &rd_set, &wr_set, NULL, NULL) < 0) {
+				if (errno != EINTR) {
+					vpn_perror(vpninfo, _("Failed select() for TLS"));
+					return -EIO;
+				}
 			}
 			if (is_cancel_pending(vpninfo, &rd_set)) {
 				vpn_progress(vpninfo, PRG_ERR, _("TLS/DTLS read cancelled\n"));
@@ -2507,10 +2510,11 @@ int cstp_handshake(struct openconnect_info *vpninfo, unsigned init)
 				FD_SET(ssl_sock, &rd_set);
 
 			cmd_fd_set(vpninfo, &rd_set, &maxfd);
-			if (select(maxfd + 1, &rd_set, &wr_set, NULL, NULL) < 0 &&
-			    errno != EINTR) {
-				vpn_perror(vpninfo, _("Failed select() for TLS"));
-				return -EIO;
+			while (select(maxfd + 1, &rd_set, &wr_set, NULL, NULL) < 0) {
+				if (errno != EINTR) {
+					vpn_perror(vpninfo, _("Failed select() for TLS"));
+					return -EIO;
+				}
 			}
 			if (is_cancel_pending(vpninfo, &rd_set)) {
 				vpn_progress(vpninfo, PRG_ERR, _("SSL connection cancelled\n"));

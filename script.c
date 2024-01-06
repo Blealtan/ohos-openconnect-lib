@@ -44,17 +44,22 @@ int script_setenv(struct openconnect_info *vpninfo,
 
 	for (p = vpninfo->script_env; p; p = p->next) {
 		if (!strcmp(opt, p->option)) {
-			if (append) {
-				if (asprintf(&str, "%s %s", p->value, val) == -1)
-					return -ENOMEM;
-			} else
+			if (append && p->value) {
+				if (val) {
+					if (asprintf(&str, "%s %s", p->value, val) == -1)
+						return -ENOMEM;
+					free (p->value);
+					p->value = str;
+				}
+			} else {
 				str = val ? strdup(val) : NULL;
-
-			free (p->value);
-			p->value = str;
+				free (p->value);
+				p->value = str;
+			}
 			return 0;
 		}
 	}
+
 	p = malloc(sizeof(*p));
 	if (!p)
 		return -ENOMEM;
@@ -366,13 +371,14 @@ void prepare_script_env(struct openconnect_info *vpninfo)
 	if (vpninfo->ip_info.dns[2])
 		script_setenv(vpninfo, "INTERNAL_IP4_DNS", vpninfo->ip_info.dns[2], 0, 1);
 
-	if (vpninfo->ip_info.nbns[0])
+	/* poorly configured VPNs send non-sensical 0.0.0.0 NBNS server address */
+	if (vpninfo->ip_info.nbns[0] && !strcmp(vpninfo->ip_info.nbns[0], "0.0.0.0"))
 		script_setenv(vpninfo, "INTERNAL_IP4_NBNS", vpninfo->ip_info.nbns[0], 0, 0);
 	else
 		script_setenv(vpninfo, "INTERNAL_IP4_NBNS", NULL, 0, 0);
-	if (vpninfo->ip_info.nbns[1])
+	if (vpninfo->ip_info.nbns[1] && !strcmp(vpninfo->ip_info.nbns[1], "0.0.0.0"))
 		script_setenv(vpninfo, "INTERNAL_IP4_NBNS", vpninfo->ip_info.nbns[1], 0, 1);
-	if (vpninfo->ip_info.nbns[2])
+	if (vpninfo->ip_info.nbns[2] && !strcmp(vpninfo->ip_info.nbns[2], "0.0.0.0"))
 		script_setenv(vpninfo, "INTERNAL_IP4_NBNS", vpninfo->ip_info.nbns[2], 0, 1);
 
 	if (vpninfo->ip_info.domain)

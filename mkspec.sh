@@ -8,11 +8,11 @@ GITDESC="$(git describe --tags HEAD)"
 GITTAG="$(echo $GITDESC | cut -f1 -d-)"
 GITTAG="${GITTAG#v}"
 
+ISSNAP=1
+
 if [ "v$GITTAG" = "$GITDESC" ]; then
-    ISSNAP=0
     GITCOUNT=0
 else
-    ISSNAP=1
     GITCOUNT="$(echo $GITDESC | cut -f2 -d-)"
 fi
 

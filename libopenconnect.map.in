@@ -124,9 +124,13 @@ OPENCONNECT_5_8 {
 	openconnect_set_external_browser_callback;
 	openconnect_set_mca_cert;
 	openconnect_set_mca_key_password;
-	openconnect_set_sni;
 	openconnect_set_useragent;
 } OPENCONNECT_5_7;
+
+OPENCONNECT_5_9 {
+ global:
+	openconnect_set_sni;
+} OPENCONNECT_5_8;
 
 OPENCONNECT_PRIVATE {
  global: @SYMVER_TIME@ @SYMVER_GETLINE@ @SYMVER_JAVA@ @SYMVER_ASPRINTF@ @SYMVER_VASPRINTF@ @SYMVER_WIN32_STRERROR@ @SYMVER_WIN32_SETENV@

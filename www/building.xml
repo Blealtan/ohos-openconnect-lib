@@ -98,19 +98,6 @@ it still doesn't build, please send the full output in a plain-text mail to the
 </ul>
 
 
-
-<h2>Test suite</h2>
-
-<p>The included test suite can be run as <tt>make check</tt>.</p>
-
-<p>It depends on the following programs and libraries being available:</p>
-<ul>
-  <li><a href="/ocserv">ocserv</a></li>
-  <li><a href="https://cwrap.org/socket_wrapper.html">socket_wrapper</a></li>
-  <li><a href="https://cwrap.org/uid_wrapper.html">uid_wrapper</a></li>
-</ul>
-
-
 <h2>TUN/TAP driver</h2>
 
 <h3>Mac OS</h3>

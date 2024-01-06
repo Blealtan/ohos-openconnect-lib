@@ -371,6 +371,7 @@ int load_tpm2_key(struct openconnect_info *vpninfo, struct cert_info *certinfo,
 static void append_bignum(struct oc_text_buf *sig_der, const gnutls_datum_t *d)
 {
 	unsigned char derlen[2];
+	int skip = 0;
 
 	buf_append_bytes(sig_der, "\x02", 1); // INTEGER
 	derlen[0] = d->size;
@@ -380,45 +381,65 @@ static void append_bignum(struct oc_text_buf *sig_der, const gnutls_datum_t *d)
 		derlen[1] = 0;
 		buf_append_bytes(sig_der, derlen, 2);
 	} else {
-		buf_append_bytes(sig_der, derlen, 1);
+		/* Skip naturally-occurring leading zeroes unless needed */
+		while (skip < d->size - 1 && d->data[skip] == 0x00 &&
+		       d->data[skip+1] < 0x80)
+			skip++;
+
+		buf_append_bytes(sig_der, derlen - skip, 1);
 	}
-	buf_append_bytes(sig_der, d->data, d->size);
+	buf_append_bytes(sig_der, d->data + skip, d->size - skip);
 }
 
 int oc_gnutls_encode_rs_value(gnutls_datum_t *sig, const gnutls_datum_t *sig_r,
 			      const gnutls_datum_t *sig_s)
 {
+	struct oc_text_buf *rs_der = NULL;
 	struct oc_text_buf *sig_der = NULL;
 	/*
 	 * Create the DER-encoded SEQUENCE containing R and S:
 	 *
-	 *	DSASignatureValue ::= SEQUENCE {
+	 *	Ecdsa-Sig-Value ::= SEQUENCE {
 	 *	  r                   INTEGER,
 	 *	  s                   INTEGER
 	 *	}
+	 *
+	 * This is defined in RFC3279 §2.2.3 as well as SEC.1.
+	 * I can't find anything which mandates DER but I've seen
+	 * OpenSSL refusing to verify it with indeterminate length.
+	 * So use two buffers, build the two INTEGERs first and
+	 * then give a definite length.
 	 */
 
+	rs_der = buf_alloc();
+	append_bignum(rs_der, sig_r);
+	append_bignum(rs_der, sig_s);
+
+	if (buf_error(rs_der))
+		return buf_free(rs_der);
+
 	sig_der = buf_alloc();
-	buf_append_bytes(sig_der, "\x30\x80", 2); // SEQUENCE, indeterminate length
-
-	append_bignum(sig_der, sig_r);
-	append_bignum(sig_der, sig_s);
-
-	/* If the length actually fits in one byte (which it should), do
-	 * it that way.  Else, leave it indeterminate and add two
-	 * end-of-contents octets to mark the end of the SEQUENCE. */
-	if (!buf_error(sig_der) && sig_der->pos <= 0x80)
-		sig_der->data[1] = sig_der->pos - 2;
-	else {
-		buf_append_bytes(sig_der, "\0\0", 2);
-		if (buf_error(sig_der))
-			goto out;
+	buf_append_bytes(sig_der, "\x30", 1); // SEQUENCE
+	if (rs_der->pos < 0x100) {
+		unsigned char l = rs_der->pos;
+		if (rs_der->pos >= 0x80)
+			buf_append_bytes(sig_der, "\x81", 1);
+		buf_append_bytes(sig_der, &l, 1);
+	} else {
+		buf_append_bytes(sig_der, "\x82", 1);
+		buf_append_be16(sig_der, rs_der->pos);
 	}
 
-	sig->data = (void *)sig_der->data;
-	sig->size = sig_der->pos;
-	sig_der->data = NULL;
- out:
+	buf_append_bytes(sig_der, rs_der->data, rs_der->pos);
+	buf_free(rs_der);
+
+
+	if (!buf_error(sig_der)) {
+		sig->data = (void *)sig_der->data;
+		sig->size = sig_der->pos;
+		sig_der->data = NULL;
+	}
+
 	return buf_free(sig_der);
 }
 #endif /* GnuTLS < 3.6.0 */

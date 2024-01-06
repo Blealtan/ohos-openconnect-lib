@@ -31,6 +31,9 @@
 #include <openssl/bio.h>
 #include <openssl/ui.h>
 #include <openssl/rsa.h>
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L
+#include <openssl/provider.h>
+#endif
 
 #include <sys/types.h>
 
@@ -68,6 +71,11 @@ const char *openconnect_get_tls_library_version(void)
 
 int can_enable_insecure_crypto(void)
 {
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L
+	if (OSSL_PROVIDER_load(NULL, "legacy") == NULL ||
+	    OSSL_PROVIDER_load(NULL, "default") == NULL)
+		return -ENOENT;
+#endif
 	if (EVP_des_ede3_cbc() == NULL ||
 	    EVP_rc4() == NULL)
 		return -ENOENT;
@@ -174,7 +182,13 @@ static int _openconnect_openssl_write(SSL *ssl, int fd, struct openconnect_info 
 				return -EIO;
 			}
 			cmd_fd_set(vpninfo, &rd_set, &maxfd);
-			select(maxfd + 1, &rd_set, &wr_set, NULL, NULL);
+			while (select(maxfd + 1, &rd_set, &wr_set, NULL, NULL) < 0) {
+				if (errno != EINTR) {
+					vpn_perror(vpninfo, _("Failed select() for TLS/DTLS"));
+					return -EIO;
+				}
+			}
+
 			if (is_cancel_pending(vpninfo, &rd_set)) {
 				vpn_progress(vpninfo, PRG_ERR, _("TLS/DTLS write cancelled\n"));
 				return -EINTR;
@@ -224,7 +238,12 @@ static int _openconnect_openssl_read(SSL *ssl, int fd, struct openconnect_info *
 			return -EIO;
 		}
 		cmd_fd_set(vpninfo, &rd_set, &maxfd);
-		ret = select(maxfd + 1, &rd_set, &wr_set, NULL, tv);
+		while ((ret = select(maxfd + 1, &rd_set, &wr_set, NULL, tv)) < 0) {
+			if (errno != EINTR) {
+				vpn_perror(vpninfo, _("Failed select() for TLS/DTLS"));
+				return -EIO;
+			}
+		}
 		if (is_cancel_pending(vpninfo, &rd_set)) {
 			vpn_progress(vpninfo, PRG_ERR, _("TLS/DTLS read cancelled\n"));
 			return -EINTR;
@@ -291,7 +310,12 @@ static int openconnect_openssl_gets(struct openconnect_info *vpninfo, char *buf,
 				break;
 			}
 			cmd_fd_set(vpninfo, &rd_set, &maxfd);
-			select(maxfd + 1, &rd_set, &wr_set, NULL, NULL);
+			while (select(maxfd + 1, &rd_set, &wr_set, NULL, NULL) < 0) {
+				if (errno != EINTR) {
+					vpn_perror(vpninfo, _("Failed select() for TLS/DTLS"));
+					return -EIO;
+				}
+			}
 			if (is_cancel_pending(vpninfo, &rd_set)) {
 				vpn_progress(vpninfo, PRG_ERR, _("TLS/DTLS read cancelled\n"));
 				ret = -EINTR;
@@ -2498,7 +2522,7 @@ void append_strap_verify(struct openconnect_info *vpninfo,
 
 	if (flen > sizeof(finished)) {
 		vpn_progress(vpninfo, PRG_ERR,
-			     _("SSL Finished message too large (%zd bytes)\n"), flen);
+			     _("SSL Finished message too large (%zu bytes)\n"), flen);
 		if (!buf_error(buf))
 			buf->error = -EIO;
 		return;

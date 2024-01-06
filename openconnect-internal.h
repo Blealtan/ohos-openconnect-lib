@@ -85,6 +85,7 @@
 #define N_(s) s
 
 #include <libxml/tree.h>
+#include <libxml/parser.h>
 #include <zlib.h>
 
 #ifdef _WIN32
@@ -94,7 +95,10 @@
 #ifndef _Ret_bytecount_
 #define _Ret_bytecount_(sz)
 #endif
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunknown-pragmas"
 #include "wintun.h"
+#pragma GCC diagnostic pop
 
 #include <ws2tcpip.h>
 #ifndef SECURITY_WIN32
@@ -122,8 +126,11 @@
 #if defined(__APPLE__)
 #include <crt_externs.h>
 #define environ (*_NSGetEnviron())
-#elif defined(__sun__)
-// Is there nothing we can #include for this? And no consts?
+#else
+/*
+ * POSIX.1-2017 says that environ must be declared by the user if it is to be used directly:
+ * https://pubs.opengroup.org/onlinepubs/9699919799/functions/exec.html
+ */
 extern char **environ;
 #endif
 #include <spawn.h>
@@ -474,6 +481,8 @@ struct openconnect_info {
 	int try_http_auth;
 	struct http_auth_state http_auth[MAX_AUTH_TYPES];
 	struct http_auth_state proxy_auth[MAX_AUTH_TYPES];
+	int no_external_auth;
+	const char *external_browser;
 
 	char *localname;
 
@@ -635,6 +644,7 @@ struct openconnect_info {
 	int reconnect_timeout;
 	int reconnect_interval;
 	int dtls_attempt_period;
+	int udp_probes_sent;
 	time_t auth_expiration;
 	time_t new_dtls_started;
 #if defined(OPENCONNECT_OPENSSL)
@@ -1174,8 +1184,9 @@ int dumb_socketpair(OPENCONNECT_CMD_SOCKET socks[2], int make_overlapped);
 /* I always coded as if it worked like this. Now it does. */
 #define realloc_inplace(p, size) do {			\
 	void *__realloc_old = p;			\
-	p = realloc(p, size);				\
-	if (size && !p)					\
+	size_t sz = size;				\
+	p = realloc(p, sz);				\
+	if (sz && !p)					\
 		free(__realloc_old);			\
     } while (0)
 

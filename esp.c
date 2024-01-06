@@ -144,18 +144,7 @@ int esp_mainloop(struct openconnect_info *vpninfo, int *timeout, int readable)
 	   reserve some extra space to handle that */
 	int receive_mtu = MAX(2048, vpninfo->ip_info.mtu + 256);
 
-	if (vpninfo->dtls_state == DTLS_SLEEPING) {
-		if (ka_check_deadline(timeout, time(NULL), vpninfo->new_dtls_started + vpninfo->dtls_attempt_period)
-		    || vpninfo->dtls_need_reconnect) {
-			vpn_progress(vpninfo, PRG_DEBUG, _("Send ESP probes\n"));
-			if (vpninfo->proto->udp_send_probes)
-				vpninfo->proto->udp_send_probes(vpninfo);
-		}
-	}
-	if (vpninfo->dtls_fd == -1)
-		return 0;
-
-	while (readable) {
+	while (readable && vpninfo->dtls_fd != -1) {
 		int len = receive_mtu + vpninfo->pkt_trailer;
 		int i;
 		struct pkt *pkt;
@@ -296,6 +285,40 @@ int esp_mainloop(struct openconnect_info *vpninfo, int *timeout, int readable)
 		}
 	}
 
+	if (vpninfo->dtls_need_reconnect) {
+	need_reconnect:
+		if (vpninfo->proto->udp_close)
+			vpninfo->proto->udp_close(vpninfo);
+	}
+
+	if (vpninfo->dtls_state == DTLS_SLEEPING) {
+		time_t now = time(NULL);
+
+		/* Send 5 probes a second apart, then give up until the next attempt */
+		if (vpninfo->udp_probes_sent <= 5 &&
+		    ka_check_deadline(timeout, now, vpninfo->dtls_times.last_tx + 1)) {
+			/* Send repeat probe */
+			vpninfo->udp_probes_sent++;
+		} else if (vpninfo->dtls_need_reconnect ||
+			   ka_check_deadline(timeout, now, vpninfo->new_dtls_started +
+					     vpninfo->dtls_attempt_period)) {
+			/* New attempt */
+			vpninfo->dtls_need_reconnect = 0;
+			vpninfo->udp_probes_sent = 1;
+			vpninfo->new_dtls_started = now;
+			if (*timeout > 1000)
+				*timeout = 1000;
+		} else {
+			return work_done;
+		}
+
+		vpn_progress(vpninfo, PRG_DEBUG, _("Send ESP probes\n"));
+		if (vpninfo->proto->udp_send_probes)
+			vpninfo->proto->udp_send_probes(vpninfo);
+
+		vpninfo->dtls_times.last_tx = now;
+	}
+
 	if (vpninfo->dtls_state != DTLS_ESTABLISHED)
 		return 0;
 
@@ -306,16 +329,14 @@ int esp_mainloop(struct openconnect_info *vpninfo, int *timeout, int readable)
 
 	case KA_DPD_DEAD:
 		vpn_progress(vpninfo, PRG_ERR, _("ESP detected dead peer\n"));
-		if (vpninfo->proto->udp_close)
-			vpninfo->proto->udp_close(vpninfo);
-		if (vpninfo->proto->udp_send_probes)
-			vpninfo->proto->udp_send_probes(vpninfo);
-		return 1;
+		goto need_reconnect;
 
 	case KA_DPD:
 		vpn_progress(vpninfo, PRG_DEBUG, _("Send ESP probes for DPD\n"));
-		if (vpninfo->proto->udp_send_probes)
+		if (vpninfo->proto->udp_send_probes) {
+			vpninfo->udp_probes_sent++;
 			vpninfo->proto->udp_send_probes(vpninfo);
+		}
 		work_done = 1;
 		break;
 

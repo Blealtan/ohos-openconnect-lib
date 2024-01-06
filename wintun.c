@@ -72,7 +72,7 @@ static int init_wintun(struct openconnect_info *vpninfo)
 			return -ENOENT;
 		}
 
-#define Resolve(Name) ((*(FARPROC *)&Name = GetProcAddress(vpninfo->wintun, #Name)) == NULL)
+#define Resolve(Name) ((Name = (void *)GetProcAddress(vpninfo->wintun, #Name)) == NULL)
 		if (Resolve(WintunCreateAdapter) || Resolve(WintunOpenAdapter) ||
 		    Resolve(WintunCloseAdapter) || Resolve(WintunDeleteDriver) ||
 		    Resolve(WintunGetAdapterLUID) || Resolve(WintunGetRunningDriverVersion) ||

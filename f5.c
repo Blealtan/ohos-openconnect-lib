@@ -203,8 +203,11 @@ static struct oc_auth_form *parse_json_form(struct openconnect_info *vpninfo, js
 			continue;
 
 		struct oc_form_opt *opt = calloc(1, sizeof(*opt));
-		if (!opt)
+		if (!opt) {
+		nomem2:
+			free(opt);
 			goto nomem;
+		}
 
 		for (int j = 0; j < f->u.object.length; j++) {
 			json_value *subval = f->u.object.values[j].value;
@@ -225,7 +228,7 @@ static struct oc_auth_form *parse_json_form(struct openconnect_info *vpninfo, js
 				subval->type = json_null, subval->u.string.ptr = NULL; /* XX */
 			} else if (!strcmp(subname, "caption") && subval->type == json_string) {
 				if (asprintf(&opt->label, "%s:", subval->u.string.ptr) < 0)
-					goto nomem;
+					goto nomem2;
 			} else if (!strcmp(subname, "value") && subval->type == json_string && subval->u.string.length > 0) {
 				opt->_value = subval->u.string.ptr;
 				subval->type = json_null, subval->u.string.ptr = NULL; /* XX */
@@ -685,9 +688,9 @@ static int f5_configure(struct openconnect_info *vpninfo)
 	for (cookie = vpninfo->cookies; cookie; cookie = cookie->next) {
 		if (!strcmp(cookie->option, "F5_ST")) {
 			int junk;
-			time_t start, dur;
+			unsigned long long start, dur;
 			char c = 0;
-			if (sscanf(cookie->value, "%dz%dz%dz%ldz%ld%c", &junk, &junk, &junk, &start, &dur, &c) >= 5
+			if (sscanf(cookie->value, "%dz%dz%dz%lldz%lld%c", &junk, &junk, &junk, &start, &dur, &c) >= 5
 			    && (c == 0 || c == 'z'))
 				vpninfo->auth_expiration = start + dur;
 			break;

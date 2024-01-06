@@ -27,7 +27,7 @@ if ! grep -q "Project-Id-Version: openconnect " "${POTFILE}"; then
 fi
 
 COMMIT="$(git rev-parse HEAD)"
-if ! echo ${COMMIT} | egrep -q "[a-f0-9]{40}"; then
+if ! echo ${COMMIT} | grep -E -q "[a-f0-9]{40}"; then
     echo "Error: Failed to fetch commit ID from git"
     exit 1
 fi

@@ -79,6 +79,9 @@ if_path2name = {'global-protect': 'portal', 'ssl-vpn': 'gateway'}
 #   portal_cookie: if set (to 'portal-userauthcookie' or 'portal-prelogonuserauthcookie'), then
 #                  the portal getconfig response will include the named "cookie" field which should
 #                  be used to automatically continue login on the gateway
+#   saml_comments_only: if set, then the SAML completion information will be sent *only* in XML
+#                       wrapped inside an XML comment (github.com/dlenski/gp-saml-gui/issues/51)
+
 @dataclass
 class TestConfiguration:
     gateways: list = ('Default gateway',)
@@ -87,6 +90,7 @@ class TestConfiguration:
     portal_cookie: str = None
     portal_saml: str = None
     gateway_saml: str = None
+    saml_comments_only: int = None
 C = TestConfiguration()
 OUTSTANDING_SAML_TOKENS = set()
 
@@ -95,13 +99,14 @@ OUTSTANDING_SAML_TOKENS = set()
 def configure():
     global C
     if request.method == 'POST':
-        gateways, portal_2fa, gw_2fa, portal_cookie, portal_saml, gateway_saml = request.form.get('gateways'), request.form.get('portal_2fa'), request.form.get('gw_2fa'), request.form.get('portal_cookie'), request.form.get('portal_saml'), request.form.get('gateway_saml')
+        gateways, portal_2fa, gw_2fa, portal_cookie, portal_saml, gateway_saml, saml_comments_only = request.form.get('gateways'), request.form.get('portal_2fa'), request.form.get('gw_2fa'), request.form.get('portal_cookie'), request.form.get('portal_saml'), request.form.get('gateway_saml'), request.form.get('saml_comments_only')
         C.gateways = gateways.split(',') if gateways else ('Default gateway',)
         C.portal_cookie = portal_cookie
         C.portal_2fa = portal_2fa and portal_2fa.strip().lower()
         C.gw_2fa = gw_2fa and gw_2fa.strip().lower()
         C.portal_saml = portal_saml
         C.gateway_saml = gateway_saml
+        C.saml_comments_only = int(saml_comments_only) if saml_comments_only else None
         return '', 201
     else:
         return 'Current configuration of fake GP server configuration:\n{}\n'.format(C)
@@ -181,7 +186,10 @@ def saml_complete():
     }
 
     body = '<html><body>Login Successful!</body><!-- {} --></html>'.format(''.join('<{0}>{1}</{0}>'.format(*kv) for kv in saml_headers.items()))
-    return body, saml_headers
+    if C.saml_comments_only:
+        return body
+    else:
+        return body, saml_headers
 
 
 def challenge_2fa(where, variant):

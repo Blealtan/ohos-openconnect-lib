@@ -63,10 +63,10 @@ CONFIGURE_ARGS := --host=$(TRIPLET) --prefix=$(OC_SYSROOT) \
 
 SOURCE_LIST = $(LIBXML2_SRC)/configure $(GMP_SRC)/configure \
 	$(NETTLE_SRC)/configure $(GNUTLS_SRC)/configure \
-	$(STOKEN_SRC)/configure $(OATH_SRC)/configure \
+	$(STOKEN_SRC)/configure \
 	$(LZ4_DIR)/Makefile
 
-PKG_LIST := LIBXML2 GMP NETTLE GNUTLS STOKEN OATH LZ4
+PKG_LIST := LIBXML2 GMP NETTLE GNUTLS STOKEN LZ4
 
 MIRROR_TEST_TARGETS := $(addprefix mirror-test-,$(PKG_LIST))
 
@@ -290,44 +290,6 @@ stoken: $(STOKEN_DEPS)
 
 #####################################################################
 #
-# Build liboath
-#
-# https://download.savannah.nongnu.org/releases/oath-toolkit/
-OATH_VER := 2.6.7
-OATH_TAR := oath-toolkit-$(OATH_VER).tar.gz
-OATH_SHA := 36eddfce8f2f36347fb257dbf878ba0303a2eaafe24eaa071d5cd302261046a9
-OATH_SRC := sources/oath-toolkit-$(OATH_VER)
-OATH_BUILD := $(TRIPLET)/oath
-
-$(OATH_TAR):
-	$(FETCH) $@ $(OATH_SHA)
-
-$(OATH_SRC)/configure: $(OATH_TAR)
-	mkdir -p sources
-	tar xfz $< -C sources
-	> $(OATH_SRC)/liboath/gl/freading.c
-	touch $@
-
-$(OATH_BUILD)/Makefile: $(TOOLCHAIN_BUILT) $(OATH_SRC)/configure
-	mkdir -p $(OATH_BUILD)
-	cd $(OATH_BUILD) && ../../$(OATH_SRC)/configure $(CONFIGURE_ARGS) \
-		--disable-pskc --disable-pam \
-		gl_cv_func_fflush_stdin=yes \
-		gl_cv_func_fpurge_works=yes
-
-$(OATH_BUILD)/liboath/liboath.la: $(OATH_BUILD)/Makefile
-	$(MAKE) -C $(OATH_BUILD)/liboath
-
-$(OC_SYSROOT)/lib/liboath.la: $(OATH_BUILD)/liboath/liboath.la
-	$(MAKEINSTALL) -C $(OATH_BUILD)/liboath install
-
-OATH_DEPS := $(OC_SYSROOT)/lib/liboath.la
-
-oath: $(OATH_DEPS)
-
-
-#####################################################################
-#
 # Build liblz4
 #
 # https://github.com/lz4/lz4/tags
@@ -368,7 +330,7 @@ $(OPENCONNECT_SRC)/configure:
 	cd $(OPENCONNECT_SRC) && ./autogen.sh
 
 $(OPENCONNECT_BUILD)/Makefile: $(TOOLCHAIN_BUILT) $(GNUTLS_DEPS) $(LIBXML_DEPS) \
-		$(STOKEN_DEPS) $(OATH_DEPS) $(LZ4_DEPS) $(OPENCONNECT_SRC)/configure
+		$(STOKEN_DEPS) $(LZ4_DEPS) $(OPENCONNECT_SRC)/configure
 	mkdir -p $(OPENCONNECT_BUILD)
 	cd $(OPENCONNECT_BUILD) && ../../../configure \
 	--host=$(TRIPLET) --prefix=/ \

@@ -12,7 +12,8 @@ variables:
   BUILD_IMAGES_PROJECT: openconnect/build-images
   CENTOS7_BUILD: openconnect-cli-centos7
   CENTOS8_BUILD: openconnect-cli-centos8
-  FEDORA_BUILD: openconnect-cli-fedora35
+  CENTOS9_BUILD: openconnect-cli-centos9
+  FEDORA_BUILD: openconnect-cli-fedora38
   MINGW32_BUILD: openconnect-cli-mingw32
   MINGW64_BUILD: openconnect-cli-mingw64
   UBUNTU_BUILD: openconnect-cli-ubuntu
@@ -36,7 +37,7 @@ Signoff:
 
 static-analyzer/GnuTLS/Fedora:
   stage: static-analysis
-  image: $CI_REGISTRY/$BUILD_IMAGES_PROJECT:buildenv-fedora33
+  image: $CI_REGISTRY/$BUILD_IMAGES_PROJECT:$FEDORA_BUILD
   script:
   - ./autogen.sh
   - scan-build ./configure
@@ -55,7 +56,7 @@ static-analyzer/GnuTLS/Fedora:
 
 static-analyzer/OpenSSL/Fedora:
   stage: static-analysis
-  image: $CI_REGISTRY/$BUILD_IMAGES_PROJECT:buildenv-fedora33
+  image: $CI_REGISTRY/$BUILD_IMAGES_PROJECT:$FEDORA_BUILD
   script:
   - ./autogen.sh
   - scan-build ./configure --without-gnutls --with-openssl --without-openssl-version-check
@@ -125,11 +126,10 @@ Fedora/OpenSSL:
   - sysctl net.ipv6.conf.all.disable_ipv6=0
 # we don't want pppd to invoke any actual connection scripts
   - mv /etc/ppp /etc/ppp.DISABLED
-# auth-certificate: obsolete crypto has been removed from LEGACY crypto policies
 # auth-swtpm: XFAIL until we understand the TPM error
 # obsolete-server-crypto: obsolete crypto has been removed from LEGACY crypto policies
 # ppp-over-tls-sync: https://gitlab.com/openconnect/openconnect/-/issues/287#note_641198529)
-  - make VERBOSE=1 XFAIL_TESTS="auth-certificate auth-swtpm obsolete-server-crypto ppp-over-tls-sync" -j4 check
+  - make VERBOSE=1 XFAIL_TESTS="auth-swtpm obsolete-server-crypto ppp-over-tls-sync" -j4 check
   tags:
   - shared
   except:
@@ -260,6 +260,61 @@ CentOS8/OpenSSL:
     paths:
       - tests/*.log
 
+CentOS9/GnuTLS:
+  stage: test-rest
+  image: $CI_REGISTRY/$BUILD_IMAGES_PROJECT:$CENTOS9_BUILD
+  script:
+  - ./autogen.sh
+  - ./configure --with-java --without-gnutls-version-check --disable-dsa-tests --enable-ppp-tests CFLAGS=-g
+  - make -j4
+# For reasons that are unclear, but probably also unimportant, IPv6 is disabled by default on this CI
+# image (verified in https://gitlab.com/openconnect/openconnect/-/jobs/1135199323#L335), and this will
+# cause PPP tests using IPv6 to fail. So we must explicitly enable IPv6:
+  - sysctl net.ipv6.conf.all.disable_ipv6=0
+# we don't want pppd to invoke any actual connection scripts
+  - mv /etc/ppp /etc/ppp.DISABLED
+# auth-nonascii: UTF-8 support is not available in distro's ocserv package
+# ppp-over-tls-sync: https://gitlab.com/openconnect/openconnect/-/issues/287#note_641198529)
+  - make VERBOSE=1 XFAIL_TESTS="auth-nonascii ppp-over-tls-sync" -j4 check
+  tags:
+  - shared
+  except:
+  - tags
+  - schedules
+  artifacts:
+    expire_in: 1 week
+    when: on_failure
+    paths:
+      - tests/*.log
+
+CentOS9/OpenSSL:
+  stage: test-rest
+  image: $CI_REGISTRY/$BUILD_IMAGES_PROJECT:$CENTOS9_BUILD
+  script:
+  - ./autogen.sh
+  - ./configure --without-gnutls --with-openssl --with-java --without-openssl-version-check --disable-dsa-tests --enable-ppp-tests CFLAGS=-g
+  - make -j4
+# For reasons that are unclear, but probably also unimportant, IPv6 is disabled by default on this CI
+# image (verified in https://gitlab.com/openconnect/openconnect/-/jobs/1135199323#L335), and this will
+# cause PPP tests using IPv6 to fail. So we must explicitly enable IPv6:
+  - sysctl net.ipv6.conf.all.disable_ipv6=0
+# we don't want pppd to invoke any actual connection scripts
+  - mv /etc/ppp /etc/ppp.DISABLED
+# auth-nonascii: UTF-8 support is not available in distro's ocserv package
+# ppp-over-tls-sync: https://gitlab.com/openconnect/openconnect/-/issues/287#note_641198529)
+# obsolete-server-crypto: unknown why the legacy openssl provider is not sufficient
+  - make VERBOSE=1 XFAIL_TESTS="auth-nonascii ppp-over-tls-sync obsolete-server-crypto" -j4 check
+  tags:
+  - shared
+  except:
+  - tags
+  - schedules
+  artifacts:
+    expire_in: 1 week
+    when: on_failure
+    paths:
+      - tests/*.log
+
 Fedora/GnuTLS/ibmtss:
   stage: test-rest
   script:
@@ -339,11 +394,10 @@ Fedora/OpenSSL/clang:
   - sysctl net.ipv6.conf.all.disable_ipv6=0
 # we don't want pppd to invoke any actual connection scripts
   - mv /etc/ppp /etc/ppp.DISABLED
-# auth-certificate: obsolete crypto has been removed from LEGACY crypto policies
 # auth-swtpm: XFAIL until we understand the TPM error
 # obsolete-server-crypto: obsolete crypto has been removed from LEGACY crypto policies
 # ppp-over-tls-sync: https://gitlab.com/openconnect/openconnect/-/issues/287#note_641198529)
-  - make VERBOSE=1 XFAIL_TESTS="auth-certificate auth-swtpm obsolete-server-crypto ppp-over-tls-sync" -j4 check
+  - make VERBOSE=1 XFAIL_TESTS="auth-swtpm obsolete-server-crypto ppp-over-tls-sync" -j4 check
   tags:
   - shared
   except:
@@ -479,10 +533,9 @@ ubsan/OpenSSL/Fedora:
   - export UBCFLAGS="-Wall -Wextra -fsanitize=undefined -fsanitize=bool -fsanitize=alignment -fsanitize=null -fsanitize=bounds-strict -fsanitize=enum -fno-sanitize-recover -g -O2"
   - CFLAGS="$UBCFLAGS" ./configure --without-gnutls --with-openssl --without-openssl-version-check --disable-dsa-tests
   - make -j4
-# auth-certificate: obsolete crypto has been removed from LEGACY crypto policies
 # auth-swtpm: XFAIL until we understand the TPM error
 # obsolete-server-crypto: obsolete crypto has been removed from LEGACY crypto policies
-  - make VERBOSE=1 XFAIL_TESTS="auth-certificate auth-swtpm obsolete-server-crypto" -j4 check
+  - make VERBOSE=1 XFAIL_TESTS="auth-swtpm obsolete-server-crypto" -j4 check
   tags:
   - shared
   - linux
@@ -499,8 +552,6 @@ ubsan/OpenSSL/Fedora:
 asan/GnuTLS/Fedora:
   stage: test-sanitizers
   image: $CI_REGISTRY/$BUILD_IMAGES_PROJECT:$FEDORA_BUILD
-  only:
-  - asan
   script:
   - ./autogen.sh
   - CC=clang CFLAGS="-fsanitize=address -fno-optimize-sibling-calls -fno-omit-frame-pointer -g -O1"
@@ -523,8 +574,6 @@ asan/GnuTLS/Fedora:
 asan/OpenSSL/Fedora:
   stage: test-sanitizers
   image: $CI_REGISTRY/$BUILD_IMAGES_PROJECT:$FEDORA_BUILD
-  only:
-  - asan
   script:
   - ./autogen.sh
   - CC=clang CFLAGS="-fsanitize=address -fno-optimize-sibling-calls -fno-omit-frame-pointer -g -O1"
@@ -581,8 +630,9 @@ MinGW32/OpenSSL:
   - mingw32-configure --without-gnutls --with-openssl --without-openssl-version-check CFLAGS=-g
   - make -j4
 # These tests seem to fail due to wine failing to start; setting as XFAIL
-# since these never run before this patch set.
-  - make VERBOSE=1 -j4 check XFAIL_TESTS="sigterm dtls-psk"
+# since these never run before this patch set. bad_dtls_test fails due
+# to an issue in fedora's openssl.
+  - make VERBOSE=1 -j4 check XFAIL_TESTS="sigterm dtls-psk bad_dtls_test.exe"
   tags:
   - shared
   except:
@@ -629,8 +679,9 @@ MinGW64/OpenSSL:
   - mingw64-configure --without-gnutls --with-openssl --without-openssl-version-check CFLAGS=-g
   - make -j4
 # These tests seem to fail due to wine failing to start; setting as XFAIL
-# since these never run before this patch set.
-  - make VERBOSE=1 -j4 check XFAIL_TESTS="sigterm dtls-psk"
+# since these never run before this patch set. bad_dtls_test fails due
+# to an issue in fedora's openssl.
+  - make VERBOSE=1 -j4 check XFAIL_TESTS="sigterm dtls-psk bad_dtls_test.exe"
   tags:
   - shared
   except:
@@ -667,6 +718,7 @@ persist-windows-builds-for-tagged-releases:
 ################################################################################
 
 Android/x86_64:
+  allow_failure: true
   stage: test-android
   image: $CI_REGISTRY/$BUILD_IMAGES_PROJECT:$ANDROID_BUILD
   script:
@@ -683,6 +735,7 @@ Android/x86_64:
       - android/*-linux-android*/out/*
 
 Android/x86:
+  allow_failure: true
   stage: test-android
   image: $CI_REGISTRY/$BUILD_IMAGES_PROJECT:$ANDROID_BUILD
   script:
@@ -699,6 +752,7 @@ Android/x86:
       - android/*-linux-android*/out/*
 
 Android/arm:
+  allow_failure: true
   stage: test-android
   image: $CI_REGISTRY/$BUILD_IMAGES_PROJECT:$ANDROID_BUILD
   script:
@@ -715,6 +769,7 @@ Android/arm:
       - android/*-linux-android*/out/*
 
 Android/arm64:
+  allow_failure: true
   stage: test-android
   image: $CI_REGISTRY/$BUILD_IMAGES_PROJECT:$ANDROID_BUILD
   script:

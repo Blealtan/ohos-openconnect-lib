@@ -73,6 +73,9 @@ struct openconnect_info *openconnect_vpninfo_new(const char *useragent,
 #ifndef _WIN32
 	vpninfo->tun_fd = -1;
 #endif
+#if defined(DEFAULT_EXTERNAL_BROWSER)
+	vpninfo->external_browser = DEFAULT_EXTERNAL_BROWSER;
+#endif
 	init_pkt_queue(&vpninfo->free_queue);
 	init_pkt_queue(&vpninfo->incoming_queue);
 	init_pkt_queue(&vpninfo->outgoing_queue);
@@ -812,7 +815,7 @@ const char *openconnect_get_connect_url(struct openconnect_info *vpninfo)
 	 * https://gitlab.gnome.org/GNOME/NetworkManager-openconnect/-/issues/53
 	 * https://gitlab.gnome.org/GNOME/NetworkManager-openconnect/-/merge_requests/22
 	 */
-	if (vpninfo->proto->proto == PROTO_PULSE)
+	if (vpninfo->proto->proto == PROTO_PULSE && vpninfo->urlpath)
 		buf_append(urlbuf, "%s", vpninfo->urlpath);
 	if (buf_error(urlbuf)) {
 		buf_free(urlbuf);

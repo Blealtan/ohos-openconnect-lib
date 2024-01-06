@@ -856,15 +856,17 @@ static xmlDocPtr xmlpost_new_query(struct openconnect_info *vpninfo, const char 
 	if (!capabilities)
 		goto bad;
 
-	node = xmlNewTextChild(capabilities, NULL, XCAST("auth-method"), XCAST("single-sign-on-v2"));
-	if (!node)
-		goto bad;
+	if (!vpninfo->no_external_auth) {
+		node = xmlNewTextChild(capabilities, NULL, XCAST("auth-method"), XCAST("single-sign-on-v2"));
+		if (!node)
+			goto bad;
 
 #ifdef HAVE_HPKE_SUPPORT
-	node = xmlNewTextChild(capabilities, NULL, XCAST("auth-method"), XCAST("single-sign-on-external-browser"));
-	if (!node)
-		goto bad;
+		node = xmlNewTextChild(capabilities, NULL, XCAST("auth-method"), XCAST("single-sign-on-external-browser"));
+		if (!node)
+			goto bad;
 #endif
+	}
 
 	if (vpninfo->certinfo[1].cert) {
 		node = xmlNewTextChild(capabilities, NULL, XCAST("auth-method"), XCAST("multiple-cert"));
@@ -1116,7 +1118,8 @@ int set_csd_user(struct openconnect_info *vpninfo)
 	setsid();
 
 	if (vpninfo->uid_csd_given && vpninfo->uid_csd != getuid()) {
-		struct passwd *pw;
+		struct passwd pwd, *result;
+		char buffer[2049]; /* should be sysconf(_SC_GETPW_R_SIZE_MAX) */
 		int err;
 
 		if (setgid(vpninfo->gid_csd)) {
@@ -1140,17 +1143,17 @@ int set_csd_user(struct openconnect_info *vpninfo)
 			return -err;
 		}
 
-		if (!(pw = getpwuid(vpninfo->uid_csd))) {
-			err = errno;
+		if ((err = getpwuid_r(vpninfo->uid_csd, &pwd, buffer, sizeof(buffer),
+				&result)) || !result) {
 			fprintf(stderr, _("Invalid user uid=%ld: %s\n"),
 				(long)vpninfo->uid_csd, strerror(err));
 			return -err;
 		}
-		setenv("HOME", pw->pw_dir, 1);
-		if (chdir(pw->pw_dir)) {
+		setenv("HOME", result->pw_dir, 1);
+		if (chdir(result->pw_dir)) {
 			err = errno;
 			fprintf(stderr, _("Failed to change to CSD home directory '%s': %s\n"),
-				pw->pw_dir, strerror(err));
+				result->pw_dir, strerror(err));
 			return -err;
 		}
 	}
@@ -1661,7 +1664,7 @@ newgroup:
 
 	struct oc_text_buf *cookie_buf = buf_alloc();
 #ifdef HAVE_HPKE_SUPPORT
-	if (vpninfo->strap_key) {
+	if (!vpninfo->no_external_auth && vpninfo->strap_key) {
 		buf_append(cookie_buf, "openconnect_strapkey=");
 		append_strap_privkey(vpninfo, cookie_buf);
 		buf_append(cookie_buf, "; webvpn=");

@@ -251,7 +251,7 @@ static int start_cstp_connection(struct openconnect_info *vpninfo, int strap_rek
 	buf_append(reqbuf, "X-CSTP-Hostname: %s\r\n", vpninfo->localname);
 
 #ifdef HAVE_HPKE_SUPPORT
-	if (vpninfo->strap_pubkey)
+	if (!vpninfo->no_external_auth && vpninfo->strap_pubkey)
 		append_connect_strap_headers(vpninfo, reqbuf, strap_rekey);
 #endif
 
@@ -691,15 +691,17 @@ int cstp_connect(struct openconnect_info *vpninfo)
 	if (!vpninfo->cookies) {
 		internal_split_cookies(vpninfo, 0, "webvpn");
 #ifdef HAVE_HPKE_SUPPORT
-		const char *strap_privkey = http_get_cookie(vpninfo, "openconnect_strapkey");
-		if (strap_privkey && *strap_privkey) {
-			int derlen;
-			void *der = openconnect_base64_decode(&derlen, strap_privkey);
-			if (der && !ingest_strap_privkey(vpninfo, der, derlen)) {
-				strap_rekey = 0;
-				vpn_progress(vpninfo, PRG_DEBUG,
-					     _("Ingested STRAP public key %s\n"),
-					     vpninfo->strap_pubkey);
+		if (!vpninfo->no_external_auth) {
+			const char *strap_privkey = http_get_cookie(vpninfo, "openconnect_strapkey");
+			if (strap_privkey && *strap_privkey) {
+				int derlen;
+				void *der = openconnect_base64_decode(&derlen, strap_privkey);
+				if (der && !ingest_strap_privkey(vpninfo, der, derlen)) {
+					strap_rekey = 0;
+					vpn_progress(vpninfo, PRG_DEBUG,
+						     _("Ingested STRAP public key %s\n"),
+						     vpninfo->strap_pubkey);
+				}
 			}
 		}
 #endif
@@ -800,7 +802,7 @@ int decompress_and_queue_packet(struct openconnect_info *vpninfo, int compr_type
 	   space to handle that */
 	int receive_mtu = MAX(16384, vpninfo->ip_info.mtu);
 	struct pkt *new = alloc_pkt(vpninfo, receive_mtu);
-	const char *comprname = "";
+	const char *comprname;
 
 	if (!new)
 		return -ENOMEM;
@@ -839,7 +841,7 @@ int decompress_and_queue_packet(struct openconnect_info *vpninfo, int compr_type
 		comprname = "LZS";
 
 		new->len = lzs_decompress(new->data, receive_mtu, buf, len);
-		if (new->len < 0) {
+		if (new->len <= 0) {
 			len = new->len;
 			if (len == 0)
 				len = -EINVAL;
@@ -1283,18 +1285,20 @@ void cstp_common_headers(struct openconnect_info *vpninfo, struct oc_text_buf *b
 	if (vpninfo->try_http_auth)
 		buf_append(buf, "X-Support-HTTP-Auth: true\r\n");
 #ifdef HAVE_HPKE_SUPPORT
-	if (!vpninfo->strap_pubkey || !vpninfo->strap_dh_pubkey) {
-		int err = generate_strap_keys(vpninfo);
-		if (err) {
-			buf->error = err;
-			return;
+	if (!vpninfo->no_external_auth) {
+		if (!vpninfo->strap_pubkey || !vpninfo->strap_dh_pubkey) {
+			int err = generate_strap_keys(vpninfo);
+			if (err) {
+				buf->error = err;
+				return;
+			}
 		}
-	}
 
-	buf_append(buf, "X-AnyConnect-STRAP-Pubkey: %s\r\n",
-		   vpninfo->strap_pubkey);
-	buf_append(buf, "X-AnyConnect-STRAP-DH-Pubkey: %s\r\n",
-		   vpninfo->strap_dh_pubkey);
+		buf_append(buf, "X-AnyConnect-STRAP-Pubkey: %s\r\n",
+			   vpninfo->strap_pubkey);
+		buf_append(buf, "X-AnyConnect-STRAP-DH-Pubkey: %s\r\n",
+			   vpninfo->strap_dh_pubkey);
+	}
 #endif
 	append_mobile_headers(vpninfo, buf);
 }
@@ -1305,7 +1309,7 @@ int cstp_sso_detect_done(struct openconnect_info *vpninfo,
 	int i;
 
 	/* Note that, at least with some backends (eg: Google's), empty cookies might be set */
-	for (i=0; result->cookies[i] != NULL; i+=2) {
+	for (i=0; result->cookies != NULL && result->cookies[i] != NULL; i+=2) {
 		const char *cname = result->cookies[i], *cval = result->cookies[i+1];
 		if (!strcmp(vpninfo->sso_token_cookie, cname) && cval && cval[0] != '\0') {
 			vpninfo->sso_cookie_value = strdup(cval);
@@ -1319,7 +1323,7 @@ int cstp_sso_detect_done(struct openconnect_info *vpninfo,
 
 	/* If we're not at the final URI, tell the webview to keep going.
 	 * Note that we might find the cookie at any time, not only on the last page. */
-	if (strcmp(result->uri, vpninfo->sso_login_final))
+	if (result->uri == NULL || strcmp(result->uri, vpninfo->sso_login_final))
 		return -EAGAIN;
 
 	/* Tell the webview to terminate */

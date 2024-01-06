@@ -2,7 +2,7 @@
 
 OpenConnect is an SSL VPN client initially created to support [Cisco's AnyConnect SSL VPN](https://www.cisco.com/site/us/en/products/security/secure-client/index.html).
 
-It has since been ported to support the Juniper SSL VPN (which is now known as [Pulse Connect Secure](https://www.pulsesecure.net/products/connect-secure/)),
+It has since been ported to support the Juniper SSL VPN (which is now known as [Pulse Connect Secure](https://www.ivanti.com/products/connect-secure-vpn)),
 the [Palo Alto Networks GlobalProtect SSL VPN](https://www.paloaltonetworks.com/features/vpn)
 the [F5 Big-IP SSL VPN](https://www.f5.com/products/big-ip-services),
 and the [Fortinet FortiGate SSL VPN](https://www.fortinet.com/products/vpn).</p>
