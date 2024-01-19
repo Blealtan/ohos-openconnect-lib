@@ -529,7 +529,7 @@ static int gpst_parse_config_xml(struct openconnect_info *vpninfo, xmlNode *xml_
 						ret = -ENOMEM;
 						goto err;
 					}
-					if (xmlnode_is_named(xml_node, "access-routes")) {
+					if (xmlnode_is_named(xml_node, "access-routes") || xmlnode_is_named(xml_node, "access-routes-v6")) {
 						inc->route = add_option_steal(&new_opts, "split-include", &s);
 						inc->next = new_ip_info.split_includes;
 						new_ip_info.split_includes = inc;
