@@ -325,7 +325,11 @@ def getconfig():
     addrs = '<ip-address>{}</ip-address>'.format(session['preferred_ip'])
     if session['ipv6_support'] == 'yes':
         addrs += '<ip-address-v6>{}</ip-address-v6>'.format(session['preferred_ipv6'])
-    return '''<response>{}<ssl-tunnel-url>/ssl-tunnel-connect.sslvpn</ssl-tunnel-url></response>'''.format(addrs)
+
+    accessroutes = '<access-routes><member>10.12.12.0/24</member><member>172.16.0.0/22</member></access-routes>'
+    if session['ipv6_support'] == 'yes':
+        accessroutes += '<access-routes-v6><member>2001:DB8:cafe::/48</member></access-routes-v6>'
+    return '<response>{}<ssl-tunnel-url>/ssl-tunnel-connect.sslvpn</ssl-tunnel-url>{}</response>'.format(addrs,accessroutes)
 
 
 # Respond to gateway hipreportcheck request
