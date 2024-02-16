@@ -47,6 +47,7 @@
 #include <shlwapi.h>
 #include <wtypes.h>
 #include <wincon.h>
+#include <fork.c>
 #else
 #include <sys/utsname.h>
 #include <pwd.h>
@@ -84,12 +85,15 @@ static void init_token(struct openconnect_info *vpninfo,
 #undef openconnect_version_str
 
 static int timestamp;
-#ifndef _WIN32
-static int background;
-static int use_syslog; /* static variable initialised to 0 */
-static int wrote_pid; /* static variable initialised to 0 */
 static char *pidfile; /* static variable initialised to NULL */
+
+static int background;
+#ifndef _WIN32
+static int use_syslog; /* static variable initialised to 0 */
 #endif
+static int wrote_pid; /* static variable initialised to 0 */
+
+
 static int do_passphrase_from_fsid;
 static int non_inter;
 static int cookieonly;
@@ -234,8 +238,8 @@ enum {
 #endif
 
 static const struct option long_options[] = {
-#ifndef _WIN32
 	OPTION("background", 0, 'b'),
+#ifndef _WIN32
 	OPTION("pid-file", 1, OPT_PIDFILE),
 	OPTION("setuid", 1, 'U'),
 	OPTION("script-tun", 0, 'S'),
@@ -992,9 +996,10 @@ static void usage(void)
 	printf("      --cookieonly                %s\n", _("Fetch and print cookie only; don't connect"));
 	printf("      --printcookie               %s\n", _("Print cookie before connecting"));
 
-#ifndef _WIN32
 	printf("\n%s:\n", _("Process control"));
 	printf("  -b, --background                %s\n", _("Continue in background after startup"));
+#ifndef _WIN32
+
 	printf("      --pid-file=PIDFILE          %s\n", _("Write the daemon's PID to this file"));
 	printf("  -U, --setuid=USER               %s\n", _("Drop privileges after connecting"));
 #endif
@@ -1627,7 +1632,7 @@ static void print_connection_stats(void *_vpninfo, const struct oc_stats *stats)
 	openconnect_set_loglevel(vpninfo, saved_loglevel);
 }
 
-#ifndef _WIN32
+
 static int background_self(struct openconnect_info *vpninfo, char *pidfile)
 {
 	FILE *fp = NULL;
@@ -1670,24 +1675,26 @@ static int background_self(struct openconnect_info *vpninfo, char *pidfile)
 		fclose(fp);
 	return !!fp;
 }
-#endif /* _WIN32 */
+
 
 static void fully_up_cb(void *_vpninfo)
 {
 	struct openconnect_info *vpninfo = _vpninfo;
 
 	print_connection_info(vpninfo);
-#ifndef _WIN32
+
 	if (background)
 		wrote_pid = background_self(vpninfo, pidfile);
 
 #ifndef __native_client__
+#ifndef _WIN32
 	if (use_syslog) {
 		openlog("openconnect", LOG_PID, LOG_DAEMON);
 		vpninfo->progress = syslog_progress;
 	}
+#endif
 #endif /* !__native_client__ */
-#endif /* !_WIN32 */
+
 }
 
 int main(int argc, char *argv[])
@@ -1805,10 +1812,11 @@ int main(int argc, char *argv[])
 			break;
 
 		switch (opt) {
-#ifndef _WIN32
+
 		case 'b':
 			background = 1;
 			break;
+#ifndef _WIN32
 		case 'l':
 			use_syslog = 1;
 			break;
@@ -2391,10 +2399,10 @@ int main(int argc, char *argv[])
 		vpn_progress(vpninfo, PRG_INFO, _("User requested reconnect\n"));
 	}
 
-#ifndef _WIN32
+
 	if (wrote_pid)
 		unlink(pidfile);
-#endif
+
 
  out:
 	switch (ret) {
