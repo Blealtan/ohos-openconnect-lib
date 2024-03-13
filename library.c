@@ -903,6 +903,12 @@ void openconnect_set_xmlsha1(struct openconnect_info *vpninfo,
 	memcpy(&vpninfo->xmlsha1, xmlsha1, size);
 }
 
+int openconnect_enable_no_external_auth(struct openconnect_info *vpninfo)
+{
+	vpninfo->no_external_auth = 1;
+	return 0;
+}
+
 int openconnect_disable_ipv6(struct openconnect_info *vpninfo)
 {
 	/* This prevents disabling IPv6 when the connection is
