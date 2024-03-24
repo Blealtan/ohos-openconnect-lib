@@ -131,7 +131,7 @@ void cleanup_gssapi_auth(struct openconnect_info *vpninfo,
 			 struct http_auth_state *auth_state)
 
 {
-	if (auth_state->state >= AUTH_IN_PROGRESS) {
+	if (auth_state != NULL && auth_state->state >= AUTH_IN_PROGRESS) {
 		free(auth_state->sspi_target_name);
 		auth_state->sspi_target_name = NULL;
 		FreeCredentialsHandle(&auth_state->sspi_cred);
