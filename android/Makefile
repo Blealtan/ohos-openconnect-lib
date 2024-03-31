@@ -101,7 +101,7 @@ $(LIBXML2_TAR):
 
 $(LIBXML2_SRC)/configure: $(LIBXML2_TAR)
 	mkdir -p sources
-	tar xfz $<  -C sources
+	tar xfJ $< -C sources
 	touch $@
 
 $(LIBXML2_BUILD)/Makefile: $(TOOLCHAIN_BUILT) $(LIBXML2_SRC)/configure
@@ -150,7 +150,7 @@ $(GMP_TAR):
 
 $(GMP_SRC)/configure: $(GMP_TAR)
 	mkdir -p sources
-	tar -xJf $< -C sources
+	tar xJf $< -C sources
 	touch $@
 
 $(GMP_BUILD)/Makefile: $(TOOLCHAIN_BUILT) $(GMP_SRC)/configure
@@ -174,9 +174,9 @@ gmp: $(GMP_DEPS)
 # Build nettle
 #
 # https://ftp.gnu.org/gnu/nettle/
-NETTLE_VER := 3.9
+NETTLE_VER := 3.9.1
 NETTLE_TAR := nettle-$(NETTLE_VER).tar.gz
-NETTLE_SHA := 0ee7adf5a7201610bb7fe0acbb7c9b3be83be44904dd35ebbcd965cd896bfeaa
+NETTLE_SHA := ccfeff981b0ca71bbd6fbcb054f407c60ffb644389a5be80d6716d5b550c6ce3
 NETTLE_SRC := sources/nettle-$(NETTLE_VER)
 NETTLE_BUILD := $(TRIPLET)/nettle
 
@@ -219,7 +219,7 @@ $(GNUTLS_TAR):
 
 $(GNUTLS_SRC)/configure: $(GNUTLS_TAR)
 	mkdir -p sources
-	xz -d < $< | tar xf - -C sources
+	tar xfJ $< -C sources
 	touch $@
 
 #$(GNUTLS_SRC)/configure.ac:
