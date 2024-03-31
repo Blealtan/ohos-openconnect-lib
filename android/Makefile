@@ -90,9 +90,9 @@ $(TOOLCHAIN_BUILT):
 # Build libxml2 with minimal configuration for OpenConnect
 #
 # http://xmlsoft.org/news.html
-LIBXML2_VER := 2.9.11
-LIBXML2_TAR := libxml2-$(LIBXML2_VER).tar.gz
-LIBXML2_SHA := 886f696d5d5b45d780b2880645edf9e0c62a4fd6841b853e824ada4e02b4d331
+LIBXML2_VER := 2.12.6
+LIBXML2_TAR := libxml2-$(LIBXML2_VER).tar.xz
+LIBXML2_SHA := 889c593a881a3db5fdd96cc9318c87df34eb648edfc458272ad46fd607353fbb
 LIBXML2_SRC := sources/libxml2-$(LIBXML2_VER)
 LIBXML2_BUILD := $(TRIPLET)/libxml2
 
@@ -139,9 +139,9 @@ libxml: $(LIBXML_DEPS)
 # Build GNU MP
 #
 # https://gmplib.org/
-GMP_VER := 6.2.1
+GMP_VER := 6.3.0
 GMP_TAR := gmp-$(GMP_VER).tar.xz
-GMP_SHA := fd4829912cddd12f84181c3451cc752be224643e87fac497b69edddadc49b4f2
+GMP_SHA := a3c2b80201b89e68616f4ad30bc66aee4927c3ce50e33929ca819d5c43538898
 GMP_SRC := sources/gmp-$(GMP_VER)
 GMP_BUILD := $(TRIPLET)/gmp
 
@@ -174,9 +174,9 @@ gmp: $(GMP_DEPS)
 # Build nettle
 #
 # https://ftp.gnu.org/gnu/nettle/
-NETTLE_VER := 3.6
+NETTLE_VER := 3.9
 NETTLE_TAR := nettle-$(NETTLE_VER).tar.gz
-NETTLE_SHA := d24c0d0f2abffbc8f4f34dcf114b0f131ec3774895f3555922fe2f40f3d5e3f1
+NETTLE_SHA := 0ee7adf5a7201610bb7fe0acbb7c9b3be83be44904dd35ebbcd965cd896bfeaa
 NETTLE_SRC := sources/nettle-$(NETTLE_VER)
 NETTLE_BUILD := $(TRIPLET)/nettle
 
@@ -208,9 +208,9 @@ nettle: $(NETTLE_DEPS)
 # Build GnuTLS
 #
 # https://www.gnutls.org/download.html
-GNUTLS_VER := 3.6.16
+GNUTLS_VER := 3.7.10
 GNUTLS_TAR := gnutls-$(GNUTLS_VER).tar.xz
-GNUTLS_SHA := 1b79b381ac283d8b054368b335c408fedcb9b7144e0c07f531e3537d4328f3b3
+GNUTLS_SHA := b6e4e8bac3a950a3a1b7bdb0904979d4ab420a81e74de8636dd50b467d36f5a9
 GNUTLS_SRC := sources/gnutls-$(GNUTLS_VER)
 GNUTLS_BUILD := $(TRIPLET)/gnutls
 
@@ -293,9 +293,9 @@ stoken: $(STOKEN_DEPS)
 # Build liblz4
 #
 # https://github.com/lz4/lz4/tags
-LZ4_VER := 1.9.3
+LZ4_VER := 1.9.4
 LZ4_TAR := lz4-v$(LZ4_VER).tar.gz
-LZ4_SHA := 030644df4611007ff7dc962d981f390361e6c97a34e5cbc393ddfbe019ffe2c1
+LZ4_SHA := 0b0e3aa07c8c063ddf40b082bdf7e37a1562bda40a0ff5272957f3e987e0e54b
 LZ4_DIR := $(TRIPLET)/lz4-$(LZ4_VER)
 
 $(LZ4_TAR):
