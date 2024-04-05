@@ -208,9 +208,9 @@ nettle: $(NETTLE_DEPS)
 # Build GnuTLS
 #
 # https://www.gnutls.org/download.html
-GNUTLS_VER := 3.7.10
+GNUTLS_VER := 3.6.16
 GNUTLS_TAR := gnutls-$(GNUTLS_VER).tar.xz
-GNUTLS_SHA := b6e4e8bac3a950a3a1b7bdb0904979d4ab420a81e74de8636dd50b467d36f5a9
+GNUTLS_SHA := 1b79b381ac283d8b054368b335c408fedcb9b7144e0c07f531e3537d4328f3b3
 GNUTLS_SRC := sources/gnutls-$(GNUTLS_VER)
 GNUTLS_BUILD := $(TRIPLET)/gnutls
 
