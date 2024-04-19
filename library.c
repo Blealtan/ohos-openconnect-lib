@@ -903,10 +903,9 @@ void openconnect_set_xmlsha1(struct openconnect_info *vpninfo,
 	memcpy(&vpninfo->xmlsha1, xmlsha1, size);
 }
 
-int openconnect_enable_no_external_auth(struct openconnect_info *vpninfo)
+void openconnect_set_no_external_auth(struct openconnect_info *vpninfo, int enable)
 {
-	vpninfo->no_external_auth = 1;
-	return 0;
+	vpninfo->no_external_auth = enable;
 }
 
 int openconnect_disable_ipv6(struct openconnect_info *vpninfo)

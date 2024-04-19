@@ -155,6 +155,7 @@ public abstract class LibOpenConnect {
 	public synchronized native int disableDTLS();
 	public synchronized native int disableIPv6();
 	public synchronized native void setCookie(String cookie);
+	public synchronized native void setNoExternalAuth(boolean isEnabled);
 
 	/* client certificate(s) and private keys */
 

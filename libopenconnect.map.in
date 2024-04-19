@@ -134,7 +134,7 @@ OPENCONNECT_5_9 {
 
 OPENCONNECT_5_10 {
  global:
-	openconnect_enable_no_external_auth;
+	openconnect_set_no_external_auth;
 } OPENCONNECT_5_9;
 
 OPENCONNECT_PRIVATE {

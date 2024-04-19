@@ -1451,6 +1451,16 @@ JNIEXPORT void JNICALL Java_org_infradead_libopenconnect_LibOpenConnect_setCooki
 	SET_STRING_END();
 }
 
+JNIEXPORT void JNICALL Java_org_infradead_libopenconnect_LibOpenConnect_setNoExternalAuth(
+	JNIEnv *jenv, jobject jobj, jboolean arg)
+{
+	struct libctx *ctx = getctx(jenv, jobj);
+
+	if (!ctx)
+		return;
+	openconnect_set_no_external_auth(ctx->vpninfo, arg);
+}
+
 JNIEXPORT void JNICALL Java_org_infradead_libopenconnect_LibOpenConnect_setLocalName(
 	JNIEnv *jenv, jobject jobj, jstring jarg)
 {
