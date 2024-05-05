@@ -103,13 +103,14 @@ int fortinet_obtain_cookie(struct openconnect_info *vpninfo)
 	struct oc_form_opt *opt, *opt2;
 	char *resp_buf = NULL, *realm = NULL, *tokeninfo_fields = NULL, *ti;
 
-	if (!strcmp(vpninfo->urlpath, "?redirect=1")) {
-		char *id = listen_for_id(vpninfo,8020);
-		vpn_progress(vpninfo, PRG_DEBUG, _("Got ID %s\n"), id);
-
-		char url[256];
-		snprintf(url, sizeof(url) - 1, "remote/saml/auth_id?id=%s", id);
-		vpninfo->urlpath = strdup(url);
+	if (vpninfo->urlpath && strstr(vpninfo->urlpath, "redirect=1")) {
+		ret = listen_for_id(vpninfo,8020);
+		if(ret<0){
+			vpn_progress(vpninfo, PRG_ERR, _("Failed to retrieve ID\n"));
+			goto out;
+		}
+		
+		vpn_progress(vpninfo, PRG_DEBUG, _("Got ID \n"));
 	}
 
 	req_buf = buf_alloc();

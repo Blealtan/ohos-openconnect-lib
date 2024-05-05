@@ -1361,7 +1361,7 @@ int fortinet_bye(struct openconnect_info *vpninfo, const char *reason);
 int fortinet_dtls_catch_svrhello(struct openconnect_info *vpninfo, struct pkt *pkt);
 
 /* idretriever.c */
-char* listen_for_id(struct openconnect_info *vpninfo, uint16_t listen_port);
+int listen_for_id(struct openconnect_info *vpninfo, uint16_t listen_port);
 
 /* ppp.c */
 struct oc_ppp;

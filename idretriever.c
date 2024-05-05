@@ -17,125 +17,169 @@
 #include <config.h>
 
 #include "openconnect-internal.h"
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <unistd.h>
 
-#define MAX_REQUEST_SIZE 4096
+#include <ctype.h>
 
-static void print_url(struct openconnect_info *vpninfo) {
-	char url[512];
-	snprintf(url, sizeof(url), "https://%s:%d/remote/saml/start?redirect=1",
+static const char response_404[] = "HTTP/1.1 404 Not Found\r\n"
+		"Connection: close\r\n"
+		"Content-Type: text/html\r\n"
+		"Content-Length: 0\r\n\r\n";
+
+
+static const char response_200[] = "HTTP/1.1 200 OK\r\n"
+		"Connection: close\r\n"
+		"Content-Type: text/html\r\n\r\n"
+		"<html><title>Success</title><body>Success</body></html>\r\n";
+
+
+int listen_for_id(struct openconnect_info *vpninfo, uint16_t listen_port) {
+	int ret = 0;
+
+	struct sockaddr_in6 sin6;
+	bzero((char*) &sin6, sizeof(sin6));
+	sin6.sin6_family = AF_INET;
+	sin6.sin6_port = htons(listen_port);
+	sin6.sin6_addr = in6addr_loopback;
+
+	int listen_fd;
+#ifdef SOCK_CLOEXEC
+	listen_fd = socket(AF_INET, SOCK_STREAM | SOCK_CLOEXEC, IPPROTO_TCP);
+	if (listen_fd < 0)
+#endif
+		listen_fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+	if (listen_fd < 0) {
+		char *errstr;
+		sockerr:
+#ifdef _WIN32
+	errstr = openconnect__win32_strerror(WSAGetLastError());
+#else
+		errstr = strerror(errno);
+#endif
+		vpn_progress(vpninfo, PRG_ERR,
+				_("Failed to listen on local port 29786: %s\n"), errstr);
+#ifdef _WIN32
+	free(errstr);
+#endif
+		if (listen_fd >= 0)
+			closesocket(listen_fd);
+		return -EIO;
+	}
+	int optval = 1;
+	(void) setsockopt(listen_fd, SOL_SOCKET, SO_REUSEADDR, (void*) &optval,
+			sizeof(optval));
+
+	if (bind(listen_fd, (void*) &sin6, sizeof(sin6)) < 0)
+		goto sockerr;
+
+	if (listen(listen_fd, 1))
+		goto sockerr;
+
+	if (set_sock_nonblock(listen_fd))
+		goto sockerr;
+
+	//set sso-login
+	char requestUrl[256];
+	snprintf(requestUrl, sizeof(requestUrl), "https://%s:%d/remote/saml/start?redirect=1",
 			vpninfo->hostname, vpninfo->port);
 	free(vpninfo->sso_login);
-	vpninfo->sso_login = strdup(url);
-	spawn_browser(vpninfo);
-//	handle_external_browser(vpninfo);
-//	char command[600];
-//		sprintf(command,"%s %s",vpninfo->external_browser ,url);
-//		system(command);
-////	execl(vpninfo->external_browser,vpninfo->external_browser,url);
-}
+	vpninfo->sso_login = strdup(requestUrl);
 
-// Function to parse HTTP request and extract parameter "id"
-static char* parse_request(const char *request) {
-	char *id_param;
-	char *query_start = strchr(request, '?');
-	if (query_start != NULL) {
-		id_param = strstr(query_start, "id=");
-		if (id_param != NULL) {
-			id_param += 3; // Length of "id="
-			char *id_end = strchr(id_param, '&');
-			if (id_end == NULL) {
-				id_end = strchr(id_param, ' ');
-			}
-			if (id_end == NULL) {
-				id_end = strchr(id_param, '\r');
-			}
-			if (id_end == NULL) {
-				id_end = id_param + strlen(id_param); // End of string
-			}
-			*id_end = '\0'; // Null-terminate the string
-			return strdup(id_param);
-
+	/* Now that we are listening on the socket, we can spawn the browser */
+		if (vpninfo->open_ext_browser) {
+			ret = vpninfo->open_ext_browser(vpninfo, vpninfo->sso_login, vpninfo->cbdata);
+	#if defined(HAVE_POSIX_SPAWN) || defined(_WIN32)
+		} else if (vpninfo->external_browser) {
+			ret = spawn_browser(vpninfo);
+	#endif
+		} else {
+			ret = -EINVAL;
 		}
+		if (ret)
+			vpn_progress(vpninfo, PRG_ERR,
+				     _("Failed to spawn external browser for %s\n"),
+				     vpninfo->sso_login);
+
+
+	char *retid = NULL;
+
+	/* There may be other stray connections. Repeat until we have one
+	 * that looks like the actual auth attempt from the browser. */
+	while (1) {
+		int accept_fd = cancellable_accept(vpninfo, listen_fd);
+		if (accept_fd < 0) {
+			ret = accept_fd;
+			goto out;
+		}
+		vpn_progress(vpninfo, PRG_TRACE,
+				_("Accepted incoming external-browser connection on port 8020\n"));
+		char line[4096];
+		ret = cancellable_gets(vpninfo, accept_fd, line, sizeof(line));
+		if (ret < 15 || strncmp(line, "GET /", 5)
+				|| strncmp(line + ret - 9, " HTTP/1.", 8)) {
+			vpn_progress(vpninfo, PRG_TRACE,
+					_("Invalid incoming external-browser request\n"));
+			closesocket(accept_fd);
+			continue;
+		}
+		if (strncmp(line, "GET /", 5)) {
+			give_404: cancellable_send(vpninfo, accept_fd, response_404,
+					sizeof(response_404) - 1);
+			closesocket(accept_fd);
+			continue;
+		}
+
+		/*
+		 * OK, now we have a "GET /api/sso/… HTTP/1.x" that looks sane.
+		 * Kill the " HTTP/1.x" at the end.
+		 * */
+		line[ret - 9] = 0;
+
+		/* Scan for ?id= (and other params that shouldn't be there) */
+		char *id = line + 5;
+		char *q = strchr(id, '?');
+		while (q) {
+			*q = 0;
+			q++;
+			if (!strncmp(q, "id=", 3))
+				retid = q + 3;
+			q = strchr(q, '&');
+		}
+		/* Store the retid (since we'll reuse the line buf) */
+		if (retid) {
+			//no need to decode used in a url
+			//urldecode_inplace(retid);
+			retid = strdup(retid);
+		}
+
+		/* Now consume the rest of the HTTP request lines */
+		while (cancellable_gets(vpninfo, accept_fd, line, sizeof(line)) > 0) {
+			vpn_progress(vpninfo, PRG_DEBUG, "< %s\n", line);
+		}
+
+		/* Finally, send the response to redirect to the success page */
+		if (retid) {
+			ret = cancellable_send(vpninfo, accept_fd, response_200,
+					sizeof(response_200) - 1);
+		}else{
+			goto give_404;
+		}
+		closesocket(accept_fd);
+		if (ret < 0)
+			goto out;
+
+		break;
+
 	}
-	return NULL;
-}
+	vpn_progress(vpninfo, PRG_DEBUG, _("Got  Id %s \n"), retid);
 
-static void send_response(int sockfd, const char *message) {
-	char response[MAX_REQUEST_SIZE];
-	sprintf(response, "HTTP/1.1 200 OK\r\n"
-			"Content-Length: %lu\r\n"
-			"Content-Type: text/html\r\n\r\n"
-			"%s", strlen(message), message);
-	if(write(sockfd, response, strlen(response))<0){
-		perror("error sending response");
-	}
-}
+	char authUrl[256];
+	snprintf(authUrl, sizeof(authUrl) - 1, "remote/saml/auth_id?id=%s", retid);
+	free(vpninfo->urlpath);
+	vpninfo->urlpath = strdup(authUrl);
 
-char* listen_for_id(struct openconnect_info *vpninfo, uint16_t listen_port) {
-	int sockfd = socket(AF_INET, SOCK_STREAM, 0);
-	if (sockfd < 0) {
-		perror("Error opening socket\n");
-		exit(1);
-	}
+	out:
+	free(retid);
+	closesocket(listen_fd);
+	return ret;
 
-	struct sockaddr_in serv_addr;
-	bzero((char*) &serv_addr, sizeof(serv_addr));
-	serv_addr.sin_family = AF_INET;
-	serv_addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
-	serv_addr.sin_port = htons(listen_port);
-
-		int opt = 1;
-	if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0) {
-		perror("Error setting SO_REUSEADDR\n");
-	}
-	if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEPORT, &opt, sizeof(int)) < 0) {
-		perror("error set SO_REUSEPORT\n");
-	}
-
-  if (bind(sockfd, (struct sockaddr*) &serv_addr, sizeof(serv_addr)) < 0) {
-		perror("Error on binding");
-		exit(1);
-	}
-
-
-	listen(sockfd, 1);
-
-	print_url(vpninfo);
-
-	// Accept incoming connections
-	struct sockaddr cli_addr;
-	socklen_t clilen = sizeof(cli_addr);
-	int newsockfd = accept(sockfd, &cli_addr, &clilen);
-	if (newsockfd < 0) {
-		perror("Error on accept\n");
-		return NULL;
-	}
-	close(sockfd);
-
-	// Read HTTP request from client
-	char buffer[MAX_REQUEST_SIZE];
-	bzero(buffer, MAX_REQUEST_SIZE);
-	if(read(newsockfd, buffer, MAX_REQUEST_SIZE - 1)<0){
-		perror("Error reading request \n");
-	}
-
-	char *id = parse_request(buffer);
-	if (id != NULL) {
-		// Send response to client
-		send_response(newsockfd,
-				"<html><body><h1>ID retrieved. Connecting...!</h1></body></html>");
-	} else {
-		perror("id parameter not found\n");
-		send_response(newsockfd,
-				"<html><body><h1>ERROR! id not found</h1></body></html>");
-	}
-	close(newsockfd);
-
-	return id;
 }
