@@ -53,7 +53,7 @@ static const char response_200[] =
 	"<html><title>Success</title><body>Success</body></html>\r\n";
 
 #ifdef HAVE_POSIX_SPAWN
-static int spawn_browser(struct openconnect_info *vpninfo)
+int spawn_browser(struct openconnect_info *vpninfo)
 {
 	vpn_progress(vpninfo, PRG_TRACE, _("Spawning external browser '%s'\n"),
 		     vpninfo->external_browser);
@@ -78,7 +78,7 @@ static int spawn_browser(struct openconnect_info *vpninfo)
 	return ret;
 }
 #elif defined(_WIN32)
-static int spawn_browser(struct openconnect_info *vpninfo)
+int spawn_browser(struct openconnect_info *vpninfo)
 {
 	HINSTANCE rv;
 	char *errstr;

@@ -52,7 +52,7 @@ lib_srcs_oidc = oidc.c
 lib_srcs_ppp = ppp.c ppp.h
 lib_srcs_nullppp = nullppp.c
 lib_srcs_f5 = f5.c
-lib_srcs_fortinet = fortinet.c
+lib_srcs_fortinet = fortinet.c idretriever.c
 lib_srcs_json = jsondump.c
 
 library_srcs += $(lib_srcs_juniper) $(lib_srcs_cisco) $(lib_srcs_oath) \
