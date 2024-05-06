@@ -1673,9 +1673,6 @@ void openconnect_set_juniper(struct openconnect_info *vpninfo);
 
 /* hpke.c */
 int handle_external_browser(struct openconnect_info *vpninfo);
-#if defined(HAVE_POSIX_SPAWN) || defined(_WIN32)
-int spawn_browser(struct openconnect_info *vpninfo);
-#endif
 
 /* version.c */
 extern const char openconnect_version_str[];
