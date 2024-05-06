@@ -79,8 +79,8 @@ int listen_for_id(struct openconnect_info *vpninfo, uint16_t listen_port) {
 
 	//set sso-login
 	char requestUrl[256];
-	snprintf(requestUrl, sizeof(requestUrl), "https://%s:%d/remote/saml/start?redirect=1",
-			vpninfo->hostname, vpninfo->port);
+	snprintf(requestUrl, sizeof(requestUrl), "https://%s:%d/%s",
+			vpninfo->hostname, vpninfo->port,vpninfo->urlpath);
 	free(vpninfo->sso_login);
 	vpninfo->sso_login = strdup(requestUrl);
 
