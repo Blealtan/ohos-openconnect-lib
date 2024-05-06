@@ -82,10 +82,9 @@ static int spawn_browser(struct openconnect_info *vpninfo)
 
 
 int listen_for_id(struct openconnect_info *vpninfo, uint16_t listen_port) {
-	int ret = 0;
 
+	int ret = 0;
 	struct sockaddr_in6 sin6;
-	bzero((char*) &sin6, sizeof(sin6));
 	sin6.sin6_family = AF_INET;
 	sin6.sin6_port = htons(listen_port);
 	sin6.sin6_addr = in6addr_loopback;
