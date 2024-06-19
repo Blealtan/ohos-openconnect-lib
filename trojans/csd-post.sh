@@ -12,6 +12,10 @@
 # server's security policy with lies. This script exists as an example
 # to work from.
 
+# The below config file allows for compatibility with newer versions of OpenSSL, change path to wherever your legacy_openssl.cnf file is located
+
+export OPENSSL_CONF=/usr/etc/legacy_openssl.cnf
+
 if ! xmlstarlet --version > /dev/null 2>&1; then
     echo "************************************************************************" >&2
     echo "WARNING: xmlstarlet not found in path; CSD token extraction may not work" >&2
