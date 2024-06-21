@@ -31,59 +31,13 @@ static const char response_200[] = "HTTP/1.1 200 OK\r\n"
 		"Content-Type: text/html\r\n\r\n"
 		"<html><title>Success</title><body>Success</body></html>\r\n";
 
-//copied from hpke.c find a way to reuse that is compatible with all build
-#ifdef HAVE_POSIX_SPAWN
-static int spawn_browser(struct openconnect_info *vpninfo)
-{
-	vpn_progress(vpninfo, PRG_TRACE, _("Spawning external browser '%s'\n"),
-		     vpninfo->external_browser);
 
-	int ret = 0;
-	pid_t pid = 0;
-	char *browser_argv[3] = { (char *)vpninfo->external_browser, vpninfo->sso_login, NULL };
-	posix_spawn_file_actions_t file_actions, *factp = NULL;
-
-	if (!posix_spawn_file_actions_init(&file_actions)) {
-		factp = &file_actions;
-		posix_spawn_file_actions_adddup2(&file_actions, STDERR_FILENO, STDOUT_FILENO);
-	}
-
-	if (posix_spawn(&pid, vpninfo->external_browser, factp, NULL, browser_argv, environ)) {
-		ret = -errno;
-		vpn_perror(vpninfo, _("Spawn browser"));
-	}
-	if (factp)
-		posix_spawn_file_actions_destroy(factp);
-
-	return ret;
-}
-#elif defined(_WIN32)
-static int spawn_browser(struct openconnect_info *vpninfo)
-{
-	HINSTANCE rv;
-	char *errstr;
-
-	vpn_progress(vpninfo, PRG_TRACE, _("Spawning external browser '%s'\n"),
-		     vpninfo->external_browser);
-
-	rv = ShellExecute(NULL, vpninfo->external_browser, vpninfo->sso_login,
-			  NULL, NULL, SW_SHOWNORMAL);
-
-	if ((intptr_t)rv > 32)
-		return 0;
-
-	errstr = openconnect__win32_strerror(GetLastError());
-	vpn_progress(vpninfo, PRG_ERR, "Failed to spawn browser: %s\n",
-		     errstr);
-	free(errstr);
-	return -EIO;
-}
-#endif
 
 
 int listen_for_id(struct openconnect_info *vpninfo, uint16_t listen_port) {
 
 	int ret = 0;
+	char *retid = NULL;
 	struct sockaddr_in6 sin6;
 	sin6.sin6_family = AF_INET;
 	sin6.sin6_port = htons(listen_port);
@@ -126,15 +80,15 @@ int listen_for_id(struct openconnect_info *vpninfo, uint16_t listen_port) {
 		goto sockerr;
 
 	//set sso-login
-	char requestUrl[256];
-	snprintf(requestUrl, sizeof(requestUrl), "https://%s:%d/%s",
-			vpninfo->hostname, vpninfo->port,vpninfo->urlpath);
 	free(vpninfo->sso_login);
-	vpninfo->sso_login = strdup(requestUrl);
-
+	ret = asprintf(&vpninfo->sso_login,"https://%s:%d/%s",vpninfo->hostname, vpninfo->port,vpninfo->urlpath);
+	if(ret < 0){
+		vpninfo->sso_login = NULL;
+		goto out;
+	}
 	/* Now that we are listening on the socket, we can spawn the browser */
-		if (vpninfo->open_ext_browser) {
-			ret = vpninfo->open_ext_browser(vpninfo, vpninfo->sso_login, vpninfo->cbdata);
+	if (vpninfo->open_ext_browser) {
+		ret = vpninfo->open_ext_browser(vpninfo, vpninfo->sso_login, vpninfo->cbdata);
 	#if defined(HAVE_POSIX_SPAWN) || defined(_WIN32)
 		} else if (vpninfo->external_browser) {
 			ret = spawn_browser(vpninfo);
@@ -147,8 +101,6 @@ int listen_for_id(struct openconnect_info *vpninfo, uint16_t listen_port) {
 				     _("Failed to spawn external browser for %s\n"),
 				     vpninfo->sso_login);
 
-
-	char *retid = NULL;
 
 	/* There may be other stray connections. Repeat until we have one
 	 * that looks like the actual auth attempt from the browser. */
@@ -220,10 +172,12 @@ int listen_for_id(struct openconnect_info *vpninfo, uint16_t listen_port) {
 	}
 	vpn_progress(vpninfo, PRG_DEBUG, _("Got  Id %s \n"), retid);
 
-	char authUrl[256];
-	snprintf(authUrl, sizeof(authUrl) - 1, "remote/saml/auth_id?id=%s", retid);
 	free(vpninfo->urlpath);
-	vpninfo->urlpath = strdup(authUrl);
+	ret = asprintf(&vpninfo->urlpath, "remote/saml/auth_id?id=%s", retid);
+	if(ret < 0){
+		vpninfo->urlpath = NULL;
+		goto out;
+	}
 
 	out:
 	free(retid);

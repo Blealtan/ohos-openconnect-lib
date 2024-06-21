@@ -1362,6 +1362,10 @@ int fortinet_dtls_catch_svrhello(struct openconnect_info *vpninfo, struct pkt *p
 
 /* idretriever.c */
 int listen_for_id(struct openconnect_info *vpninfo, uint16_t listen_port);
+/* spawn-browser.c*/
+#if defined(HAVE_POSIX_SPAWN) || defined(_WIN32)
+int spawn_browser(struct openconnect_info *vpninfo);
+#endif
 
 /* ppp.c */
 struct oc_ppp;
