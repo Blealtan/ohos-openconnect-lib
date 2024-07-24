@@ -28,6 +28,7 @@ struct login_context {
 	char *portal_userauthcookie;		/* portal-userauthcookie (from global-protect/getconfig.esp) */
 	char *portal_prelogonuserauthcookie;	/* portal-prelogonuserauthcookie (from global-protect/getconfig.esp) */
 	char *region;				/* Region (typically 2 characters, e.g. DE, US) */
+	int portal_success;			/* Portal authentication success*/
 	struct oc_auth_form *form;
 };
 
@@ -82,7 +83,7 @@ static int parse_prelogin_xml(struct openconnect_info *vpninfo, xmlNode *xml_nod
 	struct oc_form_opt *opt, *opt2;
 	char *prompt = NULL, *username_label = NULL, *password_label = NULL;
 	char *s = NULL, *saml_method = NULL, *saml_path = NULL;
-	int result = -EINVAL;
+	int second_saml_auth = 0, result = -EINVAL;
 
 	if (!xmlnode_is_named(xml_node, "prelogin-response"))
 		goto out;
@@ -103,7 +104,14 @@ static int parse_prelogin_xml(struct openconnect_info *vpninfo, xmlNode *xml_nod
 			vpn_progress(vpninfo, PRG_DEBUG, _("SAML authentication required; using portal-userauthcookie to continue SAML.\n"));
 		else if (!vpninfo->open_webview && ctx->portal_prelogonuserauthcookie)
 			vpn_progress(vpninfo, PRG_DEBUG, _("SAML authentication required; using portal-prelogonuserauthcookie to continue SAML.\n"));
-		else if (!vpninfo->open_webview && ctx->alt_secret)
+		else if (!vpninfo->open_webview && ctx->alt_secret && !ctx->portal_success)
+			/* Even when there's already a secret and the the
+			 * portal has authenticated, the gateway may still need
+			 * a separate SAML authentication.  We've a secret, and
+			 * a prelogin response, and await portal login;
+			 * SAML must have succeeded.
+			 * https://knowledgebase.paloaltonetworks.com/KCSArticleDetail?id=kA10g000000ClQXCA0
+			 */
 			vpn_progress(vpninfo, PRG_DEBUG, _("Destination form field %s was specified; assuming SAML %s authentication is complete.\n"),
 			             ctx->alt_secret, saml_method);
 		else {
@@ -149,9 +157,16 @@ static int parse_prelogin_xml(struct openconnect_info *vpninfo, xmlNode *xml_nod
 
 			/* Legacy flow (when not called by n-m-oc) */
 			if (!vpninfo->open_webview) {
-				vpn_progress(vpninfo,
-					PRG_ERR, _("When SAML authentication is complete, specify destination form field by appending :field_name to login URL.\n"));
-				goto out;
+				if (ctx->portal_success) {
+					vpn_progress(vpninfo,
+						PRG_INFO, _("When SAML authentication is complete, enter the resultant cookie when prompted for: %s\n"),
+						ctx->alt_secret);
+					second_saml_auth = 1;
+				} else {
+					vpn_progress(vpninfo,
+						PRG_ERR, _("When SAML authentication is complete, specify destination form field by appending :field_name to login URL.\n"));
+					goto out;
+				}
 			}
 		}
 	}
@@ -195,18 +210,23 @@ static int parse_prelogin_xml(struct openconnect_info *vpninfo, xmlNode *xml_nod
 	if (asprintf(&opt2->label, "%s: ", ctx->alt_secret ? : password_label ? : _("Password")) <= 0)
 		goto nomem;
 
-	/* XX: Some VPNs use a password in the first form, followed by a
-	 * a token in the second ("challenge") form. Others use only a
-	 * token. How can we distinguish these?
-	 *
-	 * Currently using the heuristic that a non-default label for the
-	 * password in the first form means we should treat the first
-	 * form's password as a token field.
-	 */
-	if (saml_path)
+	if (second_saml_auth)
+          	/* A saml_path was made and shown to the user, who must
+          	 * manually do SAML and enter the cookie.
+          	 */
+		opt2->type = OC_FORM_OPT_PASSWORD;
+	else if (saml_path)
 		opt2->type = OC_FORM_OPT_SSO_TOKEN;
 	else if (!can_gen_tokencode(vpninfo, form, opt2) && !ctx->alt_secret
 	         && password_label && strcmp(password_label, "Password"))
+		/* XX: Some VPNs use a password in the first form, followed by
+		 * a a token in the second ("challenge") form. Others use only
+		 * a token. How can we distinguish these?
+		 *
+		 * Currently using the heuristic that a non-default label for
+		 * the password in the first form means we should treat the
+		 * first form's password as a token field.
+		 */
 		opt2->type = OC_FORM_OPT_TOKEN;
 	else
 		opt2->type = OC_FORM_OPT_PASSWORD;
@@ -787,6 +807,7 @@ static int gpst_login(struct openconnect_info *vpninfo, int portal, struct login
 				 *      (a) we received a cookie that should allow automatic retry
 				 *   OR (b) portal form was neither challenge auth nor alt-secret (SAML)
 				 */
+				ctx->portal_success = 1;
 				portal = 0;
 				if (ctx->portal_userauthcookie || ctx->portal_prelogonuserauthcookie ||
 				    (strcmp(ctx->form->auth_id, "_challenge") && !ctx->alt_secret)) {
@@ -806,7 +827,7 @@ out:
 
 int gpst_obtain_cookie(struct openconnect_info *vpninfo)
 {
-	struct login_context ctx = { .username=NULL, .alt_secret=NULL, .portal_userauthcookie=NULL, .portal_prelogonuserauthcookie=NULL, .form=NULL };
+	struct login_context ctx = { .username=NULL, .alt_secret=NULL, .portal_userauthcookie=NULL, .portal_prelogonuserauthcookie=NULL, .portal_success=0, .form=NULL };
 	int result;
 
 	/* An alternate password/secret field may be specified in the "URL path" (or --usergroup).
