@@ -133,6 +133,8 @@ public abstract class LibOpenConnect {
 	public synchronized native int setProxyAuth(String methods);
 	public synchronized native int setHTTPProxy(String proxy);
 	public synchronized native void setSNI(String sni);
+	public synchronized native void setTLSHSRecFragSize(int size);
+	public synchronized native void setTLSHSTCPFragSize(int size);
 	public synchronized native void setXMLSHA1(String hash);
 	public synchronized native void setHostname(String hostname);
 	public synchronized native void setVersionString(String version);

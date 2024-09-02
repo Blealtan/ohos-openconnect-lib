@@ -581,6 +581,14 @@ int openconnect_set_urlpath(struct openconnect_info *, const char *);
 int openconnect_set_localname(struct openconnect_info *, const char *);
 int openconnect_set_sni(struct openconnect_info *, const char *);
 
+/*
+ * Comment here for explaining what are these functions
+ *
+ *
+ */
+int openconnect_set_tls_hs_rec_frag_size(struct openconnect_info *vpninfo, int size);
+int openconnect_set_tls_hs_tcp_frag_size(struct openconnect_info *vpninfo, int size);
+
 /* Some software tokens, such as HOTP tokens, include a counter which
  * needs to be stored in persistent storage.
  *
