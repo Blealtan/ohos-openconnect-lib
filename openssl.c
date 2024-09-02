@@ -158,6 +158,40 @@ int openconnect_random(void *bytes, int len)
 /* Helper functions for reading/writing lines over TLS/DTLS.
    We could use cURL for the HTTP stuff, but it's overkill */
 
+static int tls_tcp_frag_write_ex_func (BIO* bio, const char* data, const size_t size, size_t* written)
+{
+	int    socket_fd       = 0;
+	size_t current_written = 0;
+	BIO_get_fd(bio, &socket_fd);
+
+	while (current_written < size)
+	{
+		const ssize_t ret = send(socket_fd, &data[current_written], MIN(tls_hs_tcp_frag_size, size - current_written), 0);
+		if (ret <= 0)
+		{
+			if (BIO_sock_should_retry(ret))
+			{
+				BIO_set_retry_write(bio);
+				*written = current_written;
+				return 0;
+			}
+		}
+		current_written += ret;
+	}
+
+	*written = current_written;
+
+
+	return 1;
+}
+
+static int tls_tcp_frag_write_func (BIO* bio, const char* data, const int size)
+{
+	size_t written = 0;
+	tls_tcp_frag_write_ex_func(bio, data, size, &written);
+	return written;
+}
+
 static int _openconnect_openssl_write(SSL *ssl, int fd, struct openconnect_info *vpninfo, char *buf, size_t len)
 {
 	size_t orig_len = len;
@@ -1865,8 +1899,7 @@ int openconnect_install_ctx_verify(struct openconnect_info *vpninfo, SSL_CTX *ct
 	return 0;
 }
 
-/* the name should be changed */
-static BIO_METHOD* getCustomBIOMethod ()
+static BIO_METHOD* mutable_socket_method ()
 {
 	BIO_METHOD* bio_method = BIO_meth_new(BIO_TYPE_SOCKET, "custom_socket");
 
@@ -1894,40 +1927,6 @@ static BIO_METHOD* getCustomBIOMethod ()
 	return bio_method;
 }
 
-/* Probably should be moved somewhere else */
-static int tls_tcp_frag_write_ex_func (BIO* bio, const char* data, const size_t size, size_t* written)
-{
-	int    socket_fd       = 0;
-	size_t current_written = 0;
-	BIO_get_fd(bio, &socket_fd);
-
-	while (current_written < size)
-	{
-		const ssize_t ret = send(socket_fd, &data[current_written], MIN(tls_hs_tcp_frag_size, size - current_written), 0);
-		if (ret <= 0)
-		{
-			if (BIO_sock_should_retry(ret))
-			{
-				BIO_set_retry_write(bio);
-				*written = current_written;
-				return 0;
-			}
-		}
-		current_written += ret;
-	}
-
-	*written = current_written;
-
-
-	return 1;
-}
-
-static int tls_tcp_frag_write_func (BIO* bio, const char* data, const int size)
-{
-	size_t written = 0;
-	tls_tcp_frag_write_ex_func(bio, data, size, &written);
-	return written;
-}
 
 int openconnect_open_https(struct openconnect_info *vpninfo)
 {
@@ -2054,13 +2053,14 @@ int openconnect_open_https(struct openconnect_info *vpninfo)
 	https_ssl = SSL_new(vpninfo->https_ctx);
 	workaround_openssl_certchain_bug(vpninfo, https_ssl);
 
-	bio_socket_method = getCustomBIOMethod();
+	bio_socket_method = mutable_socket_method();
 	https_bio = BIO_new(bio_socket_method);
-	BIO_set_fd(https_bio, ssl_sock, BIO_NOCLOSE);
 
-	// https_bio = BIO_new_socket(ssl_sock, BIO_NOCLOSE);
+	BIO_set_fd(https_bio, ssl_sock, BIO_NOCLOSE);
 	BIO_set_nbio(https_bio, 1);
+
 	SSL_set_bio(https_ssl, https_bio, https_bio);
+
 	/*
 	 * If a ClientHello is between 256 and 511 bytes, the
 	 * server cannot distinguish between a SSLv2 formatted

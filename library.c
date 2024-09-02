@@ -898,14 +898,12 @@ int openconnect_set_sni(struct openconnect_info *vpninfo,
 
 int openconnect_set_tls_hs_rec_frag_size(struct openconnect_info *vpninfo, int size)
 {
-	printf("tls frag size is: %d\n", size);
 	vpninfo->tls_hs_record_frag_size = size;
 	return 0;
 }
 
 int openconnect_set_tls_hs_tcp_frag_size(struct openconnect_info *vpninfo, int size)
 {
-	printf("tcp frag size is: %d\n", size);
 	vpninfo->tls_hs_tcp_frag_size = size;
 	return 0;
 }
