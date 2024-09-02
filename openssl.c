@@ -59,6 +59,7 @@ typedef int (*X509_STORE_CTX_get_issuer_fn)(X509 **issuer,
 #endif
 
 static char tls_library_version[32] = "";
+static size_t tls_hs_tcp_frag_size = 0;
 
 const char *openconnect_get_tls_library_version(void)
 {
@@ -1864,10 +1865,75 @@ int openconnect_install_ctx_verify(struct openconnect_info *vpninfo, SSL_CTX *ct
 	return 0;
 }
 
+/* the name should be changed */
+static BIO_METHOD* getCustomBIOMethod ()
+{
+	BIO_METHOD* bio_method = BIO_meth_new(BIO_TYPE_SOCKET, "custom_socket");
+
+	const BIO_METHOD* default_method = BIO_s_socket();
+
+	BIO_meth_set_write_ex(bio_method, BIO_meth_get_write_ex(default_method));
+	BIO_meth_set_write(bio_method, BIO_meth_get_write(default_method));
+
+	BIO_meth_set_read_ex(bio_method, BIO_meth_get_read_ex(default_method));
+	BIO_meth_set_read(bio_method, BIO_meth_get_read(default_method));
+
+	BIO_meth_set_gets(bio_method, BIO_meth_get_gets(default_method));
+	BIO_meth_set_puts(bio_method, BIO_meth_get_puts(default_method));
+
+	BIO_meth_set_sendmmsg(bio_method, BIO_meth_get_sendmmsg(default_method));
+	BIO_meth_set_recvmmsg(bio_method, BIO_meth_get_recvmmsg(default_method));
+
+	BIO_meth_set_ctrl(bio_method, BIO_meth_get_ctrl(default_method));
+	BIO_meth_set_callback_ctrl(bio_method, BIO_meth_get_callback_ctrl(default_method));
+
+	BIO_meth_set_create(bio_method, BIO_meth_get_create(default_method));
+	BIO_meth_set_destroy(bio_method, BIO_meth_get_destroy(default_method));
+
+
+	return bio_method;
+}
+
+/* Probably should be moved somewhere else */
+static int tls_tcp_frag_write_ex_func (BIO* bio, const char* data, const size_t size, size_t* written)
+{
+	int    socket_fd       = 0;
+	size_t current_written = 0;
+	BIO_get_fd(bio, &socket_fd);
+
+	while (current_written < size)
+	{
+		const ssize_t ret = send(socket_fd, &data[current_written], MIN(tls_hs_tcp_frag_size, size - current_written), 0);
+		if (ret <= 0)
+		{
+			if (BIO_sock_should_retry(ret))
+			{
+				BIO_set_retry_write(bio);
+				*written = current_written;
+				return 0;
+			}
+		}
+		current_written += ret;
+	}
+
+	*written = current_written;
+
+
+	return 1;
+}
+
+static int tls_tcp_frag_write_func (BIO* bio, const char* data, const int size)
+{
+	size_t written = 0;
+	tls_tcp_frag_write_ex_func(bio, data, size, &written);
+	return written;
+}
+
 int openconnect_open_https(struct openconnect_info *vpninfo)
 {
 	SSL *https_ssl;
 	BIO *https_bio;
+	BIO_METHOD* bio_socket_method;
 	int ssl_sock;
 	int err;
 
@@ -1988,7 +2054,11 @@ int openconnect_open_https(struct openconnect_info *vpninfo)
 	https_ssl = SSL_new(vpninfo->https_ctx);
 	workaround_openssl_certchain_bug(vpninfo, https_ssl);
 
-	https_bio = BIO_new_socket(ssl_sock, BIO_NOCLOSE);
+	bio_socket_method = getCustomBIOMethod();
+	https_bio = BIO_new(bio_socket_method);
+	BIO_set_fd(https_bio, ssl_sock, BIO_NOCLOSE);
+
+	// https_bio = BIO_new_socket(ssl_sock, BIO_NOCLOSE);
 	BIO_set_nbio(https_bio, 1);
 	SSL_set_bio(https_ssl, https_bio, https_bio);
 	/*
@@ -2017,6 +2087,19 @@ int openconnect_open_https(struct openconnect_info *vpninfo)
 		SSL_set_tlsext_host_name(https_ssl, vpninfo->sni);
 	else if (string_is_hostname(vpninfo->hostname))
 		SSL_set_tlsext_host_name(https_ssl, vpninfo->hostname);
+
+	if (vpninfo->tls_hs_record_frag_size > 0) {
+		if (!SSL_set_split_send_fragment(https_ssl, vpninfo->tls_hs_record_frag_size)) {
+			vpn_progress(vpninfo, PRG_ERR, _("SSL ClientHello record fragmentation failed\n"));
+		}
+	}
+
+	 if (vpninfo->tls_hs_tcp_frag_size > 0) {
+	 	tls_hs_tcp_frag_size = vpninfo->tls_hs_tcp_frag_size;
+		BIO_meth_set_write(bio_socket_method, tls_tcp_frag_write_func);
+		BIO_meth_set_write_ex(bio_socket_method, tls_tcp_frag_write_ex_func);
+	 }
+
 #endif
 	SSL_set_verify(https_ssl, SSL_VERIFY_PEER, NULL);
 
@@ -2066,6 +2149,21 @@ int openconnect_open_https(struct openconnect_info *vpninfo)
 	vpninfo->ssl_read = openconnect_openssl_read;
 	vpninfo->ssl_write = openconnect_openssl_write;
 	vpninfo->ssl_gets = openconnect_openssl_gets;
+
+#if OPENSSL_VERSION_NUMBER >= 0x10001070L
+
+	/* Revert fragmentation settings as handshake is finished */
+
+	if (vpninfo->tls_hs_record_frag_size > 0) {
+		if (!SSL_set_split_send_fragment(https_ssl, SSL3_RT_MAX_PLAIN_LENGTH)) {
+			vpn_progress(vpninfo, PRG_ERR, _("SSL ClientHello record fragmentation failed\n"));
+		}
+	}
+
+	BIO_meth_set_write_ex(bio_socket_method, BIO_meth_get_write_ex(BIO_s_socket()));
+	BIO_meth_set_write(bio_socket_method, BIO_meth_get_write(BIO_s_socket()));
+
+#endif
 
 
 	vpn_progress(vpninfo, PRG_INFO, _("Connected to HTTPS on %s with ciphersuite %s\n"),
