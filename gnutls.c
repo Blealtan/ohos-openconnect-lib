@@ -27,7 +27,6 @@
 #include <gnutls/crypto.h>
 #include <gnutls/pkcs12.h>
 #include <gnutls/abstract.h>
-#include <gnutls/socket.h>
 
 #ifdef HAVE_P11KIT
 #include <p11-kit/p11-kit.h>
@@ -39,7 +38,6 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
-#include <string.h>
 #include <ctype.h>
 #include <stdio.h>
 #include <errno.h>
