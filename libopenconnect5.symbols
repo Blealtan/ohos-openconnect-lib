@@ -103,3 +103,5 @@ libopenconnect.so.5 libopenconnect5 #MINVER#
  openconnect_set_mca_key_password@OPENCONNECT_5_8 9.00
  openconnect_set_useragent@OPENCONNECT_5_8 9.00
  openconnect_set_sni@OPENCONNECT_5_9 9.12
+ openconnect_set_tls_hs_rec_frag_size@OPENCONNECT_5_9 9.12
+ openconnect_set_tls_hs_tcp_frag_size@OPENCONNECT_5_9 9.12
