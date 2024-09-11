@@ -21,11 +21,13 @@
 
 #include "gnutls.h"
 
+#include <string.h>
 #include <gnutls/gnutls.h>
 #include <gnutls/x509.h>
 #include <gnutls/crypto.h>
 #include <gnutls/pkcs12.h>
 #include <gnutls/abstract.h>
+#include <gnutls/socket.h>
 
 #ifdef HAVE_P11KIT
 #include <p11-kit/p11-kit.h>
@@ -33,9 +35,9 @@
 #include <p11-kit/pin.h>
 #endif
 
-#include <sys/types.h>
+#include <assert.h>
 #include <sys/stat.h>
-#include <fcntl.h>
+#include <sys/types.h>
 
 #include <string.h>
 #include <ctype.h>
@@ -67,7 +69,30 @@ static int gnutls_pin_callback(void *priv, int attempt, const char *uri,
 #define GNUTLS_FORCE_CLIENT_CERT 0
 #endif
 
+#pragma pack(push, 1)
+struct tls_record_header_st
+{
+	uint8_t content_type;
+	uint16_t version;
+	uint16_t length;
+};
+#pragma pack(pop)
+
+typedef enum {
+	ChangeCipherSpec = 20,
+	Alert,
+	Handshake,
+	ApplicationData
+} tls_record_content_type_t;
+
+typedef enum {
+	ClientHello = 1,
+	ClientKeyExchange = 16
+} tls_record_handshake_type_t;
+
 static char tls_library_version[32] = "";
+static size_t tls_hs_tcp_frag_size = 0;
+static size_t tls_hs_record_frag_size = 0;
 
 const char *openconnect_get_tls_library_version(void)
 {
@@ -358,6 +383,102 @@ int ssl_nonblock_write(struct openconnect_info *vpninfo, int dtls, void *buf, in
 	vpn_progress(vpninfo, PRG_ERR, _("Write error on %s session: %s\n"),
 		     dtls ? "DTLS" : "SSL", gnutls_strerror(ret));
 	return -1;
+}
+
+static ssize_t tls_fragment_push_func(gnutls_transport_ptr_t transport_ptr, const void* original_data, size_t original_size)
+{
+	const int socket_fd = (intptr_t)transport_ptr;
+	char* data_to_be_written = (char*)original_data;
+	size_t data_size_to_be_written = original_size;
+	size_t tcp_seg_size = tls_hs_tcp_frag_size;
+	size_t tls_rec_size = tls_hs_record_frag_size;
+
+
+	if (data_size_to_be_written <= sizeof(struct tls_record_header_st)) {
+		tls_rec_size = 0;
+	}
+
+	struct tls_record_header_st base_header = *((struct tls_record_header_st*)data_to_be_written);
+	const tls_record_handshake_type_t handshake_type = *(uint8_t*)(data_to_be_written + sizeof(struct tls_record_header_st));
+
+	/*
+	 * We can only fragment TLS records that have ContentType of Handshake
+	 * and the HandshakeType of ClientHello or ClientKeyExchange.
+	 * OpenSSL has the same behavior through `SSL_set_split_send_fragment()`.
+	 */
+	if (tls_rec_size > 0
+		&& base_header.content_type == Handshake
+		&& (handshake_type == ClientHello || handshake_type == ClientKeyExchange)) {
+
+		const size_t data_without_base_header_size = data_size_to_be_written - sizeof(struct tls_record_header_st);
+		const char* data_without_base_header = data_to_be_written + sizeof(struct tls_record_header_st);
+
+		const int needs_carry = data_without_base_header_size % tls_rec_size == 0 ? 0 : 1;
+		const int number_of_headers = (data_without_base_header_size / tls_rec_size) + needs_carry;
+		const size_t tls_frag_rec_overhead = number_of_headers * sizeof(struct tls_record_header_st);
+
+		/*
+		 * We need to allocate a new buffer as we need to copy new headers
+		 * in between our data.
+		 */
+		data_size_to_be_written = data_without_base_header_size + tls_frag_rec_overhead;
+		data_to_be_written = (char*)malloc(data_without_base_header_size + tls_frag_rec_overhead);
+		if (data_to_be_written == NULL) {
+			return -1;
+		}
+
+		/*
+		 * Create a new buffer with fragmented TLS records.
+		 */
+		ssize_t remained_bytes = data_without_base_header_size;
+		ssize_t copied_bytes = 0;
+		for (int i = 0; i < number_of_headers; i++) {
+			// Copy TLS Record base header
+			base_header.length = htons(MIN(tls_rec_size, remained_bytes));
+			memcpy(data_to_be_written + copied_bytes, (char*)(&base_header), sizeof(struct tls_record_header_st));
+			copied_bytes += sizeof(struct tls_record_header_st);
+
+			// Copy fragment of data
+			const size_t frag_size = MIN(tls_rec_size, remained_bytes);
+			memcpy(data_to_be_written + copied_bytes, data_without_base_header + (i * tls_rec_size), frag_size);
+			copied_bytes += frag_size;
+			remained_bytes -= frag_size;
+		}
+	}
+
+	if (tcp_seg_size == 0) {
+		tcp_seg_size = data_size_to_be_written;
+	}
+
+	size_t current_written = 0;
+	while (current_written < data_size_to_be_written)
+	{
+		const ssize_t ret = send(socket_fd, &data_to_be_written[current_written],
+					MIN(tcp_seg_size, data_size_to_be_written - current_written), 0);
+		if (ret <= 0)
+		{
+			if (data_to_be_written != original_data) {
+				free(data_to_be_written);
+			}
+			return -1;
+		}
+		current_written += ret;
+	}
+
+	if (data_to_be_written != original_data) {
+		free(data_to_be_written);
+		if (current_written == data_size_to_be_written) {
+			current_written = original_size;
+		}
+	}
+	return current_written;
+}
+
+static ssize_t tls_default_push_func(gnutls_transport_ptr_t ptr, const void *data,
+			 size_t len)
+{
+	const int socket_fd = (intptr_t)ptr;
+	return send(socket_fd, data, len, 0);
 }
 
 static int check_certificate_expiry(struct openconnect_info *vpninfo, struct cert_info *certinfo,
@@ -2498,6 +2619,12 @@ int cstp_handshake(struct openconnect_info *vpninfo, unsigned init)
 
 	ssl_sock = (intptr_t)gnutls_transport_get_ptr(vpninfo->https_sess);
 
+	if (vpninfo->tls_hs_record_frag_size > 0 || vpninfo->tls_hs_tcp_frag_size > 0) {
+		tls_hs_tcp_frag_size = vpninfo->tls_hs_tcp_frag_size;
+		tls_hs_record_frag_size = vpninfo->tls_hs_record_frag_size;
+		gnutls_transport_set_push_function(vpninfo->https_sess, tls_fragment_push_func);
+	}
+
 	while ((err = gnutls_handshake(vpninfo->https_sess))) {
 		if (err == GNUTLS_E_AGAIN || err == GNUTLS_E_INTERRUPTED) {
 			fd_set rd_set, wr_set;
@@ -2542,6 +2669,13 @@ int cstp_handshake(struct openconnect_info *vpninfo, unsigned init)
 				     _("GnuTLS non-fatal return during handshake: %s\n"),
 				     gnutls_strerror(err));
 		}
+	}
+
+	/*
+	 * Restore the default push function for the rest of the application flow.
+	 */
+	if (vpninfo->tls_hs_record_frag_size > 0 || vpninfo->tls_hs_tcp_frag_size > 0) {
+		gnutls_transport_set_push_function(vpninfo->https_sess, tls_default_push_func);
 	}
 
 	gnutls_free(vpninfo->cstp_cipher);
