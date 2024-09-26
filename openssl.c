@@ -1899,6 +1899,8 @@ int openconnect_install_ctx_verify(struct openconnect_info *vpninfo, SSL_CTX *ct
 	return 0;
 }
 
+#if OPENSSL_VERSION_NUMBER >= 0x10001070L
+
 static BIO_METHOD* mutable_socket_method ()
 {
 	BIO_METHOD* bio_method = BIO_meth_new(BIO_TYPE_SOCKET, "custom_socket");
@@ -1914,12 +1916,10 @@ static BIO_METHOD* mutable_socket_method ()
 	BIO_meth_set_gets(bio_method, BIO_meth_get_gets(default_method));
 	BIO_meth_set_puts(bio_method, BIO_meth_get_puts(default_method));
 
-	/*
-	 * These two functions are not set because they're not available in the CI:
-	 *
-	 *	BIO_meth_set_sendmmsg(bio_method, BIO_meth_get_sendmmsg(default_method));
-	 *	BIO_meth_set_recvmmsg(bio_method, BIO_meth_get_recvmmsg(default_method));
-	*/
+
+	BIO_meth_set_sendmmsg(bio_method, BIO_meth_get_sendmmsg(default_method));
+	BIO_meth_set_recvmmsg(bio_method, BIO_meth_get_recvmmsg(default_method));
+
 	BIO_meth_set_ctrl(bio_method, BIO_meth_get_ctrl(default_method));
 	BIO_meth_set_callback_ctrl(bio_method, BIO_meth_get_callback_ctrl(default_method));
 
@@ -1930,6 +1930,7 @@ static BIO_METHOD* mutable_socket_method ()
 	return bio_method;
 }
 
+#endif
 
 int openconnect_open_https(struct openconnect_info *vpninfo)
 {
@@ -2056,8 +2057,12 @@ int openconnect_open_https(struct openconnect_info *vpninfo)
 	https_ssl = SSL_new(vpninfo->https_ctx);
 	workaround_openssl_certchain_bug(vpninfo, https_ssl);
 
+#if OPENSSL_VERSION_NUMBER >= 0x10001070L
 	bio_socket_method = mutable_socket_method();
 	https_bio = BIO_new(bio_socket_method);
+#else
+	https_bio = BIO_new_socket(ssl_sock, BIO_NOCLOSE);
+#endif
 
 	BIO_set_fd(https_bio, ssl_sock, BIO_NOCLOSE);
 	BIO_set_nbio(https_bio, 1);
