@@ -1916,8 +1916,12 @@ static BIO_METHOD* mutable_socket_method ()
 	BIO_meth_set_gets(bio_method, BIO_meth_get_gets(default_method));
 	BIO_meth_set_puts(bio_method, BIO_meth_get_puts(default_method));
 
-	BIO_meth_set_sendmmsg(bio_method, BIO_meth_get_sendmmsg(default_method));
-	BIO_meth_set_recvmmsg(bio_method, BIO_meth_get_recvmmsg(default_method));
+	/*
+	 * These two functions are not set because they're not available in the CI:
+	 *
+	 *	BIO_meth_set_sendmmsg(bio_method, BIO_meth_get_sendmmsg(default_method));
+	 *	BIO_meth_set_recvmmsg(bio_method, BIO_meth_get_recvmmsg(default_method));
+	*/
 
 	BIO_meth_set_ctrl(bio_method, BIO_meth_get_ctrl(default_method));
 	BIO_meth_set_callback_ctrl(bio_method, BIO_meth_get_callback_ctrl(default_method));
