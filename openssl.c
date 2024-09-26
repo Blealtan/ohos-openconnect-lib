@@ -2166,7 +2166,7 @@ int openconnect_open_https(struct openconnect_info *vpninfo)
 	vpninfo->ssl_write = openconnect_openssl_write;
 	vpninfo->ssl_gets = openconnect_openssl_gets;
 
-#if OPENSSL_VERSION_NUMBER >= 0x10001070L
+#if OPENSSL_VERSION_NUMBER >= 0x11000000L
 
 	/* Revert fragmentation settings as handshake is finished */
 
