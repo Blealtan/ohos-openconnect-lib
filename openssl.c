@@ -1899,7 +1899,7 @@ int openconnect_install_ctx_verify(struct openconnect_info *vpninfo, SSL_CTX *ct
 	return 0;
 }
 
-#if OPENSSL_VERSION_NUMBER >= 0x11000000L
+#if OPENSSL_VERSION_NUMBER >= 0x110000000L
 
 static BIO_METHOD* mutable_socket_method ()
 {
@@ -2056,7 +2056,7 @@ int openconnect_open_https(struct openconnect_info *vpninfo)
 	https_ssl = SSL_new(vpninfo->https_ctx);
 	workaround_openssl_certchain_bug(vpninfo, https_ssl);
 
-#if OPENSSL_VERSION_NUMBER >= 0x11000000L
+#if OPENSSL_VERSION_NUMBER >= 0x110000000L
 	bio_socket_method = mutable_socket_method();
 	https_bio = BIO_new(bio_socket_method);
 #else
@@ -2097,7 +2097,7 @@ int openconnect_open_https(struct openconnect_info *vpninfo)
 
 #endif
 
-#if OPENSSL_VERSION_NUMBER >= 0x11000000L
+#if OPENSSL_VERSION_NUMBER >= 0x110000000L
 
 	if (vpninfo->tls_hs_record_frag_size > 0) {
 		if (!SSL_set_split_send_fragment(https_ssl, vpninfo->tls_hs_record_frag_size)) {
@@ -2162,7 +2162,7 @@ int openconnect_open_https(struct openconnect_info *vpninfo)
 	vpninfo->ssl_write = openconnect_openssl_write;
 	vpninfo->ssl_gets = openconnect_openssl_gets;
 
-#if OPENSSL_VERSION_NUMBER >= 0x11000000L
+#if OPENSSL_VERSION_NUMBER >= 0x110000000L
 
 	/* Revert fragmentation settings as handshake is finished */
 
