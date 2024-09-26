@@ -2099,6 +2099,10 @@ int openconnect_open_https(struct openconnect_info *vpninfo)
 	else if (string_is_hostname(vpninfo->hostname))
 		SSL_set_tlsext_host_name(https_ssl, vpninfo->hostname);
 
+#endif
+
+#if OPENSSL_VERSION_NUMBER >= 0x11000000L
+
 	if (vpninfo->tls_hs_record_frag_size > 0) {
 		if (!SSL_set_split_send_fragment(https_ssl, vpninfo->tls_hs_record_frag_size)) {
 			vpn_progress(vpninfo, PRG_ERR, _("SSL ClientHello record fragmentation failed\n"));
@@ -2112,6 +2116,7 @@ int openconnect_open_https(struct openconnect_info *vpninfo)
 	 }
 
 #endif
+
 	SSL_set_verify(https_ssl, SSL_VERIFY_PEER, NULL);
 
 	vpn_progress(vpninfo, PRG_INFO, _("SSL negotiation with %s\n"),
