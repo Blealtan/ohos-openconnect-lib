@@ -2019,7 +2019,8 @@ int main(int argc, char *argv[])
 			openconnect_set_sni(vpninfo, config_arg);
 			break;
 		case OPT_TLS_REC_FRAG:
-#if OPENSSL_VERSION_NUMBER < 0x10001070L
+#if OPENSSL_VERSION_NUMBER < 0x11000000L
+
 			fprintf(stderr, _("The version of your OpenSSL doesn't support fragmentation. "
 			"Ignoring this option\n"));
 			break;
@@ -2029,7 +2030,7 @@ int main(int argc, char *argv[])
 			openconnect_set_tls_hs_rec_frag_size(vpninfo, atoi(config_arg));
 			break;
 		case OPT_TLS_TCP_FRAG:
-#if OPENSSL_VERSION_NUMBER < 0x10001070L
+#if OPENSSL_VERSION_NUMBER < 0x11000000L
 			fprintf(stderr, _("The version of your OpenSSL doesn't support fragmentation. "
 			"Ignoring this option\n"));
 			break;
