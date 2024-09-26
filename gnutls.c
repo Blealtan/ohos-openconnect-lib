@@ -43,6 +43,7 @@
 #include <errno.h>
 #include <stdarg.h>
 #include <stdlib.h>
+#include <fcntl.h>
 
 #if defined(HAVE_P11KIT) || defined(HAVE_GNUTLS_SYSTEM_KEYS)
 static int gnutls_pin_callback(void *priv, int attempt, const char *uri,
