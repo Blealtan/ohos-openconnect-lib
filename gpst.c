@@ -1153,7 +1153,7 @@ int gpst_mainloop(struct openconnect_info *vpninfo, int *timeout, int readable)
 				     _("Failed to connect ESP tunnel; using HTTPS instead.\n"));
 		/* XX: gpst_connect does nothing if ESP is enabled and has secrets */
 		vpninfo->dtls_state = DTLS_NOSECRET;
-		if (ret = gpst_connect(vpninfo)) {
+		if ((ret = gpst_connect(vpninfo))) {
 			vpninfo->quit_reason = "GPST connect failed";
 			return ret;
 		}
@@ -1311,7 +1311,7 @@ int gpst_mainloop(struct openconnect_info *vpninfo, int *timeout, int readable)
 			return ret;
 		}
 		/* XX: no need to do_reconnect, since ESP doesn't need reconnection */
-		if (ret = gpst_connect(vpninfo))
+		if ((ret = gpst_connect(vpninfo)))
 			vpninfo->quit_reason = "GPST connect failed";
 		return ret;
 	}

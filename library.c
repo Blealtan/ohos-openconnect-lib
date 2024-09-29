@@ -1767,3 +1767,11 @@ int openconnect_webview_load_changed(struct openconnect_info *vpninfo,
 
 	return -EOPNOTSUPP;
 }
+
+void openconnect_set_no_external_auth(struct openconnect_info *vpninfo,
+                                      int noauth)
+{
+        if (!vpninfo)
+          return;
+        vpninfo->no_external_auth = noauth;
+}

@@ -33,9 +33,12 @@ extern "C" {
 #endif
 
 #define OPENCONNECT_API_VERSION_MAJOR 5
-#define OPENCONNECT_API_VERSION_MINOR 9
+#define OPENCONNECT_API_VERSION_MINOR 10
 
 /*
+ * API version 5.10 (v9.13: 2024-09-13):
+ *  - Add openconnect_set_no_external_auth()
+ *
  * API version 5.9 (v9.12; 2023-05-20):
  *  - Add openconnect_set_sni()
  *
@@ -796,6 +799,8 @@ void openconnect_set_protect_socket_handler(struct openconnect_info *vpninfo,
 
 void openconnect_set_loglevel(struct openconnect_info *vpninfo, int level);
 
+void openconnect_set_no_external_auth(struct openconnect_info *vpninfo, int noext);
+  
 void openconnect_set_pass_tos(struct openconnect_info *vpninfo, int enable);
 
 /* Callback for obtaining traffic stats via OC_CMD_STATS.
