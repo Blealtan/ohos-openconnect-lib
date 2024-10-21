@@ -799,7 +799,7 @@ void openconnect_set_protect_socket_handler(struct openconnect_info *vpninfo,
 
 void openconnect_set_loglevel(struct openconnect_info *vpninfo, int level);
 
-void openconnect_set_no_external_auth(struct openconnect_info *vpninfo, int noext);
+void openconnect_set_no_external_auth(struct openconnect_info *vpninfo);
   
 void openconnect_set_pass_tos(struct openconnect_info *vpninfo, int enable);
 
