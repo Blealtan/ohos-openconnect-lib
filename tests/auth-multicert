@@ -35,7 +35,7 @@ CAFILE=$certdir/ca.pem
 echo "Testing multiple certificate authentication against fake Cisco server ... "
 
 OCSERV=${srcdir}/fake-cisco-server.py
-launch_simple_sr_server --enable-multicert --cafile $CAFILE $ADDRESS 443 $CERT $KEY > /dev/null 2>&1
+launch_simple_sr_server --enable-multicert --cafile $CAFILE $ADDRESS 443 $CERT $KEY 
 PID=$!
 wait_server $PID
 
@@ -43,7 +43,7 @@ echo -n "Authenticating using multiple certificate authentication... "
 ( echo "test" | LD_PRELOAD=libsocket_wrapper.so $OPENCONNECT --cafile $CAFILE \
 	--certificate $USERCERT --sslkey $USERKEY \
 	--mca-certificate $USERCERT --mca-key $USERKEY \
-	-q $ADDRESS:443 $FINGERPRINT --authenticate >/dev/null 2>&1) ||
+	-q $ADDRESS:443 $FINGERPRINT --authenticate -v ) ||
     fail $PID "Could not receive cookie from fake Cisco server"
 
 echo ok

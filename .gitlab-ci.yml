@@ -25,7 +25,6 @@ Fedora/OpenSSL:
   - ./configure --without-gnutls --with-openssl --without-openssl-version-check --disable-dsa-tests --enable-ppp-tests CFLAGS=-g
   - make tmp-distdir
   - openssl version
-  - python --version
   - ls -l /usr/lib64/libsocket_wrapper*
   - mkdir build
   - cd build
