@@ -19,9 +19,6 @@
 
 #include "openconnect-internal.h"
 
-#include "execinfo.h"  /* CEL */
-#include "stdio.h"     /* CEL */
-
 #include <openssl/crypto.h>
 #include <openssl/ssl.h>
 #include <openssl/err.h>
@@ -2608,38 +2605,30 @@ int export_certificate_pkcs7(struct openconnect_info *vpninfo,
 	 * connection those would be used by SSL_CTX_use_certificate() and
 	 * SSL_CTX_add_extra_chain_cert() respectively. For PKCS7_sign()
 	 * we need the actual cert at the head of the stack, so *create*
-	 * one if needed, and insert oci.cert at position zero. */
+	 * one if needed, and insert oci.cert at position zero.
+         * openssl 3.1.2, used for gitlab verify pipeline, seems to dislike having
+         * a NULL for the PKCS7_sign 'data' argument, so give it a blank BIO */
 
-	if (!oci->extra_certs) {
-          vpn_progress(vpninfo, PRG_ERR,_("checkpoint1\n")); /* CEL */
+	if (!oci->extra_certs)
           oci->extra_certs = sk_X509_new_null();
-        }
-	if (!oci->extra_certs) {
-          vpn_progress(vpninfo, PRG_ERR,_("checkpoint2\n")); /* CEL */
+        
+	if (!oci->extra_certs)
           goto err;
-        }
-	if (!sk_X509_insert(oci->extra_certs, oci->cert, 0)) {
-          vpn_progress(vpninfo, PRG_ERR,_("checkpoint3\n")); /* CEL */
+        
+	if (!sk_X509_insert(oci->extra_certs, oci->cert, 0)) 
           goto err;
-        }
+        
 	X509_up_ref(oci->cert);
-        vpn_progress(vpninfo, PRG_ERR,_("checkpoint4\n")); /* CEL */
 
-	p7 = PKCS7_sign(NULL, NULL, oci->extra_certs,
-                        BIO_new(BIO_s_mem()), PKCS7_DETACHED); /*CEL*/
+	bio = BIO_new(BIO_s_mem());
+	if (!bio) {
+		ret = -ENOMEM;
+		goto pkcs7_error;
+	}
+
+	p7 = PKCS7_sign(NULL, NULL, oci->extra_certs, bio, PKCS7_DETACHED);
 	if (!p7) {
-          char ebuf[512]; /* CEL */
 	err:
-          /* CEL */
-		vpn_progress(vpninfo, PRG_ERR,
-			     _("openssl version %s\n"),OPENSSL_VERSION_TEXT);
-
-                ERR_error_string_n(ERR_get_error(),ebuf,512);
-                strcat(ebuf,"\n");
-		vpn_progress(vpninfo, PRG_ERR,
-			     ebuf);
-                backtrace_symbols_fd(ebuf,512,stdout);
-            /* CEL */
 		vpn_progress(vpninfo, PRG_ERR,
 			     _("Failed to create PKCS#7 structure\n"));
 		ret = -EIO;
@@ -2647,12 +2636,6 @@ int export_certificate_pkcs7(struct openconnect_info *vpninfo,
 	}
 
 	ret = 0;
-
-	bio = BIO_new(BIO_s_mem());
-	if (!bio) {
-		ret = -ENOMEM;
-		goto pkcs7_error;
-	}
 
 	if (format == CERT_FORMAT_ASN1) {
 		ok = i2d_PKCS7_bio(bio, p7);
