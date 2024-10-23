@@ -19,6 +19,9 @@
 
 #include "openconnect-internal.h"
 
+#include "execinfo.h"  /* CEL */
+#include "stdio.h"     /* CEL */
+
 #include <openssl/crypto.h>
 #include <openssl/ssl.h>
 #include <openssl/err.h>
@@ -2608,24 +2611,25 @@ int export_certificate_pkcs7(struct openconnect_info *vpninfo,
 	 * one if needed, and insert oci.cert at position zero. */
 
 	if (!oci->extra_certs) {
-          vpn_progress(vpninfo, PRG_ERR,_("checkpoint1\n"));
+          vpn_progress(vpninfo, PRG_ERR,_("checkpoint1\n")); /* CEL */
           oci->extra_certs = sk_X509_new_null();
         }
 	if (!oci->extra_certs) {
-          vpn_progress(vpninfo, PRG_ERR,_("checkpoint2\n"));
+          vpn_progress(vpninfo, PRG_ERR,_("checkpoint2\n")); /* CEL */
           goto err;
         }
 	if (!sk_X509_insert(oci->extra_certs, oci->cert, 0)) {
-          vpn_progress(vpninfo, PRG_ERR,_("checkpoint3\n"));
+          vpn_progress(vpninfo, PRG_ERR,_("checkpoint3\n")); /* CEL */
           goto err;
         }
 	X509_up_ref(oci->cert);
-        vpn_progress(vpninfo, PRG_ERR,_("checkpoint4\n"));
+        vpn_progress(vpninfo, PRG_ERR,_("checkpoint4\n")); /* CEL */
 
 	p7 = PKCS7_sign(NULL, NULL, oci->extra_certs, NULL, PKCS7_DETACHED);
 	if (!p7) {
-          char ebuf[512];
+          char ebuf[512]; /* CEL */
 	err:
+          /* CEL */
 		vpn_progress(vpninfo, PRG_ERR,
 			     _("openssl version %s\n"),OPENSSL_VERSION_TEXT);
 
@@ -2633,6 +2637,8 @@ int export_certificate_pkcs7(struct openconnect_info *vpninfo,
                 strcat(ebuf,"\n");
 		vpn_progress(vpninfo, PRG_ERR,
 			     ebuf);
+                backtrace_symbols_fd(ebuf,512,stderr);
+            /* CEL */
 		vpn_progress(vpninfo, PRG_ERR,
 			     _("Failed to create PKCS#7 structure\n"));
 		ret = -EIO;
