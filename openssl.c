@@ -2617,7 +2617,12 @@ int export_certificate_pkcs7(struct openconnect_info *vpninfo,
 
 	p7 = PKCS7_sign(NULL, NULL, oci->extra_certs, NULL, PKCS7_DETACHED);
 	if (!p7) {
+          char ebuf[512];
 	err:
+                ERR_error_string_n(ERR_get_error(),ebuf,512);
+                strcat(ebuf,"\n");
+		vpn_progress(vpninfo, PRG_ERR,
+			     ebuf);
 		vpn_progress(vpninfo, PRG_ERR,
 			     _("Failed to create PKCS#7 structure\n"));
 		ret = -EIO;

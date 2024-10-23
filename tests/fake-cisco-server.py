@@ -130,7 +130,7 @@ AUTH_COMPLETE_RESPONSE = dedent('''
 
 
 # Respond to XML/POST auth requests
-@app.route('/', methods=('GET','POST',))
+@app.route('/', methods=('POST',))
 def handle_xmlpost(usergroup=None):
     dict_req = xmltodict.parse(request.data)
     assert 'config-auth' in dict_req
