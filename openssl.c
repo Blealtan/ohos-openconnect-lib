@@ -2607,18 +2607,28 @@ int export_certificate_pkcs7(struct openconnect_info *vpninfo,
 	 * we need the actual cert at the head of the stack, so *create*
 	 * one if needed, and insert oci.cert at position zero. */
 
-	if (!oci->extra_certs)
-		oci->extra_certs = sk_X509_new_null();
-	if (!oci->extra_certs)
-		goto err;
-	if (!sk_X509_insert(oci->extra_certs, oci->cert, 0))
-		goto err;
+	if (!oci->extra_certs) {
+          vpn_progress(vpninfo, PRG_ERR,_("checkpoint1\n"));
+          oci->extra_certs = sk_X509_new_null();
+        }
+	if (!oci->extra_certs) {
+          vpn_progress(vpninfo, PRG_ERR,_("checkpoint2\n"));
+          goto err;
+        }
+	if (!sk_X509_insert(oci->extra_certs, oci->cert, 0)) {
+          vpn_progress(vpninfo, PRG_ERR,_("checkpoint3\n"));
+          goto err;
+        }
 	X509_up_ref(oci->cert);
+        vpn_progress(vpninfo, PRG_ERR,_("checkpoint4\n"));
 
 	p7 = PKCS7_sign(NULL, NULL, oci->extra_certs, NULL, PKCS7_DETACHED);
 	if (!p7) {
           char ebuf[512];
 	err:
+		vpn_progress(vpninfo, PRG_ERR,
+			     _("openssl version %s\n"),OPENSSL_VERSION_TEXT);
+
                 ERR_error_string_n(ERR_get_error(),ebuf,512);
                 strcat(ebuf,"\n");
 		vpn_progress(vpninfo, PRG_ERR,
