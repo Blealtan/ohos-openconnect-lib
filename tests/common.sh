@@ -37,7 +37,7 @@ top_builddir=${top_builddir:-..}
 SOCKDIR="./sockwrap.$$.tmp"
 mkdir -p $SOCKDIR
 export SOCKET_WRAPPER_DIR=$SOCKDIR
-export SOCKET_WRAPPER_DEFAULT_IFACE=2
+export SOCKET_WRAPPER_DEFAULT_IFACE=1
 ADDRESS=127.0.0.$SOCKET_WRAPPER_DEFAULT_IFACE
 OPENCONNECT="${OPENCONNECT:-${top_builddir}/openconnect}"${EXEEXT}
 LOGFILE="$SOCKDIR/log.$$.tmp"

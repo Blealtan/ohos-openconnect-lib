@@ -24,7 +24,6 @@ Fedora/OpenSSL:
   - ./autogen.sh
   - ./configure --without-gnutls --with-openssl --without-openssl-version-check --disable-dsa-tests --enable-ppp-tests CFLAGS=-g
   - make tmp-distdir
-  - nslookup localhost
   - mkdir build
   - cd build
   - TMPDISTDIR=../openconnect-$(git describe --tags | sed s/^v//)
