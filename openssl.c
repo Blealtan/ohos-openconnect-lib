@@ -2625,7 +2625,8 @@ int export_certificate_pkcs7(struct openconnect_info *vpninfo,
 	X509_up_ref(oci->cert);
         vpn_progress(vpninfo, PRG_ERR,_("checkpoint4\n")); /* CEL */
 
-	p7 = PKCS7_sign(NULL, NULL, oci->extra_certs, NULL, PKCS7_DETACHED);
+	p7 = PKCS7_sign(NULL, NULL, oci->extra_certs,
+                        BIO_new(BIO_s_mem()), PKCS7_DETACHED); /*CEL*/
 	if (!p7) {
           char ebuf[512]; /* CEL */
 	err:
@@ -2637,7 +2638,7 @@ int export_certificate_pkcs7(struct openconnect_info *vpninfo,
                 strcat(ebuf,"\n");
 		vpn_progress(vpninfo, PRG_ERR,
 			     ebuf);
-                backtrace_symbols_fd(ebuf,512,stderr);
+                backtrace_symbols_fd(ebuf,512,stdout);
             /* CEL */
 		vpn_progress(vpninfo, PRG_ERR,
 			     _("Failed to create PKCS#7 structure\n"));
