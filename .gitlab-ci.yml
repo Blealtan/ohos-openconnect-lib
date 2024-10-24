@@ -9,7 +9,7 @@ stages:
   - test-android     # Android
 
 variables:
-  BUILD_IMAGES_PROJECT: openconnect/build-images
+  RUNNER_SCRIPT_TIMEOUT: 6h
   CENTOS7_BUILD: openconnect-cli-centos7
   CENTOS8_BUILD: openconnect-cli-centos8
   CENTOS9_BUILD: openconnect-cli-centos9
