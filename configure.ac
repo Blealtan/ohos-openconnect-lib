@@ -1,4 +1,4 @@
-AC_INIT([openconnect], [9.13])
+AC_INIT([openconnect], [9.12])
 AC_LANG([C])
 AC_CONFIG_HEADERS([config.h])
 m4_ifdef([AC_CONFIG_MACRO_DIRS], [AC_CONFIG_MACRO_DIRS([m4])])
