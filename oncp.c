@@ -256,6 +256,28 @@ static int process_attr(struct openconnect_info *vpninfo,
 		vpninfo->esp_lifetime_seconds = load_be32(data);
 		vpn_progress(vpninfo, PRG_DEBUG, _("ESP key lifetime: %u seconds\n"),
 			     vpninfo->esp_lifetime_seconds);
+
+		/* When the ESP keys are expiring, Juniper servers are supposed to send
+		 * new keys to the client with a KMP 302 packet on the oNCP/TLS
+		 * channel. However, we don't know how to keep the oNCP/TLS channel alive,
+		 * or even to detect if it is still alive, so these messages are often
+		 * missed.
+		 *
+		 * As a workaround, we can rekey by reconnecting the TLS channel and
+		 * re-fetching the config shortly before the ESP keys expire. (If we HAVE
+		 * already received new ESP keys from the server then we won't do this.)
+                 *
+                 * Why 60 seconds? We want to re-connect the TLS channel far enough ahead
+                 * of the ESP rekey to ensure that we actually receive the ESP rekey
+                 * message (typically arrives just a few seconds ahead of the old key's
+                 * expiration), but not so far ahead that the TLS channel may die again.
+		 */
+		vpninfo->dtls_times.rekey = MIN(60, vpninfo->esp_lifetime_seconds - 60);
+		vpninfo->dtls_times.rekey_method = REKEY_TUNNEL;
+		/* last_rekey should not really be set until we actually receive the
+		 * initial ESP keys, but we need to prevent a race/loop until then.
+		 */
+		vpninfo->dtls_times.last_rekey = time(NULL);
 		break;
 
 	case GRP_ATTR(8, 9):
@@ -807,6 +829,7 @@ static int oncp_receive_espkeys(struct openconnect_info *vpninfo, int len)
 
 		print_esp_keys(vpninfo, _("new incoming"), esp);
 		print_esp_keys(vpninfo, _("new outgoing"), &vpninfo->esp_out);
+		vpninfo->dtls_times.last_rekey = time(NULL);
 	}
 	return ret;
 #else
@@ -1058,6 +1081,20 @@ int oncp_mainloop(struct openconnect_info *vpninfo, int *timeout, int readable)
 			return 1;
 		}
 	}
+
+#ifdef HAVE_ESP
+	/* ESP keys are expiring, but we haven't received new ones from the server via a
+	 * KMP 302 packet on the oNCP/TLS channel, perhaps because it is dead and we have
+	 * no keepalive/DPD mechanism to prevent or detect this. Reconnect the oNCP/TLS
+	 * channel in order to get new ESP keys.
+	 */
+	 if (vpninfo->dtls_state != DTLS_DISABLED &&
+	     keepalive_action(&vpninfo->dtls_times, timeout) == KA_REKEY) {
+		 vpn_progress(vpninfo, PRG_INFO,
+			      _("Reconnecting oNCP to rekey expiring ESP keys, since server has not sent new ones\n"));
+		 goto do_reconnect;
+	}
+#endif
 
 	/* If SSL_write() fails we are expected to try again. With exactly
 	   the same data, at exactly the same location. So we keep the
