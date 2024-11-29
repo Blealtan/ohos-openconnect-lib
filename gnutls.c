@@ -42,6 +42,7 @@
 #include <stdio.h>
 #include <errno.h>
 #include <stdarg.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #include <fcntl.h>
 
@@ -68,14 +69,12 @@ static int gnutls_pin_callback(void *priv, int attempt, const char *uri,
 #define GNUTLS_FORCE_CLIENT_CERT 0
 #endif
 
-#pragma pack(push, 1)
 struct tls_record_header_st
 {
 	uint8_t content_type;
 	uint16_t version;
 	uint16_t length;
-};
-#pragma pack(pop)
+} __attribute__((packed));
 
 typedef enum {
 	ChangeCipherSpec = 20,
@@ -86,7 +85,8 @@ typedef enum {
 
 typedef enum {
 	ClientHello = 1,
-	ClientKeyExchange = 16
+	ClientKeyExchange = 16,
+	UNKNOWN = -1
 } tls_record_handshake_type_t;
 
 static char tls_library_version[32] = "";
@@ -384,32 +384,49 @@ int ssl_nonblock_write(struct openconnect_info *vpninfo, int dtls, void *buf, in
 	return -1;
 }
 
+/**
+ * The purpose of this function is to be a replacement
+ * for the default GnuTLS' "push" function (i.e. transport layer "send" function).
+ * This function will "fragment" the TLS requests (at both TLS Record and TCP segment layers).
+ * The fragmentation is applied based on the values stored in
+ * the global variables `tls_hs_record_frag_size` and `tls_hs_tcp_frag_size`.
+ */
 static ssize_t tls_fragment_push_func(gnutls_transport_ptr_t transport_ptr, const void* original_data, size_t original_size)
 {
 	const int socket_fd = (intptr_t)transport_ptr;
 	char* data_to_be_written = (char*)original_data;
-	size_t data_size_to_be_written = original_size;
-	size_t tcp_seg_size = tls_hs_tcp_frag_size;
+	size_t data_to_be_written_size = original_size;
+
 	size_t tls_rec_size = tls_hs_record_frag_size;
+	size_t tcp_seg_size = tls_hs_tcp_frag_size;
+	bool is_tls_rec_frag_enabled = tls_rec_size > 0 ? true : false;
+	bool is_tcp_seg_frag_enabled = tcp_seg_size > 0 ? true : false;
 
+	struct tls_record_header_st base_header;
+	tls_record_handshake_type_t handshake_type = UNKNOWN;
 
-	if (data_size_to_be_written <= sizeof(struct tls_record_header_st)) {
-		tls_rec_size = 0;
+	/**
+	 * For TLS Record fragmentation we expect the data
+	 * to be at least as big as a handshake TLS Record header
+	 */
+	if (data_to_be_written_size <= sizeof(struct tls_record_header_st)) {
+		is_tls_rec_frag_enabled = false;
+
+	} else {
+		memcpy(&base_header, data_to_be_written, sizeof(struct tls_record_header_st));
+		handshake_type = ((uint8_t*)data_to_be_written)[sizeof(struct tls_record_header_st)];
 	}
-
-	struct tls_record_header_st base_header = *((struct tls_record_header_st*)data_to_be_written);
-	const tls_record_handshake_type_t handshake_type = *(uint8_t*)(data_to_be_written + sizeof(struct tls_record_header_st));
 
 	/*
 	 * We can only fragment TLS records that have ContentType of Handshake
 	 * and the HandshakeType of ClientHello or ClientKeyExchange.
 	 * OpenSSL has the same behavior through `SSL_set_split_send_fragment()`.
 	 */
-	if (tls_rec_size > 0
+	if (is_tls_rec_frag_enabled
 		&& base_header.content_type == Handshake
 		&& (handshake_type == ClientHello || handshake_type == ClientKeyExchange)) {
 
-		const size_t data_without_base_header_size = data_size_to_be_written - sizeof(struct tls_record_header_st);
+		const size_t data_without_base_header_size = data_to_be_written_size - sizeof(struct tls_record_header_st);
 		const char* data_without_base_header = data_to_be_written + sizeof(struct tls_record_header_st);
 
 		const int needs_carry = data_without_base_header_size % tls_rec_size == 0 ? 0 : 1;
@@ -420,7 +437,7 @@ static ssize_t tls_fragment_push_func(gnutls_transport_ptr_t transport_ptr, cons
 		 * We need to allocate a new buffer as we need to copy new headers
 		 * in between our data.
 		 */
-		data_size_to_be_written = data_without_base_header_size + tls_frag_rec_overhead;
+		data_to_be_written_size = data_without_base_header_size + tls_frag_rec_overhead;
 		data_to_be_written = (char*)malloc(data_without_base_header_size + tls_frag_rec_overhead);
 		if (data_to_be_written == NULL) {
 			return -1;
@@ -445,15 +462,15 @@ static ssize_t tls_fragment_push_func(gnutls_transport_ptr_t transport_ptr, cons
 		}
 	}
 
-	if (tcp_seg_size == 0) {
-		tcp_seg_size = data_size_to_be_written;
+	if (!is_tcp_seg_frag_enabled) {
+		tcp_seg_size = data_to_be_written_size;
 	}
 
 	size_t current_written = 0;
-	while (current_written < data_size_to_be_written)
+	while (current_written < data_to_be_written_size)
 	{
 		const ssize_t ret = send(socket_fd, &data_to_be_written[current_written],
-					MIN(tcp_seg_size, data_size_to_be_written - current_written), 0);
+					MIN(tcp_seg_size, data_to_be_written_size - current_written), 0);
 		if (ret <= 0)
 		{
 			if (data_to_be_written != original_data) {
@@ -466,13 +483,18 @@ static ssize_t tls_fragment_push_func(gnutls_transport_ptr_t transport_ptr, cons
 
 	if (data_to_be_written != original_data) {
 		free(data_to_be_written);
-		if (current_written == data_size_to_be_written) {
+		if (current_written == data_to_be_written_size) {
 			current_written = original_size;
 		}
 	}
 	return current_written;
 }
 
+/**
+ * This is the default 'push' function (i.e. transport layer 'send' function).
+ * This is based on the GnuTLS implementation.
+ * See https://gnutls.org/manual/gnutls.html#Setting-up-the-transport-layer
+ */
 static ssize_t tls_default_push_func(gnutls_transport_ptr_t ptr, const void *data,
 			 size_t len)
 {
