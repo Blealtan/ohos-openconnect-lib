@@ -31,6 +31,7 @@
 #include <errno.h>
 #include <stdio.h>
 
+#ifdef ENABLE_TAP
 /*
  * TAP-Windows support inspired by http://i3.cs.berkeley.edu/ (v0.2) with
  * permission.
@@ -49,158 +50,11 @@
 #define TAP_IOCTL_CONFIG_DHCP_SET_OPT   _TAP_IOCTL(9)
 #define TAP_IOCTL_CONFIG_TUN            _TAP_IOCTL(10)
 
-/* TAP driver 9.21.2 we download from the OpenVPN download page */
-#define TAP_COMPONENT_ID "tap0901"
-/* TAP driver bundled with OpenVPN */
-#define TAP_OVPNCONNECT_COMPONENT_ID "tap_ovpnconnect"
-
 #define DEVTEMPLATE "\\\\.\\Global\\%s.tap"
 
-#define NETDEV_GUID "{4D36E972-E325-11CE-BFC1-08002BE10318}"
-#define CONTROL_KEY "SYSTEM\\CurrentControlSet\\Control\\"
+#endif
 
-#define ADAPTERS_KEY CONTROL_KEY "Class\\" NETDEV_GUID
-#define CONNECTIONS_KEY CONTROL_KEY "Network\\" NETDEV_GUID
-
-#define ADAPTER_TUNTAP 0
-#define ADAPTER_WINTUN 1
-
-typedef intptr_t (tap_callback)(struct openconnect_info *vpninfo, int type, char *idx, wchar_t *name);
-
-#define SEARCH_CONTINUE	0
-#define SEARCH_DONE	1
-
-static intptr_t search_taps(struct openconnect_info *vpninfo, tap_callback *cb)
-{
-	LONG status;
-	HKEY adapters_key, hkey;
-	DWORD len, type;
-	int adapter_type;
-	char buf[40];
-	wchar_t name[MAX_ADAPTER_NAME];
-	char keyname[strlen(CONNECTIONS_KEY) + sizeof(buf) + 1 + strlen("\\Connection")];
-	int i = 0;
-	intptr_t ret = OPEN_TUN_SOFTFAIL;
-
-	status = RegOpenKeyExA(HKEY_LOCAL_MACHINE, ADAPTERS_KEY, 0,
-			       KEY_READ, &adapters_key);
-	if (status) {
-		vpn_progress(vpninfo, PRG_ERR,
-			     _("Error accessing registry key for network adapters\n"));
-		return -EIO;
-	}
-	while (ret == OPEN_TUN_SOFTFAIL) {
-		len = sizeof(buf);
-		status = RegEnumKeyExA(adapters_key, i++, buf, &len,
-				       NULL, NULL, NULL, NULL);
-		if (status) {
-			if (status != ERROR_NO_MORE_ITEMS)
-				ret = OPEN_TUN_HARDFAIL;
-			break;
-		}
-
-		snprintf(keyname, sizeof(keyname), "%s\\%s",
-			 ADAPTERS_KEY, buf);
-
-		status = RegOpenKeyExA(HKEY_LOCAL_MACHINE, keyname, 0,
-				       KEY_QUERY_VALUE, &hkey);
-		if (status)
-			continue;
-
-		len = sizeof(buf);
-		status = RegQueryValueExA(hkey, "ComponentId", NULL, &type,
-					  (unsigned char *)buf, &len);
-		if (status || type != REG_SZ) {
-			if (status == ERROR_FILE_NOT_FOUND) {
-				vpn_progress(vpninfo, PRG_TRACE,
-					_("Cannot read registry key %s\\%s: value not found\n"),
-					keyname, "ComponentId");
-			}
-			else if (type != REG_SZ) {
-				vpn_progress(vpninfo, PRG_TRACE,
-					_("Cannot read registry key %s\\%s: value is not a string (%ld)\n"),
-					keyname, "ComponentId", type);
-			}
-			else {
-				vpn_progress(vpninfo, PRG_TRACE,
-					_("Cannot read registry key %s\\%s or is not string: %s (%ld)\n"),
-					keyname, "ComponentId", openconnect__win32_strerror(status), status);
-			}
-			RegCloseKey(hkey);
-			continue;
-		}
-		if (!stricmp(buf, TAP_COMPONENT_ID) || !stricmp(buf, "root\\" TAP_COMPONENT_ID) ||
-		    !stricmp(buf, TAP_OVPNCONNECT_COMPONENT_ID) ||
-		    !stricmp(buf, "root\\" TAP_OVPNCONNECT_COMPONENT_ID))
-			adapter_type = ADAPTER_TUNTAP;
-		else if (!stricmp(buf, "Wintun"))
-			adapter_type = ADAPTER_WINTUN;
-		else {
-			vpn_progress(vpninfo, PRG_TRACE, _("%s\\ComponentId is unknown '%s'\n"),
-				     keyname, buf);
-			RegCloseKey(hkey);
-			continue;
-		}
-
-		vpn_progress(vpninfo, PRG_TRACE, _("Found %s at %s\n"),
-			     buf, keyname);
-
-		len = sizeof(buf);
-		status = RegQueryValueExA(hkey, "NetCfgInstanceId", NULL,
-					  &type, (unsigned char *)buf, &len);
-		RegCloseKey(hkey);
-		if (status || type != REG_SZ)
-			continue;
-
-		snprintf(keyname, sizeof(keyname), "%s\\%s\\Connection",
-			 CONNECTIONS_KEY, buf);
-
-		status = RegOpenKeyExA(HKEY_LOCAL_MACHINE, keyname, 0,
-				       KEY_QUERY_VALUE, &hkey);
-		if (status) {
-			vpn_progress(vpninfo, PRG_DEBUG,
-				     _("Cannot open registry key %s\n"),
-				     keyname);
-			continue;
-		}
-
-		len = sizeof(name);
-		status = RegQueryValueExW(hkey, L"Name", NULL, &type,
-					 (unsigned char *)name, &len);
-		RegCloseKey(hkey);
-		if (status || type != REG_SZ) {
-			if (status == ERROR_FILE_NOT_FOUND) {
-				vpn_progress(vpninfo, PRG_INFO,
-					_("Cannot read registry key %s\\%s: value not found\n"),
-					keyname, "Name");
-			}
-			else if (status == ERROR_MORE_DATA) {
-				vpn_progress(vpninfo, PRG_INFO,
-					_("Cannot read registry key %s\\%s: character buffer too small: %llu chars required\n"),
-					keyname, "Name", (long long unsigned int)(len / sizeof(wchar_t)));
-			}
-			else if (type != REG_SZ) {
-				vpn_progress(vpninfo, PRG_INFO,
-					_("Cannot read registry key %s\\%s: value is not a string (%ld)\n"),
-					keyname, "Name", type);
-			}
-			else {
-				vpn_progress(vpninfo, PRG_INFO,
-					_("Cannot read registry key %s\\%s: %s (%ld)\n"),
-					keyname, "Name", openconnect__win32_strerror(status), status);
-			}
-			continue;
-		}
-
-		ret = cb(vpninfo, adapter_type, buf, name);
-	}
-
-	RegCloseKey(adapters_key);
-
-	return ret;
-}
-
-#ifndef __LIST_TAPS__
+#include "tap-list-win32.h"
 
 static int get_adapter_index(struct openconnect_info *vpninfo, char *guid)
 {
@@ -383,6 +237,8 @@ static int check_address_conflicts(struct openconnect_info *vpninfo)
 	return ret;
 }
 
+#ifdef ENABLE_TAP
+
 static intptr_t open_tuntap(struct openconnect_info *vpninfo, char *guid, wchar_t *wname)
 {
 	char devname[80];
@@ -455,6 +311,7 @@ static intptr_t open_tuntap(struct openconnect_info *vpninfo, char *guid, wchar_
 
 	return (intptr_t)tun_fh;
 }
+#endif
 
 static intptr_t open_tun(struct openconnect_info *vpninfo, int adapter_type, char *guid, wchar_t *wname)
 {
@@ -467,11 +324,14 @@ static intptr_t open_tun(struct openconnect_info *vpninfo, int adapter_type, cha
 		return 0;
 	}
 
+#ifdef ENABLE_TAP
 	if (adapter_type == ADAPTER_TUNTAP)
 		ret = open_tuntap(vpninfo, guid, wname);
 	else
 		ret = open_wintun(vpninfo, guid, wname);
-
+#else
+	ret = open_wintun(vpninfo, guid, wname);
+#endif
 	if (ret == OPEN_TUN_SOFTFAIL || ret == OPEN_TUN_HARDFAIL)
 		return ret;
 
@@ -502,12 +362,6 @@ static intptr_t open_tun(struct openconnect_info *vpninfo, int adapter_type, cha
 		     _("Using %s device '%s', index %d\n"),
 		     adapter_type ? "Wintun" : "TAP-Windows",
 		     vpninfo->ifname, vpninfo->tun_idx);
-	if (adapter_type == ADAPTER_WINTUN)
-		vpn_progress(vpninfo, PRG_ERR,
-			     _("WARNING: Support for Wintun is experimental and may be unstable. If you\n"
-			       "  encounter problems, install the TAP-Windows driver instead. See\n"
-			       "  %s\n"),
-			     "https://www.infradead.org/openconnect/building.html");
 
 	return ret;
 }
@@ -541,6 +395,7 @@ intptr_t os_setup_tun(struct openconnect_info *vpninfo)
 			return ret;
 	}
 
+#ifdef ENABLE_TAP
 	ret = search_taps(vpninfo, open_tun);
 
 	if (ret == OPEN_TUN_SOFTFAIL) {
@@ -571,7 +426,28 @@ intptr_t os_setup_tun(struct openconnect_info *vpninfo)
 			     _("Neither Windows-TAP nor Wintun adapters were found. Is the driver installed?\n"));
 		ret = OPEN_TUN_HARDFAIL;
 	}
+#else
+	ret = search_taps(vpninfo, open_tun);
+	if (ret) {
+		vpn_progress(vpninfo, PRG_ERR,
+			     _("Wintun adapters were found. Is the driver installed?\n"));
+		return OPEN_TUN_HARDFAIL;
+	}
 
+	if (!vpninfo->ifname_w) {
+		ret = create_ifname_w(vpninfo, vpninfo->hostname);
+		if (ret)
+			return ret;
+	}
+
+	int retw = create_wintun(vpninfo);
+	if (!retw) {
+		os_shutdown_wintun(vpninfo);
+	} else if (retw == -EPERM) {
+		vpn_progress(vpninfo, PRG_ERR,
+			     _("Access denied creating Wintun adapter. Are you running with Administrator privileges?\n"));
+	}
+#endif
 	if (check_address_conflicts(vpninfo) < 0)
 		ret = OPEN_TUN_HARDFAIL; /* already complained about it */
 
@@ -580,6 +456,7 @@ intptr_t os_setup_tun(struct openconnect_info *vpninfo)
 
 int os_read_tun(struct openconnect_info *vpninfo, struct pkt *pkt)
 {
+#ifdef ENABLE_TAP
 	DWORD pkt_size;
 	if (vpninfo->wintun)
 		return os_read_wintun(vpninfo, pkt);
@@ -627,10 +504,14 @@ int os_read_tun(struct openconnect_info *vpninfo, struct pkt *pkt)
 	vpninfo->tun_rd_pending = 0;
 	pkt->len = pkt_size;
 	return 0;
+#else
+	return os_read_wintun(vpninfo, pkt);
+#endif
 }
 
 int os_write_tun(struct openconnect_info *vpninfo, struct pkt *pkt)
 {
+#ifdef ENABLE_TAP
 	DWORD pkt_size = 0;
 	DWORD err;
 	char *errstr;
@@ -663,12 +544,16 @@ int os_write_tun(struct openconnect_info *vpninfo, struct pkt *pkt)
 		     _("Failed to write to TAP device: %s\n"), errstr);
 	free(errstr);
 	return -1;
+#else
+	return os_write_wintun(vpninfo, pkt);
+#endif
 }
 
 void os_shutdown_tun(struct openconnect_info *vpninfo)
 {
 	script_config_tun(vpninfo, "disconnect");
 
+#ifdef ENABLE_TAP
 	if (vpninfo->wintun) {
 		os_shutdown_wintun(vpninfo);
 		return;
@@ -678,10 +563,14 @@ void os_shutdown_tun(struct openconnect_info *vpninfo)
 	vpninfo->tun_fh = NULL;
 	CloseHandle(vpninfo->tun_rd_overlap.hEvent);
 	vpninfo->tun_rd_overlap.hEvent = NULL;
+#else
+	os_shutdown_wintun(vpninfo);
+#endif
 }
 
 int openconnect_setup_tun_fd(struct openconnect_info *vpninfo, intptr_t tun_fd)
 {
+#ifdef ENABLE_TAP
 	ULONG data;
 	DWORD len;
 
@@ -708,6 +597,9 @@ int openconnect_setup_tun_fd(struct openconnect_info *vpninfo, intptr_t tun_fd)
 	monitor_read_fd(vpninfo, tun);
 
 	return 0;
+#else
+	return setup_wintun_fd(vpninfo, tun_fd);
+#endif
 }
 
 int openconnect_setup_tun_script(struct openconnect_info *vpninfo,
@@ -718,4 +610,3 @@ int openconnect_setup_tun_script(struct openconnect_info *vpninfo,
 	return -1;
 }
 
-#endif /* __LIST_TAPS__ */

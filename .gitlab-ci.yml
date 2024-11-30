@@ -665,6 +665,30 @@ MinGW64/GnuTLS:
       - tests/*.log
       - openconnect-installer*.exe
 
+MinGW64/GnuTLS/NoTAP:
+  stage: test-windows
+  image: $CI_REGISTRY/$BUILD_IMAGES_PROJECT:$MINGW64_BUILD
+  script:
+  - dnf remove -y wine.i686
+  - mount -t binfmt_misc binfmt_misc /proc/sys/fs/binfmt_misc
+  - echo ':DOSWin:M::MZ::/usr/bin/wine:' > /proc/sys/fs/binfmt_misc/register
+  - ./autogen.sh
+  - mingw64-configure --without-gnutls-version-check --disable-tap-driver CFLAGS=-g
+  - make -j4
+# Setup wine path so tests won't fail due to unresolved dll dependencies
+  - export WINEPATH=/usr/x86_64-w64-mingw32/sys-root/mingw/bin\;.
+  - make VERBOSE=1 -j4 check
+  tags:
+  - saas-linux-small-amd64
+  except:
+  - schedules
+  artifacts:
+    expire_in: 1 week
+    when: always
+    paths:
+      - tests/*.log
+      - openconnect-installer*.exe
+
 MinGW64/OpenSSL:
   stage: test-windows
   image: $CI_REGISTRY/$BUILD_IMAGES_PROJECT:$MINGW64_BUILD

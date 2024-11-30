@@ -81,6 +81,14 @@ case $host_os in
         AC_CHECK_TOOL([MAKENSIS], [makensis], [])
     fi
 
+    AC_ARG_ENABLE([tap-driver],
+	AS_HELP_STRING([--disable-tap-driver], [Disable the TAP driver]),
+	[USE_TAP=$enableval], [USE_TAP=yes])
+
+    if test "$USE_TAP" = "yes"; then
+        AC_DEFINE(ENABLE_TAP, 1, [Enable TAP support])
+    fi
+
     default_browser=open
 
     case $host_cpu in

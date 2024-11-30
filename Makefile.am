@@ -63,7 +63,7 @@ library_srcs += $(lib_srcs_juniper) $(lib_srcs_cisco) $(lib_srcs_oath) \
 
 lib_srcs_gnutls = gnutls.c gnutls_tpm.c gnutls_tpm2.c
 lib_srcs_openssl = openssl.c openssl-pkcs11.c
-lib_srcs_win32 = wintun.c tun-win32.c sspi.c wintun.h
+lib_srcs_win32 = wintun.c tun-win32.c sspi.c wintun.h tap-list-win32.h
 lib_srcs_posix = tun.c
 lib_srcs_gssapi = gssapi.c
 lib_srcs_iconv = iconv.c

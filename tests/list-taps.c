@@ -36,9 +36,7 @@ struct openconnect_info {
 #define OPEN_TUN_SOFTFAIL 0
 #define OPEN_TUN_HARDFAIL -1
 
-#define __LIST_TAPS__
-
-#include "../tun-win32.c"
+#include "../tap-list-win32.h"
 
 static intptr_t print_tun(struct openconnect_info *vpninfo, int type, char *guid, wchar_t *wname)
 {
