@@ -10,19 +10,18 @@
 #
 # It should also be fairly simple to extend this to cross-compile for any target
 
-# Last tested with https://dl.google.com/android/repository/android-ndk-r21b-linux-x86_64.zip
+# Last tested with https://dl.google.com/android/repository/android-ndk-r25c-linux.zip
 
 
-NDK     := /opt/android-sdk-linux_x86/android-ndk-r21b
+NDK     := /opt/android-sdk-linux_x86/android-ndk-r25c
 ARCH    := x86_64
 API_LEVEL := 23
 
-EXTRA_CFLAGS :=
+EXTRA_CFLAGS := -fPIC
 
 # You should be able to just 'make ARCH=x86' and it should DTRT.
 ifeq ($(ARCH),arm)
-TRIPLET := arm-linux-androideabi
-EXTRA_CFLAGS := -march=armv7-a -mthumb
+TRIPLET := armv7a-linux-androideabi
 endif
 ifeq ($(ARCH),arm64)
 TRIPLET := aarch64-linux-android
@@ -40,14 +39,19 @@ DESTDIR := $(TOPDIR)/$(TRIPLET)/out
 
 EXTRA_CFLAGS += -D__ANDROID_API__=$(API_LEVEL) -O2
 
-TOOLCHAIN := $(TOPDIR)/$(TRIPLET)/toolchain
-TOOLCHAIN_BUILT := $(TOOLCHAIN)/.built
-TOOLCHAIN_OPTS := --platform=android-$(API_LEVEL) --arch=$(ARCH) \
-		  --install-dir=$(TOOLCHAIN)
+TOOLCHAIN := $(NDK)/toolchains/llvm/prebuilt/linux-x86_64
 PATH := $(TOOLCHAIN)/bin:$(PATH)
 
 OC_SYSROOT := $(TOOLCHAIN)/sysroot/usr
 PKG_CONFIG_LIBDIR := $(OC_SYSROOT)/lib/pkgconfig
+
+AR := $(TOOLCHAIN)/bin/llvm-ar
+CC := $(TOOLCHAIN)/bin/$(TRIPLET)$(API_LEVEL)-clang
+AS := $(CC)
+CXX := $(TOOLCHAIN)/bin/$(TRIPLET)$(API_LEVEL)-clang++
+LD := $(TOOLCHAIN)/bin/ld
+RANLIB := $(TOOLCHAIN)/bin/llvm-ranlib
+STRIP := $(TOOLCHAIN)/bin/llvm-strip
 
 export PATH PKG_CONFIG_LIBDIR
 
@@ -59,7 +63,7 @@ FETCH=$(TOPDIR)/fetch.sh
 
 CONFIGURE_ARGS := --host=$(TRIPLET) --prefix=$(OC_SYSROOT) \
 		  --disable-shared --enable-static --with-pic \
-		  CC=$(TRIPLET)-clang CFLAGS="$(EXTRA_CFLAGS)"
+		  CC="$(CC)" CFLAGS="$(EXTRA_CFLAGS)"
 
 SOURCE_LIST = $(LIBXML2_SRC)/configure $(GMP_SRC)/configure \
 	$(NETTLE_SRC)/configure $(GNUTLS_SRC)/configure \
@@ -74,25 +78,12 @@ all: openconnect run_pie
 
 #####################################################################
 #
-# Install a local cross toolchain + sysroot
-#
-# (The fallback logic is because NDK versions <= r8e can fail after trying to
-# use 32-bit binaries on a 64-bit NDK installation.)
-#
-$(TOOLCHAIN_BUILT):
-	$(NDK)/build/tools/make-standalone-toolchain.sh $(TOOLCHAIN_OPTS) || \
-		$(NDK)/build/tools/make-standalone-toolchain.sh \
-			$(TOOLCHAIN_OPTS) --system=linux-x86_64
-	touch $@
-
-#####################################################################
-#
 # Build libxml2 with minimal configuration for OpenConnect
 #
 # http://xmlsoft.org/news.html
-LIBXML2_VER := 2.9.11
-LIBXML2_TAR := libxml2-$(LIBXML2_VER).tar.gz
-LIBXML2_SHA := 886f696d5d5b45d780b2880645edf9e0c62a4fd6841b853e824ada4e02b4d331
+LIBXML2_VER := 2.10.4
+LIBXML2_TAR := libxml2-$(LIBXML2_VER).tar.xz
+LIBXML2_SHA := ed0c91c5845008f1936739e4eee2035531c1c94742c6541f44ee66d885948d45
 LIBXML2_SRC := sources/libxml2-$(LIBXML2_VER)
 LIBXML2_BUILD := $(TRIPLET)/libxml2
 
@@ -101,7 +92,7 @@ $(LIBXML2_TAR):
 
 $(LIBXML2_SRC)/configure: $(LIBXML2_TAR)
 	mkdir -p sources
-	tar xfz $<  -C sources
+	tar xf $<  -C sources
 	touch $@
 
 $(LIBXML2_BUILD)/Makefile: $(TOOLCHAIN_BUILT) $(LIBXML2_SRC)/configure
@@ -174,9 +165,9 @@ gmp: $(GMP_DEPS)
 # Build nettle
 #
 # https://ftp.gnu.org/gnu/nettle/
-NETTLE_VER := 3.6
+NETTLE_VER := 3.8.1
 NETTLE_TAR := nettle-$(NETTLE_VER).tar.gz
-NETTLE_SHA := d24c0d0f2abffbc8f4f34dcf114b0f131ec3774895f3555922fe2f40f3d5e3f1
+NETTLE_SHA := 364f3e2b77cd7dcde83fd7c45219c834e54b0c75e428b6f894a23d12dd41cbfe
 NETTLE_SRC := sources/nettle-$(NETTLE_VER)
 NETTLE_BUILD := $(TRIPLET)/nettle
 
@@ -208,9 +199,9 @@ nettle: $(NETTLE_DEPS)
 # Build GnuTLS
 #
 # https://www.gnutls.org/download.html
-GNUTLS_VER := 3.6.16
+GNUTLS_VER := 3.7.9
 GNUTLS_TAR := gnutls-$(GNUTLS_VER).tar.xz
-GNUTLS_SHA := 1b79b381ac283d8b054368b335c408fedcb9b7144e0c07f531e3537d4328f3b3
+GNUTLS_SHA := aaa03416cdbd54eb155187b359e3ec3ed52ec73df4df35a0edd49429ff64d844
 GNUTLS_SRC := sources/gnutls-$(GNUTLS_VER)
 GNUTLS_BUILD := $(TRIPLET)/gnutls
 
@@ -232,7 +223,7 @@ $(GNUTLS_SRC)/configure: $(GNUTLS_TAR)
 
 $(GNUTLS_BUILD)/Makefile: $(TOOLCHAIN_BUILT) $(GNUTLS_SRC)/configure $(NETTLE_DEPS)
 	mkdir -p $(GNUTLS_BUILD)
-	cd $(GNUTLS_BUILD) && ../../$(GNUTLS_SRC)/configure $(CONFIGURE_ARGS) \
+	cd $(GNUTLS_BUILD) && ac_cv_func_malloc_0_nonnull=yes ac_cv_func_realloc_0_nonnull=yes ../../$(GNUTLS_SRC)/configure $(CONFIGURE_ARGS) \
 		AUTOGEN=/bin/false \
 		--disable-threads --disable-tests --disable-nls \
 		--disable-doc --disable-openssl-compatibility --disable-cxx \
@@ -240,7 +231,7 @@ $(GNUTLS_BUILD)/Makefile: $(TOOLCHAIN_BUILT) $(GNUTLS_SRC)/configure $(NETTLE_DE
 		--disable-anon-authentication --with-included-libtasn1 \
 		--enable-psk-authentication --disable-srp-authentication \
 		--disable-dtls-srtp-support  --enable-dhe --enable-ecdhe \
-		--with-included-unistring --without-p11-kit --disable-guile
+		--with-included-unistring --without-p11-kit --disable-guile --with-gnu-ld
 
 $(GNUTLS_BUILD)/lib/libgnutls.la: $(GNUTLS_BUILD)/Makefile
 	$(MAKE) -C $(GNUTLS_BUILD)
@@ -293,9 +284,9 @@ stoken: $(STOKEN_DEPS)
 # Build liblz4
 #
 # https://github.com/lz4/lz4/tags
-LZ4_VER := 1.9.3
+LZ4_VER := 1.9.4
 LZ4_TAR := lz4-v$(LZ4_VER).tar.gz
-LZ4_SHA := 030644df4611007ff7dc962d981f390361e6c97a34e5cbc393ddfbe019ffe2c1
+LZ4_SHA := 0b0e3aa07c8c063ddf40b082bdf7e37a1562bda40a0ff5272957f3e987e0e54b
 LZ4_DIR := $(TRIPLET)/lz4-$(LZ4_VER)
 
 $(LZ4_TAR):
@@ -308,8 +299,9 @@ $(LZ4_DIR)/Makefile: $(LZ4_TAR)
 
 $(OC_SYSROOT)/lib/liblz4.a: $(TOOLCHAIN_BUILT) $(LZ4_DIR)/Makefile
 	$(MAKE) -C $(LZ4_DIR)/lib \
-		CC="$(TRIPLET)-clang $(EXTRA_CFLAGS)" \
-		AR="$(TRIPLET)-ar" \
+		CC="$(CC)" \
+		AR="$(AR)" \
+		CFLAGS="$(EXTRA_CFLAGS)" \
 		LIBDIR=$(OC_SYSROOT)/lib \
 		INCLUDEDIR=$(OC_SYSROOT)/include \
 		install
@@ -329,12 +321,13 @@ OPENCONNECT_BUILD := $(TRIPLET)/openconnect
 $(OPENCONNECT_SRC)/configure:
 	cd $(OPENCONNECT_SRC) && ./autogen.sh
 
-$(OPENCONNECT_BUILD)/Makefile: $(TOOLCHAIN_BUILT) $(GNUTLS_DEPS) $(LIBXML_DEPS) \
+$(OPENCONNECT_BUILD)/Makefile: $(TOOLCHAIN) $(GNUTLS_DEPS) $(LIBXML_DEPS) \
 		$(STOKEN_DEPS) $(LZ4_DEPS) $(OPENCONNECT_SRC)/configure
 	mkdir -p $(OPENCONNECT_BUILD)
 	cd $(OPENCONNECT_BUILD) && ../../../configure \
 	--host=$(TRIPLET) --prefix=/ \
-	CFLAGS="$(EXTRA_CFLAGS) -fvisibility=default -fPIE" \
+	CC="$(CC)" LD="$(LD)" STRIP="$(STRIP)" \
+	CFLAGS="-fvisibility=default -fPIE" \
 	LDFLAGS="$(EXTRA_LDFLAGS) -rdynamic -pie" \
 	GNUTLS_LIBS="$(shell $(PKG_CONFIG) --static --libs gnutls)" \
 	LIBSTOKEN_LIBS="$(shell $(PKG_CONFIG) --static --libs stoken)" \
@@ -353,7 +346,7 @@ openconnect: $(OPENCONNECT_BUILD)/Makefile
 #
 $(DESTDIR)/sbin/run_pie: run_pie.c $(TOOLCHAIN_BUILT)
 	mkdir -p $(DESTDIR)/sbin
-	$(TRIPLET)-clang $< -o $@ -ldl
+	$(TRIPLET)$(API_LEVEL)-clang $< -o $@ -ldl
 
 .PHONY: run_pie
 run_pie: $(DESTDIR)/sbin/run_pie

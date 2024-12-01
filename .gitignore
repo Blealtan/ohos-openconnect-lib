@@ -45,9 +45,10 @@ Makefile
 /android/*.tar.bz2
 /android/*.tar.xz
 /android/sources/
-/android/arm-linux-androideabi/
+/android/armv7a-linux-androideabi/
+/android/aarch64-linux-android/
 /android/i686-linux-android/
-/android/mipsel-linux-android/
+/android/x86_64-linux-android/
 /android/sysroot-*/
 
 /java/build/
