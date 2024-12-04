@@ -2518,14 +2518,30 @@ void append_strap_verify(struct openconnect_info *vpninfo,
 			 struct oc_text_buf *buf, int rekey)
 {
 	unsigned char finished[64];
-	size_t flen = SSL_get_finished(vpninfo->https_ssl, finished, sizeof(finished));
+	size_t flen;
 
-	if (flen > sizeof(finished)) {
-		vpn_progress(vpninfo, PRG_ERR,
-			     _("SSL Finished message too large (%zu bytes)\n"), flen);
-		if (!buf_error(buf))
-			buf->error = -EIO;
-		return;
+	if (SSL_SESSION_get_protocol_version(SSL_get_session(vpninfo->https_ssl)) <= TLS1_2_VERSION) {
+		/* For TLSv1.2 and earlier, use RFC5929 'tls-unique' channel binding */
+		flen = SSL_get_finished(vpninfo->https_ssl, finished, sizeof(finished));
+		if (flen > sizeof(finished)) {
+			vpn_progress(vpninfo, PRG_ERR,
+				     _("SSL Finished message too large (%zu bytes)\n"), flen);
+			if (!buf_error(buf))
+				buf->error = -EIO;
+			return;
+		}
+	} else {
+		/* For TLSv1.3 use RFC9266 'tls-exporter' channel binding */
+		if (!SSL_export_keying_material(vpninfo->https_ssl,
+						finished, TLS_EXPORTER_KEY_SIZE,
+						TLS_EXPORTER_LABEL, TLS_EXPORTER_LABEL_SIZE,
+						NULL, 0, 0)) {
+			vpn_progress(vpninfo, PRG_ERR,
+				     _("Failed to generate channel bindings for STRAP key\n"));
+			openconnect_report_ssl_errors(vpninfo);
+			return;
+		}
+		flen = TLS_EXPORTER_KEY_SIZE;
 	}
 
 	/* If we're rekeying, we need to sign the Verify header with the *old* key. */
