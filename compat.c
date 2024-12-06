@@ -517,11 +517,6 @@ int dumb_socketpair_full(OPENCONNECT_CMD_SOCKET socks[2], int make_overlapped, i
             DeleteFile(a.unaddr.sun_path);  // Socket file no longer needed
 
         socks[1] = WSAAccept(listener, NULL, NULL, NULL, 0);
-		/*
-		 *    once WSAAccept(listener, NULL, NULL, NULL, 0) has done its work,
-		 *    the newly created socket (socks[1]) copies
-		 *    WSA_FLAG_NO_HANDLE_INHERIT flag value from listener to itself
-		 */
         if (socks[1] == INVALID_SOCKET)
             goto fallback;
 
