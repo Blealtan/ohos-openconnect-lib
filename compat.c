@@ -545,6 +545,6 @@ int dumb_socketpair_full(OPENCONNECT_CMD_SOCKET socks[2], int make_overlapped, i
 
 int dumb_socketpair(OPENCONNECT_CMD_SOCKET socks[2], int make_overlapped)
 {
-	dumb_socketpair_full(socks, make_overlapped, 0);
+	dumb_socketpair_full(socks, make_overlapped, 1);
 }
 #endif
