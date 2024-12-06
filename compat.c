@@ -518,8 +518,8 @@ int dumb_socketpair_full(OPENCONNECT_CMD_SOCKET socks[2], int make_overlapped, i
 
         socks[1] = WSAAccept(listener, NULL, NULL, NULL, 0);
 		/*
-		 *    This is how WSAAccept works: once WSAAccept(listener, NULL, NULL, NULL, 0)
-		 *    has done its work, the newly created socket (socks[1]) copies
+		 *    once WSAAccept(listener, NULL, NULL, NULL, 0) has done its work,
+		 *    the newly created socket (socks[1]) copies
 		 *    WSA_FLAG_NO_HANDLE_INHERIT flag value from listener to itself
 		 */
         if (socks[1] == INVALID_SOCKET)
