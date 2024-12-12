@@ -438,7 +438,7 @@ static ssize_t tls_fragment_push_func(gnutls_transport_ptr_t transport_ptr, cons
 		 * in between our data.
 		 */
 		data_to_be_written_size = data_without_base_header_size + tls_frag_rec_overhead;
-		data_to_be_written = (char*)malloc(data_without_base_header_size + tls_frag_rec_overhead);
+		data_to_be_written = malloc(data_without_base_header_size + tls_frag_rec_overhead);
 		if (data_to_be_written == NULL) {
 			return -1;
 		}
