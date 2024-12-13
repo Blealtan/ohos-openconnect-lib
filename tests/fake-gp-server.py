@@ -95,6 +95,7 @@ class TestConfiguration:
     gateway_saml: str = None
     saml_comments_only: int = None
     saml_needs_js: int = None
+    esp: bool = True
 C = TestConfiguration()
 OUTSTANDING_SAML_TOKENS = set()
 
@@ -103,7 +104,7 @@ OUTSTANDING_SAML_TOKENS = set()
 def configure():
     global C
     if request.method == 'POST':
-        gateways, portal_2fa, gw_2fa, portal_cookie, portal_saml, gateway_saml, saml_comments_only, saml_needs_js = request.form.get('gateways'), request.form.get('portal_2fa'), request.form.get('gw_2fa'), request.form.get('portal_cookie'), request.form.get('portal_saml'), request.form.get('gateway_saml'), request.form.get('saml_comments_only'), request.form.get('saml_needs_js')
+        gateways, portal_2fa, gw_2fa, portal_cookie, portal_saml, gateway_saml, saml_comments_only, saml_needs_js, esp = request.form.get('gateways'), request.form.get('portal_2fa'), request.form.get('gw_2fa'), request.form.get('portal_cookie'), request.form.get('portal_saml'), request.form.get('gateway_saml'), request.form.get('saml_comments_only'), request.form.get('saml_needs_js'), request.form.get('esp')
         C.gateways = gateways.split(',') if gateways else ('Default gateway',)
         C.portal_cookie = portal_cookie
         C.portal_2fa = portal_2fa and portal_2fa.strip().lower()
@@ -112,6 +113,7 @@ def configure():
         C.gateway_saml = gateway_saml
         C.saml_comments_only = int(saml_comments_only) if saml_comments_only else None
         C.saml_needs_js = int(saml_needs_js) if saml_needs_js else None
+        C.esp = int(esp) if esp else None
         return '', 201
     else:
         return 'Current configuration of fake GP server configuration:\n{}\n'.format(C)
@@ -340,9 +342,25 @@ def gateway_login():
 def getconfig():
     session.update(step='gateway-config')
     addrs = '<ip-address>{}</ip-address>'.format(session['preferred_ip'])
+    addrs += '<gw-address>127.0.0.1</gw-address>'
+    addrs += '<gw-address-v6>::1</gw-address-v6>'  # some(?) servers send the IPv6 address even if not otherwise configured for IPv6
     if session['ipv6_support'] == 'yes':
         addrs += '<ip-address-v6>{}</ip-address-v6>'.format(session['preferred_ipv6'])
-    return '''<response>{}<ssl-tunnel-url>/ssl-tunnel-connect.sslvpn</ssl-tunnel-url></response>'''.format(addrs)
+    ipsec = ''
+    if C.esp:
+        ipsec = '''<ipsec>
+            <udp-port>4501</udp-port>
+            <ipsec-mode>esp-tunnel</ipsec-mode>
+            <enc-algo>aes-128-cbc</enc-algo>
+            <hmac-algo>sha1</hmac-alog>
+            <c2s-spi>0xa5a5a5a5</c2s-spi>
+            <s2c-spi>0x5a5a5a5a</s2c-spi>
+            <akey-s2c><bits>160</bits><val>deadbeefdeadbeefdeadbeefdeadbeefdeadbeef</val></akey-s2c>
+            <akey-c2s><bits>160</bits><val>deadbeefdeadbeefdeadbeefdeadbeefdeadbee1</val></akey-c2s>
+            <ekey-s2c><bits>128</bits><val>deadbeefdeadbeefdeadbeefdeadbeef</val></ekey-s2c>
+            <ekey-c2s><bits>128</bits><val>deadbeefdeadbeefdeadbeefdeadbee1</val></ekey-c2s>
+        </ipsec>'''
+    return '''<response>{}{}<ssl-tunnel-url>/ssl-tunnel-connect.sslvpn</ssl-tunnel-url></response>'''.format(addrs, ipsec)
 
 
 # Respond to gateway hipreportcheck request
@@ -366,7 +384,7 @@ def tunnel():
 
 
 # Respond to 'GET /ssl-vpn/logout.esp' by clearing session and MRHSession
-@app.route('/ssl-vpn/logout.esp')
+@app.route('/ssl-vpn/logout.esp', methods=('POST',))
 # XX: real server really requires all these fields; see auth-globalprotect.c
 @check_form_against_session('authcookie', 'portal', 'user', 'computer')
 def logout():

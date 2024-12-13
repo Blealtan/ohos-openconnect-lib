@@ -65,8 +65,7 @@ static int init_wintun(struct openconnect_info *vpninfo)
 {
 	if (!vpninfo->wintun) {
 		vpninfo->wintun = LoadLibraryExW(L"wintun.dll", NULL,
-						 LOAD_LIBRARY_SEARCH_APPLICATION_DIR |
-						 LOAD_LIBRARY_SEARCH_SYSTEM32);
+						 LOAD_LIBRARY_SEARCH_APPLICATION_DIR);
 		if (!vpninfo->wintun) {
 			vpn_progress(vpninfo, PRG_DEBUG, _("Could not load wintun.dll\n"));
 			return -ENOENT;

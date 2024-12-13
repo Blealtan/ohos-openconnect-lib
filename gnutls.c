@@ -3176,7 +3176,25 @@ void append_strap_verify(struct openconnect_info *vpninfo,
 
 	/* Concatenate our Finished message with our pubkey to be signed */
 	struct oc_text_buf *nonce = buf_alloc();
-	buf_append_bytes(nonce, vpninfo->finished, vpninfo->finished_len);
+	if (gnutls_protocol_get_version(vpninfo->https_sess) <= GNUTLS_TLS1_2) {
+		/* For TLSv1.2 and earlier, use RFC5929 'tls-unique' channel binding */
+		buf_append_bytes(nonce, vpninfo->finished, vpninfo->finished_len);
+	} else {
+		/* For TLSv1.3 use RFC9266 'tls-exporter' channel binding */
+		char channel_binding_buf[TLS_EXPORTER_KEY_SIZE];
+		err = gnutls_prf(vpninfo->https_sess, TLS_EXPORTER_LABEL_SIZE, TLS_EXPORTER_LABEL,
+				 0, 0, 0, TLS_EXPORTER_KEY_SIZE, channel_binding_buf);
+		if (err) {
+			vpn_progress(vpninfo, PRG_ERR,
+				     _("Failed to generate channel bindings for STRAP key: %s\n"),
+				     gnutls_strerror(err));
+			if (!buf_error(buf))
+				buf->error = -EIO;
+			buf_free(nonce);
+			return;
+		}
+		buf_append_bytes(nonce, channel_binding_buf, TLS_EXPORTER_KEY_SIZE);
+	}
 
 	if (rekey) {
 		/* We have a copy and we don't want it freed just yet */

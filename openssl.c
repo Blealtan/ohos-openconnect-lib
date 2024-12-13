@@ -2518,14 +2518,30 @@ void append_strap_verify(struct openconnect_info *vpninfo,
 			 struct oc_text_buf *buf, int rekey)
 {
 	unsigned char finished[64];
-	size_t flen = SSL_get_finished(vpninfo->https_ssl, finished, sizeof(finished));
+	size_t flen;
 
-	if (flen > sizeof(finished)) {
-		vpn_progress(vpninfo, PRG_ERR,
-			     _("SSL Finished message too large (%zu bytes)\n"), flen);
-		if (!buf_error(buf))
-			buf->error = -EIO;
-		return;
+	if (SSL_SESSION_get_protocol_version(SSL_get_session(vpninfo->https_ssl)) <= TLS1_2_VERSION) {
+		/* For TLSv1.2 and earlier, use RFC5929 'tls-unique' channel binding */
+		flen = SSL_get_finished(vpninfo->https_ssl, finished, sizeof(finished));
+		if (flen > sizeof(finished)) {
+			vpn_progress(vpninfo, PRG_ERR,
+				     _("SSL Finished message too large (%zu bytes)\n"), flen);
+			if (!buf_error(buf))
+				buf->error = -EIO;
+			return;
+		}
+	} else {
+		/* For TLSv1.3 use RFC9266 'tls-exporter' channel binding */
+		if (!SSL_export_keying_material(vpninfo->https_ssl,
+						finished, TLS_EXPORTER_KEY_SIZE,
+						TLS_EXPORTER_LABEL, TLS_EXPORTER_LABEL_SIZE,
+						NULL, 0, 0)) {
+			vpn_progress(vpninfo, PRG_ERR,
+				     _("Failed to generate channel bindings for STRAP key\n"));
+			openconnect_report_ssl_errors(vpninfo);
+			return;
+		}
+		flen = TLS_EXPORTER_KEY_SIZE;
 	}
 
 	/* If we're rekeying, we need to sign the Verify header with the *old* key. */
@@ -2615,7 +2631,13 @@ int export_certificate_pkcs7(struct openconnect_info *vpninfo,
 		goto err;
 	X509_up_ref(oci->cert);
 
-	p7 = PKCS7_sign(NULL, NULL, oci->extra_certs, NULL, PKCS7_DETACHED);
+	bio = BIO_new(BIO_s_mem());
+	if (!bio) {
+		ret = -ENOMEM;
+		goto pkcs7_error;
+	}
+
+	p7 = PKCS7_sign(NULL, NULL, oci->extra_certs, bio, PKCS7_DETACHED);
 	if (!p7) {
 	err:
 		vpn_progress(vpninfo, PRG_ERR,
@@ -2625,12 +2647,6 @@ int export_certificate_pkcs7(struct openconnect_info *vpninfo,
 	}
 
 	ret = 0;
-
-	bio = BIO_new(BIO_s_mem());
-	if (!bio) {
-		ret = -ENOMEM;
-		goto pkcs7_error;
-	}
 
 	if (format == CERT_FORMAT_ASN1) {
 		ok = i2d_PKCS7_bio(bio, p7);

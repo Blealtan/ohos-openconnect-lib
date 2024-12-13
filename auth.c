@@ -359,7 +359,7 @@ static int xmlnode_get_text(xmlNode *xml_node, const char *name, char **var)
  *   <csd
  *        stuburl="<!-- save to vpninfo->csd_stuburl if --os=win -->"
  *        starturl="<!-- save to vpninfo->csd_starturl if --os=win -->"
- *        waiturl="<!-- save to vpninfo->csd_starturl if --os=win -->"
+ *        waiturl="<!-- save to vpninfo->csd_waiturl if --os=win -->"
  *   <csdMac
  *        stuburl="<!-- save to vpninfo->csd_stuburl if --os=mac-intel -->"
  *        starturl="<!-- save to vpninfo->csd_starturl if --os=mac-intel -->"
@@ -452,13 +452,15 @@ static int parse_auth_node(struct openconnect_info *vpninfo, xmlNode *xml_node,
 
 			/* defaults for new XML POST */
 			form->method = strdup("POST");
-			form->action = strdup("/");
 
 			xmlnode_get_prop(xml_node, "method", &form->method);
 			xmlnode_get_prop(xml_node, "action", &form->action);
 
-			if (!form->method || !form->action ||
-			    strcasecmp(form->method, "POST") || !form->action[0]) {
+			/* - expect unset action (reuse current URL) or non-empty action="..."
+			 * - expect unset method (defaults to "POST") or explicit method="POST"
+			 */
+			if ((form->action && !form->action[0]) ||
+			    !form->method || strcasecmp(form->method, "POST")) {
 				vpn_progress(vpninfo, PRG_ERR,
 					     _("Cannot handle form method='%s', action='%s'\n"),
 					     form->method, form->action);

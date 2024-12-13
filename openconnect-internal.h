@@ -1060,6 +1060,11 @@ static inline void __monitor_fd_new(struct openconnect_info *vpninfo,
 #define PSK_LABEL_SIZE (sizeof(PSK_LABEL) - 1)
 #define PSK_KEY_SIZE 32
 
+/* Key material for RFC9266 tls-exporter channel binding */
+#define TLS_EXPORTER_LABEL "EXPORTER-Channel-Binding"
+#define TLS_EXPORTER_LABEL_SIZE (sizeof(TLS_EXPORTER_LABEL) - 1)
+#define TLS_EXPORTER_KEY_SIZE 32
+
 /* Packet types */
 
 #define AC_PKT_DATA		0	/* Uncompressed data */

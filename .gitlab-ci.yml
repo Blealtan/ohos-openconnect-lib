@@ -43,8 +43,7 @@ static-analyzer/GnuTLS/Fedora:
   - scan-build ./configure
   - scan-build --status-bugs -o scan-build-src make -j4
   tags:
-  - shared
-  - linux
+  - saas-linux-small-amd64
   except:
   - tags
   - schedules
@@ -62,8 +61,7 @@ static-analyzer/OpenSSL/Fedora:
   - scan-build ./configure --without-gnutls --with-openssl --without-openssl-version-check
   - scan-build --status-bugs -o scan-build-src make -j4
   tags:
-  - shared
-  - linux
+  - saas-linux-small-amd64
   except:
   - tags
   - schedules
@@ -97,7 +95,7 @@ Fedora/GnuTLS:
 # ppp-over-tls-sync: https://gitlab.com/openconnect/openconnect/-/issues/287#note_641198529)
   - make VERBOSE=1 XFAIL_TESTS="ppp-over-tls-sync" -j4 check
   tags:
-  - shared
+  - saas-linux-small-amd64
   except:
   - tags
   - schedules
@@ -132,7 +130,7 @@ Fedora/OpenSSL:
 # ppp-over-tls-sync: https://gitlab.com/openconnect/openconnect/-/issues/287#note_641198529)
   - make VERBOSE=1 XFAIL_TESTS="auth-swtpm obsolete-server-crypto ppp-over-tls-sync" -j4 check
   tags:
-  - shared
+  - saas-linux-small-amd64
   except:
   - tags
   - schedules
@@ -166,7 +164,7 @@ CentOS7/GnuTLS:
 # ppp-over-tls-sync: https://gitlab.com/openconnect/openconnect/-/issues/287#note_641198529)
   - make VERBOSE=1 XFAIL_TESTS="auth-nonascii ppp-over-tls-sync" -j4 check
   tags:
-  - shared
+  - saas-linux-small-amd64
   except:
   - tags
   - schedules
@@ -196,7 +194,7 @@ CentOS7/OpenSSL:
 # ppp-over-tls-sync: https://gitlab.com/openconnect/openconnect/-/issues/287#note_641198529)
   - make VERBOSE=1 XFAIL_TESTS="auth-nonascii ppp-over-tls-sync" -j4 check
   tags:
-  - shared
+  - saas-linux-small-amd64
   except:
   - tags
   - schedules
@@ -223,7 +221,7 @@ CentOS8/GnuTLS:
 # ppp-over-tls-sync: https://gitlab.com/openconnect/openconnect/-/issues/287#note_641198529)
   - make VERBOSE=1 XFAIL_TESTS="auth-nonascii ppp-over-tls-sync" -j4 check
   tags:
-  - shared
+  - saas-linux-small-amd64
   except:
   - tags
   - schedules
@@ -250,7 +248,7 @@ CentOS8/OpenSSL:
 # ppp-over-tls-sync: https://gitlab.com/openconnect/openconnect/-/issues/287#note_641198529)
   - make VERBOSE=1 XFAIL_TESTS="auth-nonascii ppp-over-tls-sync" -j4 check
   tags:
-  - shared
+  - saas-linux-small-amd64
   except:
   - tags
   - schedules
@@ -277,7 +275,7 @@ CentOS9/GnuTLS:
 # ppp-over-tls-sync: https://gitlab.com/openconnect/openconnect/-/issues/287#note_641198529)
   - make VERBOSE=1 XFAIL_TESTS="auth-nonascii ppp-over-tls-sync" -j4 check
   tags:
-  - shared
+  - saas-linux-small-amd64
   except:
   - tags
   - schedules
@@ -305,7 +303,7 @@ CentOS9/OpenSSL:
 # obsolete-server-crypto: unknown why the legacy openssl provider is not sufficient
   - make VERBOSE=1 XFAIL_TESTS="auth-nonascii ppp-over-tls-sync obsolete-server-crypto" -j4 check
   tags:
-  - shared
+  - saas-linux-small-amd64
   except:
   - tags
   - schedules
@@ -335,7 +333,7 @@ Fedora/GnuTLS/ibmtss:
 # ppp-over-tls-sync: https://gitlab.com/openconnect/openconnect/-/issues/287#note_641198529)
   - make VERBOSE=1 XFAIL_TESTS="ppp-over-tls-sync" -j4 check
   tags:
-  - shared
+  - saas-linux-small-amd64
   except:
   - tags
   - schedules
@@ -365,7 +363,7 @@ Fedora/GnuTLS/clang:
 # ppp-over-tls-sync: https://gitlab.com/openconnect/openconnect/-/issues/287#note_641198529)
   - make VERBOSE=1 XFAIL_TESTS="ppp-over-tls-sync" -j4 check
   tags:
-  - shared
+  - saas-linux-small-amd64
   except:
   - tags
   - schedules
@@ -400,7 +398,7 @@ Fedora/OpenSSL/clang:
 # ppp-over-tls-sync: https://gitlab.com/openconnect/openconnect/-/issues/287#note_641198529)
   - make VERBOSE=1 XFAIL_TESTS="auth-swtpm obsolete-server-crypto ppp-over-tls-sync" -j4 check
   tags:
-  - shared
+  - saas-linux-small-amd64
   except:
   - tags
   - schedules
@@ -427,7 +425,7 @@ Ubuntu18.04/GnuTLS:
 # ppp-over-tls-sync: https://gitlab.com/openconnect/openconnect/-/issues/287#note_641198529)
   - make VERBOSE=1 XFAIL_TESTS="auth-nonascii ppp-over-tls-sync" -j4 check
   tags:
-  - shared
+  - saas-linux-small-amd64
   except:
   - tags
   - schedules
@@ -454,7 +452,7 @@ Ubuntu18.04/OpenSSL:
 # ppp-over-tls-sync: https://gitlab.com/openconnect/openconnect/-/issues/287#note_641198529)
   - make VERBOSE=1 XFAIL_TESTS="auth-nonascii obsolete-server-crypto ppp-over-tls-sync" -j4 check
   tags:
-  - shared
+  - saas-linux-small-amd64
   except:
   - tags
   - schedules
@@ -493,7 +491,7 @@ Coverity:
     --form file=@cov-int.tar.gz --form version="`git describe --tags`"
     --form description="`git describe --tags` / $CI_COMMIT_TITLE / $CI_COMMIT_REF_NAME:$CI_PIPELINE_ID "
   tags:
-  - shared
+  - saas-linux-small-amd64
   artifacts:
     expire_in: 1 week
     when: on_failure
@@ -514,8 +512,7 @@ ubsan/GnuTLS/Fedora:
   - make -j4
   - make VERBOSE=1 -j4 check
   tags:
-  - shared
-  - linux
+  - saas-linux-small-amd64
   except:
   - tags
   - schedules
@@ -538,8 +535,7 @@ ubsan/OpenSSL/Fedora:
 # obsolete-server-crypto: obsolete crypto has been removed from LEGACY crypto policies
   - make VERBOSE=1 XFAIL_TESTS="auth-swtpm obsolete-server-crypto" -j4 check
   tags:
-  - shared
-  - linux
+  - saas-linux-small-amd64
   except:
   - tags
   - schedules
@@ -560,8 +556,7 @@ asan/GnuTLS/Fedora:
   - make -j4
   - make VERBOSE=1 -j4 check
   tags:
-  - shared
-  - linux
+  - saas-linux-small-amd64
   except:
   - tags
   - schedules
@@ -582,8 +577,7 @@ asan/OpenSSL/Fedora:
   - make -j4
   - make VERBOSE=1 -j4 check
   tags:
-  - shared
-  - linux
+  - saas-linux-small-amd64
   except:
   - tags
   - schedules
@@ -609,9 +603,10 @@ MinGW32/GnuTLS:
   - make -j4
 # Setup wine path so tests won't fail due to unresolved dll dependencies
   - export WINEPATH=/usr/i686-w64-mingw32/sys-root/mingw/bin\;.
-  - make VERBOSE=1 -j4 check
+# Wintun tests cannot be run under wine, wintun cannot create the interface on wine. 
+  - make VERBOSE=1 XFAIL_TESTS="wintun-names.exe" -j4 check
   tags:
-  - shared
+  - saas-linux-small-amd64
   except:
   - schedules
   artifacts:
@@ -632,9 +627,10 @@ MinGW32/OpenSSL:
   - make -j4
 # Setup wine path so tests won't fail due to unresolved dll dependencies
   - export WINEPATH=/usr/i686-w64-mingw32/sys-root/mingw/bin\;.
-  - make VERBOSE=1 -j4 check
+# Wintun tests cannot be run under wine, wintun cannot create the interface on wine. 
+  - make VERBOSE=1 XFAIL_TESTS="wintun-names.exe" -j4 check
   tags:
-  - shared
+  - saas-linux-small-amd64
   except:
   - schedules
   artifacts:
@@ -656,9 +652,10 @@ MinGW64/GnuTLS:
   - make -j4
 # Setup wine path so tests won't fail due to unresolved dll dependencies
   - export WINEPATH=/usr/x86_64-w64-mingw32/sys-root/mingw/bin\;.
-  - make VERBOSE=1 -j4 check
+# Wintun tests cannot be run under wine, wintun cannot create the interface on wine. 
+  - make VERBOSE=1 XFAIL_TESTS="wintun-names.exe" -j4 check
   tags:
-  - shared
+  - saas-linux-small-amd64
   except:
   - schedules
   artifacts:
@@ -680,9 +677,10 @@ MinGW64/OpenSSL:
   - make -j4
 # Setup wine path so tests won't fail due to unresolved dll dependencies
   - export WINEPATH=/usr/x86_64-w64-mingw32/sys-root/mingw/bin\;.
-  - make VERBOSE=1 -j4 check
+# Wintun tests cannot be run under wine, wintun cannot create the interface on wine. 
+  - make VERBOSE=1 XFAIL_TESTS="wintun-names.exe" -j4 check
   tags:
-  - shared
+  - saas-linux-small-amd64
   except:
   - schedules
   artifacts:
@@ -722,7 +720,7 @@ Android/x86_64:
   image: $CI_REGISTRY/$BUILD_IMAGES_PROJECT:$ANDROID_BUILD
   script:
   tags:
-  - shared
+  - saas-linux-small-amd64
   except:
   - tags
   - schedules
@@ -739,7 +737,7 @@ Android/x86:
   image: $CI_REGISTRY/$BUILD_IMAGES_PROJECT:$ANDROID_BUILD
   script:
   tags:
-  - shared
+  - saas-linux-small-amd64
   except:
   - tags
   - schedules
@@ -756,7 +754,7 @@ Android/arm:
   image: $CI_REGISTRY/$BUILD_IMAGES_PROJECT:$ANDROID_BUILD
   script:
   tags:
-  - shared
+  - saas-linux-small-amd64
   except:
   - tags
   - schedules
@@ -773,7 +771,7 @@ Android/arm64:
   image: $CI_REGISTRY/$BUILD_IMAGES_PROJECT:$ANDROID_BUILD
   script:
   tags:
-  - shared
+  - saas-linux-small-amd64
   except:
   - tags
   - schedules

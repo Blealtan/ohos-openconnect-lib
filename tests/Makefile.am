@@ -151,9 +151,25 @@ TESTS_ENVIRONMENT = srcdir="$(srcdir)" \
 
 C_TESTS = lzstest seqtest buftest
 
+DISTCLEANFILES =
+
 if OPENCONNECT_WIN32
 C_TESTS += list-taps
-endif
+
+list_taps_SOURCES = list-taps.c
+
+if OPENCONNECT_WINTUN
+C_TESTS += wintun-names
+
+wintun_names_SOURCES = wintun-names.c
+
+#list wintun as a script so it is "rebuilt" (copied from top-level) when the tests run
+nodist_check_SCRIPTS = $(WINTUN_DLL)
+
+WINTUN_DLL = .libs/wintun.dll
+DISTCLEANFILES += $(WINTUN_DLL)
+endif # OPENCONNECT_WINTUN
+endif # OPENCONNECT_WIN32
 
 if CHECK_DTLS
 C_TESTS += bad_dtls_test
@@ -182,6 +198,9 @@ keyfiles: $(USER_KEYS) $(USER_CERTS) $(certsdir)/server-cert.pem
 OPENSSL = openssl
 OSSLARGS = -in $(firstword $|) -out $@ -passout pass:password
 OSSLARGSP12 = -inkey $(firstword $|) -out $@ -in $${KEYFILE%-key-pkcs8.pem}-cert.pem -passout pass:$${PASSWORD:-password}
+
+.libs/wintun.dll: ../.libs/wintun.dll
+	cp -f ../$@ $@
 
 # Strictly speaking this is only PKCS#1 for RSA. For EC it's probably
 # best described as RFC5915§4, and no idea what defines it for DSA.

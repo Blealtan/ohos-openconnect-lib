@@ -77,7 +77,7 @@ static intptr_t search_taps(struct openconnect_info *vpninfo, tap_callback *cb)
 	DWORD len, type;
 	int adapter_type;
 	char buf[40];
-	wchar_t name[40];
+	wchar_t name[MAX_ADAPTER_NAME];
 	char keyname[strlen(CONNECTIONS_KEY) + sizeof(buf) + 1 + strlen("\\Connection")];
 	int i = 0;
 	intptr_t ret = OPEN_TUN_SOFTFAIL;
@@ -111,9 +111,21 @@ static intptr_t search_taps(struct openconnect_info *vpninfo, tap_callback *cb)
 		status = RegQueryValueExA(hkey, "ComponentId", NULL, &type,
 					  (unsigned char *)buf, &len);
 		if (status || type != REG_SZ) {
-			vpn_progress(vpninfo, PRG_TRACE,
-				     _("Cannot read %s\\%s or is not string\n"),
-				     keyname, "ComponentId");
+			if (status == ERROR_FILE_NOT_FOUND) {
+				vpn_progress(vpninfo, PRG_TRACE,
+					_("Cannot read registry key %s\\%s: value not found\n"),
+					keyname, "ComponentId");
+			}
+			else if (type != REG_SZ) {
+				vpn_progress(vpninfo, PRG_TRACE,
+					_("Cannot read registry key %s\\%s: value is not a string (%ld)\n"),
+					keyname, "ComponentId", type);
+			}
+			else {
+				vpn_progress(vpninfo, PRG_TRACE,
+					_("Cannot read registry key %s\\%s or is not string: %s (%ld)\n"),
+					keyname, "ComponentId", openconnect__win32_strerror(status), status);
+			}
 			RegCloseKey(hkey);
 			continue;
 		}
@@ -157,9 +169,26 @@ static intptr_t search_taps(struct openconnect_info *vpninfo, tap_callback *cb)
 					 (unsigned char *)name, &len);
 		RegCloseKey(hkey);
 		if (status || type != REG_SZ) {
-			vpn_progress(vpninfo, PRG_INFO,
-				     _("Cannot read registry key %s\\%s or is not string\n"),
-				     keyname, "Name");
+			if (status == ERROR_FILE_NOT_FOUND) {
+				vpn_progress(vpninfo, PRG_INFO,
+					_("Cannot read registry key %s\\%s: value not found\n"),
+					keyname, "Name");
+			}
+			else if (status == ERROR_MORE_DATA) {
+				vpn_progress(vpninfo, PRG_INFO,
+					_("Cannot read registry key %s\\%s: character buffer too small: %llu chars required\n"),
+					keyname, "Name", (long long unsigned int)(len / sizeof(wchar_t)));
+			}
+			else if (type != REG_SZ) {
+				vpn_progress(vpninfo, PRG_INFO,
+					_("Cannot read registry key %s\\%s: value is not a string (%ld)\n"),
+					keyname, "Name", type);
+			}
+			else {
+				vpn_progress(vpninfo, PRG_INFO,
+					_("Cannot read registry key %s\\%s: %s (%ld)\n"),
+					keyname, "Name", openconnect__win32_strerror(status), status);
+			}
 			continue;
 		}
 

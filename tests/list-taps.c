@@ -29,6 +29,10 @@ struct openconnect_info {
 	char *ifname;
 };
 
+/* don't link linkopenconnect in this test, just for this function
+ * it won't get loaded under wine when cross compiling anyway */
+#define openconnect__win32_strerror(err) "(Actual error text not present in tests)"
+
 #define OPEN_TUN_SOFTFAIL 0
 #define OPEN_TUN_HARDFAIL -1
 
