@@ -903,11 +903,6 @@ void openconnect_set_xmlsha1(struct openconnect_info *vpninfo,
 	memcpy(&vpninfo->xmlsha1, xmlsha1, size);
 }
 
-void openconnect_set_no_external_auth(struct openconnect_info *vpninfo, int enable)
-{
-	vpninfo->no_external_auth = enable;
-}
-
 int openconnect_disable_ipv6(struct openconnect_info *vpninfo)
 {
 	/* This prevents disabling IPv6 when the connection is
@@ -1772,3 +1767,9 @@ int openconnect_webview_load_changed(struct openconnect_info *vpninfo,
 
 	return -EOPNOTSUPP;
 }
+
+void openconnect_set_no_external_auth(struct openconnect_info *vpninfo, int enable)
+{
+	vpninfo->no_external_auth = enable;
+}
+
