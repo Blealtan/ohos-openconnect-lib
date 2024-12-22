@@ -1273,6 +1273,7 @@ intptr_t os_setup_wintun(struct openconnect_info *vpninfo);
 int setup_wintun_fd(struct openconnect_info *vpninfo, intptr_t tun_fd);
 intptr_t open_wintun(struct openconnect_info *vpninfo, char *guid, wchar_t *wname);
 int create_wintun(struct openconnect_info *vpninfo);
+int get_wintun_adapter_guid(struct openconnect_info *vpninfo, char *buf, size_t buf_len);
 #endif
 
 /* {gnutls,openssl}-dtls.c */

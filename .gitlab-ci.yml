@@ -603,8 +603,9 @@ MinGW32/GnuTLS:
   - make -j4
 # Setup wine path so tests won't fail due to unresolved dll dependencies
   - export WINEPATH=/usr/i686-w64-mingw32/sys-root/mingw/bin\;.
-# Wintun tests cannot be run under wine, wintun cannot create the interface on wine. 
-  - make VERBOSE=1 XFAIL_TESTS="wintun-names.exe" -j4 check
+# Wintun tests cannot be run under wine, wintun cannot create the interface on wine,
+# Tap tests also: wine does not support windows drivers
+  - make VERBOSE=1 XFAIL_TESTS="list-taps.exe wintun-names.exe" -j4 check
   tags:
   - saas-linux-small-amd64
   except:
@@ -628,7 +629,8 @@ MinGW32/OpenSSL:
 # Setup wine path so tests won't fail due to unresolved dll dependencies
   - export WINEPATH=/usr/i686-w64-mingw32/sys-root/mingw/bin\;.
 # Wintun tests cannot be run under wine, wintun cannot create the interface on wine. 
-  - make VERBOSE=1 XFAIL_TESTS="wintun-names.exe" -j4 check
+# Tap tests also: wine does not support windows drivers
+  - make VERBOSE=1 XFAIL_TESTS="list-taps.exe wintun-names.exe" -j4 check
   tags:
   - saas-linux-small-amd64
   except:
@@ -653,7 +655,8 @@ MinGW64/GnuTLS:
 # Setup wine path so tests won't fail due to unresolved dll dependencies
   - export WINEPATH=/usr/x86_64-w64-mingw32/sys-root/mingw/bin\;.
 # Wintun tests cannot be run under wine, wintun cannot create the interface on wine. 
-  - make VERBOSE=1 XFAIL_TESTS="wintun-names.exe" -j4 check
+# Tap tests also: wine does not support windows drivers
+  - make VERBOSE=1 XFAIL_TESTS="list-taps.exe wintun-names.exe" -j4 check
   tags:
   - saas-linux-small-amd64
   except:
@@ -678,7 +681,8 @@ MinGW64/OpenSSL:
 # Setup wine path so tests won't fail due to unresolved dll dependencies
   - export WINEPATH=/usr/x86_64-w64-mingw32/sys-root/mingw/bin\;.
 # Wintun tests cannot be run under wine, wintun cannot create the interface on wine. 
-  - make VERBOSE=1 XFAIL_TESTS="wintun-names.exe" -j4 check
+# Tap tests also: wine does not support windows drivers
+  - make VERBOSE=1 XFAIL_TESTS="list-taps.exe wintun-names.exe" -j4 check
   tags:
   - saas-linux-small-amd64
   except:

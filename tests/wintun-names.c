@@ -43,11 +43,12 @@
 
 struct openconnect_info {
 	char *ifname;
+    wchar_t *ifname_w;
 };
 
 /* don't link linkopenconnect in this test, just for this function
  * it won't get loaded under wine when cross compiling anyway */
-#define openconnect__win32_strerror(err) "(Actual error text not present in tests)"
+#define openconnect__win32_strerror(err) (strdup("(Actual error text not present in tests)"))
 
 #define OPEN_TUN_SOFTFAIL 0
 #define OPEN_TUN_HARDFAIL -1
@@ -186,23 +187,31 @@ cleanupWintun:
     return NULL;
 }
 
-wchar_t * currentAdapterName;
-
-static intptr_t check_tun(struct openconnect_info *vpninfo, int type, char *guid, wchar_t *wname)
+static intptr_t check_tun(struct openconnect_info *vpninfo, struct oc_adapter_info *list, wchar_t *wname)
 {
-    if (currentAdapterName != 0) {
-        if ( ! wcscmp(currentAdapterName, wname) ) {
+    if (list) {
+        struct oc_adapter_info *found = find_adapter_by_name(vpninfo, list, wname);
+        if (!found || found->type != ADAPTER_WINTUN) {
+            wprintf(L"Device %s was%s found%s",
+                (!found ? " not" : ""), (found? ", but is not of expected type" : "")
+            );
+            return OPEN_TUN_SOFTFAIL;
+        }
+
+        if ( ! wcscmp(wname, found->ifname) ) {
             wprintf(L"Found %s device '%ls' guid %s\n",
-                type ? "Wintun" : "Tap", wname, guid);
+                (found->type == ADAPTER_WINTUN) ? "Wintun" : "Tap", wname, found->guid);
             return VALID_WINTUN_HANDLE;
         }
     }
-    return 0;
+    return OPEN_TUN_SOFTFAIL;
 }
 
 int main(void)
 {
     _setmode(_fileno(stdout), _O_U16TEXT);
+
+    struct openconnect_info empty_info = { NULL, NULL};
 
     HMODULE Wintun = InitializeWintun();
     if (!Wintun) {
@@ -225,21 +234,25 @@ int main(void)
     wsprintfW(adapterName, L"testAdapterNameForRunningLoops_");
     int add = 0;
     int len = 0;
+    struct oc_adapter_info *list;
 
     do {
+        ret = OPEN_TUN_HARDFAIL;
         wsprintfW(adapterName, L"%s%d", adapterName, add);
         add = (add+1)%10;
         len = wcslen(adapterName);
         Log(WINTUN_LOG_INFO, L"len=%3d name=%ls", len, adapterName);
         adapter = create_wintun_adapter(adapterName);
 
-        if (adapter == NULL)
-            ret = OPEN_TUN_HARDFAIL;
-        else {
-            currentAdapterName = adapterName;
-	    ret = search_taps(NULL, check_tun);
-	    WintunCloseAdapter(adapter);
-	    Log(WINTUN_LOG_INFO, L"Wintun adapter closed");
+        if (adapter) {
+            list = get_adapter_list(NULL);
+            if (list) {
+                ret = check_tun(&empty_info, list, adapterName);
+                free_adapter_list(list);
+            }
+
+            WintunCloseAdapter(adapter);
+            Log(WINTUN_LOG_INFO, L"Wintun adapter closed");
         }
     } while ( (len < (MAX_ADAPTER_NAME - 1)) && (ret == VALID_WINTUN_HANDLE) );
 
@@ -257,21 +270,22 @@ int main(void)
     }
 
     Log(WINTUN_LOG_INFO, L"len=%3d name=%ls", len, adapterName);
+
+    ret = OPEN_TUN_HARDFAIL;
     adapter = create_wintun_adapter(adapterName);
 
-    if (adapter == NULL) {
-        /* last test was not succesful*/
-        FreeLibrary(Wintun);
-        return 2;
-    }
-    else {
-        currentAdapterName = adapterName;
-	ret = search_taps(NULL, check_tun);
-	WintunCloseAdapter(adapter);
-	Log(WINTUN_LOG_INFO, L"Wintun adapter closed");
+    if (adapter) {
+        list = get_adapter_list(NULL);
+        if (list) {
+            ret = check_tun(&empty_info, list, adapterName);
+            free_adapter_list(list);
+        }
+
+        WintunCloseAdapter(adapter);
+        Log(WINTUN_LOG_INFO, L"Wintun adapter closed");
     }
 
     FreeLibrary(Wintun);
 
-    return 0;
+    return (ret == VALID_WINTUN_HANDLE ? 0 : 2);
 }

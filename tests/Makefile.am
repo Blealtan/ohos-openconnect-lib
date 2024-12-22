@@ -154,9 +154,10 @@ C_TESTS = lzstest seqtest buftest
 DISTCLEANFILES =
 
 if OPENCONNECT_WIN32
-C_TESTS += list-taps
+C_TESTS += list-taps adapter-fallback
 
 list_taps_SOURCES = list-taps.c
+adapter_fallback_SOURCES = adapter-fallback.c
 
 if OPENCONNECT_WINTUN
 C_TESTS += wintun-names
