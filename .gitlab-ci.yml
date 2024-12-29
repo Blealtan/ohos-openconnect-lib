@@ -17,8 +17,8 @@ variables:
   MINGW32_BUILD: openconnect-cli-mingw32
   MINGW64_BUILD: openconnect-cli-mingw64
   UBUNTU_BUILD: openconnect-cli-ubuntu
-  ANDROID_BUILD: openconnect-cli-android-r21e
-  ANDROID_TOOLCHAINDIR: /opt/android-sdk-linux_x86/toolchains
+  ANDROID_BUILD: openconnect-cli-android-r27c
+  ANDROID_TOOLCHAINDIR: /opt/android-sdk-linux_x86/android-ndk-r27c/toolchains/llvm/prebuilt/linux-x86_64
 
 image: $CI_REGISTRY/$BUILD_IMAGES_PROJECT:$FEDORA_BUILD
 
@@ -729,7 +729,7 @@ Android/x86_64:
   - tags
   - schedules
   script:
-  - make -C android ARCH=x86_64 TOOLCHAIN=$ANDROID_TOOLCHAINDIR/'$(TRIPLET)-$(API_LEVEL)'
+  - make -C android ARCH=x86_64 TOOLCHAIN=$ANDROID_TOOLCHAINDIR
   artifacts:
     when: always
     paths:
@@ -746,7 +746,7 @@ Android/x86:
   - tags
   - schedules
   script:
-  - make -C android ARCH=x86 TOOLCHAIN=$ANDROID_TOOLCHAINDIR/'$(TRIPLET)-$(API_LEVEL)'
+  - make -C android ARCH=x86 TOOLCHAIN=$ANDROID_TOOLCHAINDIR
   artifacts:
     when: always
     paths:
@@ -763,7 +763,7 @@ Android/arm:
   - tags
   - schedules
   script:
-  - make -C android ARCH=arm TOOLCHAIN=$ANDROID_TOOLCHAINDIR/'$(TRIPLET)-$(API_LEVEL)'
+  - make -C android ARCH=arm TOOLCHAIN=$ANDROID_TOOLCHAINDIR
   artifacts:
     when: always
     paths:
@@ -780,7 +780,7 @@ Android/arm64:
   - tags
   - schedules
   script:
-  - make -C android ARCH=arm64 TOOLCHAIN=$ANDROID_TOOLCHAINDIR/'$(TRIPLET)-$(API_LEVEL)'
+  - make -C android ARCH=arm64 TOOLCHAIN=$ANDROID_TOOLCHAINDIR
   artifacts:
     when: always
     paths:
