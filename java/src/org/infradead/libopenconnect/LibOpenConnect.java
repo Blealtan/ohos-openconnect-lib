@@ -109,6 +109,7 @@ public abstract class LibOpenConnect {
 	public native void pause();
 	public native void requestStats();
 	public native void setLogLevel(int level);
+        public native void set_no_external_auth();
 
 	/* control operations */
 

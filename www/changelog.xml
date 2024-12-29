@@ -34,6 +34,7 @@
        <li>openconnect_disable_dtls() allows to disable DTLS unless it is already connected (<a href="https://gitlab.com/openconnect/openconnect/-/issues/697">#697</a>)</li>
        <li>Enable DTLSv1.0 to continue working with OpenSSL v3.1.0 and newer (<a href="https://gitlab.com/openconnect/openconnect/-/merge_requests/504">!504</a>, <a href="https://gitlab.com/openconnect/openconnect/-/merge_requests/536">!536</a>).</li>
        <li>Fix bug that caused OpenConnect to incorrectly log the remaining time until a re-key or periodic Trojan (<a href="https://gitlab.com/openconnect/openconnect/-/issues/677">#677</a>, <a href="https://gitlab.com/openconnect/openconnect/-/merge_requests/539">!539</a>)</li>
+       <li>Add support for setting no_external_auth in libopenconnect (<a href="https://gitlab.com/openconnect/openconnect/-/merge_requests/544">!544</a>)</li>
        <li>Fix bug that prevented GlobalProtect ESP from working correctly when the server sends both Legacy IP and IPv6 versions of the ESP "magic ping" address, but no IPv6 client address (<a href="https://gitlab.com/openconnect/openconnect/-/merge_requests/565">!565</a>)</li>
        <li>Use the full URI (including "usergroup" or path) as specified in <tt>--server</tt> for all requests during authentication instead of only the first one (<a href="https://gitlab.com/openconnect/openconnect/-/merge_requests/560">!560</a>).</li>
      </ul><br/>

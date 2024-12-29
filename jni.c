@@ -1641,3 +1641,10 @@ JNIEXPORT jint JNICALL Java_org_infradead_libopenconnect_LibOpenConnect_setMCAKe
 
 	return ret;
 }
+
+JNIEXPORT void JNICALL Java_org_infradead_libopenconnect_LibOpenConnect_set_no_external_auth(
+	JNIEnv *jenv, jobject jobj)
+{
+        struct libctx *ctx = getctx(jenv, jobj);
+	openconnect_set_no_external_auth(ctx->vpninfo);
+}

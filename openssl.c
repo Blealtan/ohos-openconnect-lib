@@ -2621,14 +2621,19 @@ int export_certificate_pkcs7(struct openconnect_info *vpninfo,
 	 * connection those would be used by SSL_CTX_use_certificate() and
 	 * SSL_CTX_add_extra_chain_cert() respectively. For PKCS7_sign()
 	 * we need the actual cert at the head of the stack, so *create*
-	 * one if needed, and insert oci.cert at position zero. */
+	 * one if needed, and insert oci.cert at position zero.
+         * openssl 3.1.2, used for gitlab verify pipeline, seems to dislike having
+         * a NULL for the PKCS7_sign 'data' argument, so give it a blank BIO */
 
 	if (!oci->extra_certs)
-		oci->extra_certs = sk_X509_new_null();
+          oci->extra_certs = sk_X509_new_null();
+        
 	if (!oci->extra_certs)
-		goto err;
-	if (!sk_X509_insert(oci->extra_certs, oci->cert, 0))
-		goto err;
+          goto err;
+        
+	if (!sk_X509_insert(oci->extra_certs, oci->cert, 0)) 
+          goto err;
+        
 	X509_up_ref(oci->cert);
 
 	bio = BIO_new(BIO_s_mem());
