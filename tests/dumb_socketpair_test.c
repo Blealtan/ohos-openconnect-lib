@@ -242,6 +242,9 @@ int run_send(OPENCONNECT_CMD_SOCKET s, char *buffer) {
     timeout.tv_usec= 0;
 
     int ret, bytesSent, iError;
+
+    bytesSent = 0;
+
     fd_set writefds;
     FD_ZERO(&writefds);
     FD_SET(s, &writefds);//s is connected socket
@@ -284,6 +287,9 @@ int run_recv(OPENCONNECT_CMD_SOCKET s) {
     char buf[4096];
 
     int ret, iResult, bytesReceived, iError;
+
+    bytesReceived = 0;
+
     fd_set readfds;
 
     while(1) { //this loop is to control cycles of retries when failed on attempts to connect
