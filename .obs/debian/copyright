@@ -1,4 +1,6 @@
 Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: OpenConnect
+Upstream-Contact: openconnect-devel@lists.infradead.org
 Source: ftp://ftp.infradead.org/pub/openconnect/
 
 Files: *
