@@ -299,6 +299,7 @@ $(certsdir)/ca.pem: | $(certsdir)/ca-key.pem
 
 SWTPM_TMPDIR := $(shell echo swtpm.$$$$.tmp)
 SWTPM_PRELOAD := LD_PRELOAD=libsocket_wrapper.so SOCKET_WRAPPER_DIR=$(SWTPM_TMPDIR) \
+	SOCKET_WRAPPER_DIR_ALLOW_ORIG=1 \
 	TPM_INTERFACE_TYPE=socsim TPM2TSSENGINE_TCTI=swtpm
 
 SWTPM_IOCTL_RUN = $(SWTPM_PRELOAD) $(SWTPM_IOCTL) --tcp 127.0.0.1:2322

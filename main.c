@@ -910,21 +910,103 @@ static void print_default_vpncscript(void)
 
 static struct oc_vpn_option *gai_overrides;
 
+static struct addrinfo *gai_add_or_free(struct addrinfo *list, struct addrinfo *elem)
+{
+	struct addrinfo **lp = &list;
+
+	while (*lp) {
+		struct addrinfo *p = *lp;
+		if (p->ai_family == elem->ai_family &&
+		    p->ai_socktype == elem->ai_socktype &&
+		    p->ai_protocol == elem->ai_protocol &&
+		    p->ai_addrlen == elem->ai_addrlen &&
+		    !memcmp(p->ai_addr, elem->ai_addr, p->ai_addrlen)) {
+			freeaddrinfo(elem);
+			return list;
+		}
+		lp = &((*lp)->ai_next);
+	}
+	*lp = elem;
+	return list;
+}
+
+static struct addrinfo *gai_merge(struct addrinfo *list1, struct addrinfo *list2)
+{
+	while (list2) {
+		struct addrinfo *elem = list2;
+		list2 = elem->ai_next;
+		elem->ai_next = NULL;
+
+		list1 = gai_add_or_free(list1, elem);
+	}
+	return list1;
+}
+
 static int gai_override_cb(void *cbdata, const char *node,
-			    const char *service, const struct addrinfo *hints,
-			    struct addrinfo **res)
+			   const char *service, const struct addrinfo *hints,
+			   struct addrinfo **res)
 {
 	struct openconnect_info *vpninfo = cbdata;
 	struct oc_vpn_option *p = gai_overrides;
+	struct addrinfo *results = NULL;
+	int ret = 0;
 
 	while (p) {
 		if (!strcmp(node, p->option)) {
+			struct addrinfo *this_res = NULL;
+			int this_ret = 0;
+
 			vpn_progress(vpninfo, PRG_TRACE, _("Override hostname '%s' to '%s'\n"),
 				     node, p->value);
-			node = p->value;
-			break;
+
+			this_ret = getaddrinfo(p->value, service, hints, &this_res);
+			/*
+			 * Accumulate non-fatal results by precedence: If anything *works*,
+			 * return success. If anything returns EAI_ADDRFAMILY, return that.
+			 * Next EAI_NODATA, and finally return EAI_NONAME only if *every*
+			 * lookup returned that. Any other errors are fatal.
+			 */
+			if (!this_ret) {
+				/* As we process the list in reverse of the order they were
+				 * given on the command line, *prepend* results. */
+				results = gai_merge(this_res, results);
+				ret = 0;
+			} else {
+#ifdef _WIN32
+				char *errstr = openconnect__win32_strerror(this_ret);
+#else
+				const char *errstr = gai_strerror(this_ret);
+#endif
+				vpn_progress(vpninfo, PRG_DEBUG,
+					     _("getaddrinfo failed for host '%s': %s\n"),
+					     p->value, errstr);
+#ifdef _WIN32
+				free(errstr);
+#endif
+
+#ifdef EAI_ADDRFAMILY /* Missing in MinGW */
+				if (this_ret == EAI_ADDRFAMILY || ret == EAI_ADDRFAMILY) {
+					ret = EAI_ADDRFAMILY;
+				} else
+#endif
+				if (this_ret == EAI_NODATA || ret == EAI_NODATA) {
+					ret = EAI_NODATA;
+				} else if (this_ret == EAI_NONAME || ret == EAI_NONAME) {
+					ret = EAI_NONAME;
+				} else {
+					/* Fatal errors abort the lookup */
+					freeaddrinfo(results);
+					return this_ret;
+				}
+			}
 		}
 		p = p->next;
+	}
+
+	/* Any override will set *either* 'results' on success, or 'ret' on failure. */
+	if (results || ret) {
+		*res = results;
+		return ret;
 	}
 
 	return getaddrinfo(node, service, hints, res);
