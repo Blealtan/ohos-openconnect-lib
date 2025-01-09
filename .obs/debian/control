@@ -4,27 +4,32 @@ Section: net
 Priority: optional
 Build-Depends: debhelper-compat (= 12),
                groff,
-               libgcrypt20-dev,
                libgnutls28-dev,
                libkrb5-dev,
                liblz4-dev,
                libp11-kit-dev,
                libpcsclite-dev,
                libproxy-dev,
-               libsocket-wrapper [!hurd-i386] <!nocheck>,
+#              disabled due to #1069450
+#              libsocket-wrapper [!hurd-any] <!nocheck>,
                libstoken-dev,
                libtasn1-6-dev,
-               libuid-wrapper [!alpha !hurd-i386 !kfreebsd-amd64 !kfreebsd-i386] <!nocheck>,
+               libtss2-dev [!hurd-any !kfreebsd-any],
+#              disabled due to #1069425
+#              libuid-wrapper [!alpha !hurd-any !kfreebsd-any] <!nocheck>,
                libxml2-dev,
                locales-all <!nocheck>,
-               ocserv [!hurd-i386 !kfreebsd-amd64 !kfreebsd-i386] <!nocheck>,
-               openssl <!nocheck>,
-               pkg-config,
+#              disabled due to #1069450
+#              ocserv [!alpha !hurd-any !ia64 !kfreebsd-any !m68k !sh4 !sparc64] <!nocheck>,
+#              disabled due to #1069450
+#              openssl <!nocheck>,
+               pkgconf,
                python3:any,
-               softhsm2 [!hurd-i386] <!nocheck>,
+#              disabled due to #1069450
+#              softhsm2 [!hurd-any] <!nocheck>,
                xdg-utils,
                zlib1g-dev
-Standards-Version: 4.6.0
+Standards-Version: 4.7.0
 Rules-Requires-Root: no
 Vcs-Browser: https://salsa.debian.org/debian/openconnect
 Vcs-Git: https://salsa.debian.org/debian/openconnect.git
@@ -34,13 +39,13 @@ Package: openconnect
 Architecture: any
 Depends: libopenconnect5 (= ${binary:Version}), vpnc-scripts, ${misc:Depends}, ${shlibs:Depends}
 Recommends: python3, python3-asn1crypto, python3-mechanize, python3-netifaces,
-Suggests: bash-completion,
-Description: open multi-protocol SSL VPN client
+Suggests: bash-completion, xdg-utils,
+Description: open client for various network vendors SSL VPNs
  OpenConnect is an SSL VPN client initially created to support Cisco's
  AnyConnect SSL VPN. It has since been extended to support the Pulse Connect
  Secure VPN (formerly known as Juniper Network Connect or Junos Pulse), the Palo
  Alto Networks GlobalProtect SSL VPN, F5 Big-IP SSL VPN, Fortinet Fortigate SSL
- VPN and Array Networks SSL VPN.
+ VPN and Array Networks AG SSL VPN.
  .
  A corresponding OpenConnect VPN server implementation can be found in the
  ocserv package.
@@ -64,7 +69,7 @@ Description: open client for various network vendors SSL VPNs - development file
  AnyConnect SSL VPN. It has since been extended to support the Pulse Connect
  Secure VPN (formerly known as Juniper Network Connect or Junos Pulse), the Palo
  Alto Networks GlobalProtect SSL VPN, F5 Big-IP SSL VPN, Fortinet Fortigate SSL
- VPN and Array Networks SSL VPN.
+ VPN and Array Networks AG SSL VPN.
  .
  This package provides the header and development files.
 
@@ -80,6 +85,6 @@ Description: open client for various network vendors SSL VPNs - shared library
  AnyConnect SSL VPN. It has since been extended to support the Pulse Connect
  Secure VPN (formerly known as Juniper Network Connect or Junos Pulse), the Palo
  Alto Networks GlobalProtect SSL VPN, F5 Big-IP SSL VPN, Fortinet Fortigate SSL
- VPN and Array Networks SSL VPN.
+ VPN and Array Networks AG SSL VPN.
  .
  This package provides the shared library.
