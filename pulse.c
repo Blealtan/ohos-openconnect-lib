@@ -2816,6 +2816,7 @@ int pulse_mainloop(struct openconnect_info *vpninfo, int *timeout, int readable)
 {
 	int ret;
 	int work_done = 0;
+	const int hdr_size = 16;
 
 	if (vpninfo->ssl_fd == -1)
 		goto do_reconnect;
@@ -2832,7 +2833,7 @@ int pulse_mainloop(struct openconnect_info *vpninfo, int *timeout, int readable)
 		   handle that */
 		int receive_mtu = MAX(16384, vpninfo->deflate_pkt_size ? : vpninfo->ip_info.mtu);
 		struct pkt *pkt = vpninfo->cstp_pkt;
-		int len, payload_len;
+		int len, hdr_len;
 
 		if (!pkt) {
 			pkt = vpninfo->cstp_pkt = alloc_pkt(vpninfo, receive_mtu);
@@ -2842,54 +2843,64 @@ int pulse_mainloop(struct openconnect_info *vpninfo, int *timeout, int readable)
 			}
 		}
 
-		/* Receive packet header, if there's anything there... */
-		len = ssl_nonblock_read(vpninfo, 0, &pkt->pulse.vendor, 16);
+		len = ssl_nonblock_read(vpninfo, 0,
+					((char *)&pkt->pulse.vendor) + vpninfo->partial_rec_size,
+					receive_mtu + hdr_size - vpninfo->partial_rec_size);
 		if (!len)
 			break;
 		if (len < 0)
 			goto do_reconnect;
-		if (len < 16) {
-			vpn_progress(vpninfo, PRG_ERR, _("Short packet received (%d bytes)\n"), len);
-			vpninfo->quit_reason = "Short packet received";
-			return 1;
-		}
+		len += vpninfo->partial_rec_size;
+		vpninfo->partial_rec_size = 0;
 
-		/* Packets shouldn't cross SSL record boundaries (we hope!), so if there
-		 * was a header there, then rest of that packet should be there too. */
-		if (load_be32(&pkt->pulse.len) > receive_mtu + 0x10) {
-			/* This doesn't look right. Pull the rest of the SSL record
-			 * and complain about it (which we will, since the length
-			 * won't match the header */
-			len = receive_mtu;
-		} else
-			len = load_be32(&pkt->pulse.len) - 0x10;
-
-		payload_len = ssl_nonblock_read(vpninfo, 0, &pkt->data, len);
-		if (payload_len != load_be32(&pkt->pulse.len) - 0x10) {
-			if (payload_len < 0)
-				len = 0x10;
-			else
-				len = payload_len + 0x10;
-			goto unknown_pkt;
+	next_pkt:
+		/* Ensure we have a full packet header with the expected vendor field */
+		if (len < hdr_size) {
+			vpn_progress(vpninfo, PRG_DEBUG,
+				     _("Received partial packet header, %d bytes\n"), len);
+			vpninfo->partial_rec_size = len;
+			continue;
 		}
 
 		if (load_be32(&pkt->pulse.vendor) != VENDOR_JUNIPER)
 			goto unknown_pkt;
 
+		/* We received something that at least appears to be a Pulse packet */
 		vpninfo->ssl_times.last_rx = time(NULL);
-		len = payload_len + 0x10;
 
+		/* Continue fetching partial packets until we have a full packet
+		 * (header length is >= bytes received)
+		 */
+		hdr_len = load_be32(&pkt->pulse.len);
+		if (hdr_len < hdr_size || hdr_len > receive_mtu)
+			goto unknown_pkt;
+
+		if (hdr_len > len) {
+			vpn_progress(vpninfo, PRG_DEBUG,
+				     _("Received partial packet, %d of %d bytes\n"),
+				     len, hdr_len);
+			vpninfo->partial_rec_size = len;
+			continue;
+		} else if (len > hdr_len)
+			vpn_progress(vpninfo, PRG_TRACE,
+				     _("Received packet of %d bytes with %d trailing bytes of concatenated packet.\n"),
+				     hdr_len, len - hdr_len);
+
+		int payload_len = hdr_len - hdr_size;
 		switch(load_be32(&pkt->pulse.type)) {
 		case 4:
+			if (payload_len <= 0)
+				goto unknown_pkt;
 			vpn_progress(vpninfo, PRG_TRACE,
-				     _("Received data packet of %d bytes\n"),
-				     payload_len);
-			dump_buf_hex(vpninfo, PRG_TRACE, '<', (void *)&vpninfo->cstp_pkt->pulse.vendor, len);
-			vpninfo->cstp_pkt->len = payload_len;
+				     _("Received IPv%d data packet of %d bytes\n"),
+				     (pkt->data[0] >> 4), payload_len);
+			if (vpninfo->dump_http_traffic)
+				dump_buf_hex(vpninfo, PRG_TRACE, '<', (void *)&pkt->pulse.vendor, len);
+			pkt->len = payload_len;
 			queue_packet(&vpninfo->incoming_queue, pkt);
-			vpninfo->cstp_pkt = pkt = NULL;
+			vpninfo->cstp_pkt = NULL;
 			work_done = 1;
-			continue;
+			break;
 		case 1:
 			if (payload_len < 0x6a ||
 			    load_be32(pkt->data + 0x10) != 0x21202400 ||
@@ -2899,22 +2910,26 @@ int pulse_mainloop(struct openconnect_info *vpninfo, int *timeout, int readable)
 			    load_be16(pkt->data + 0x28) != 0x40)
 				goto unknown_pkt;
 
-			dump_buf_hex(vpninfo, PRG_TRACE, '<', (void *)&vpninfo->cstp_pkt->pulse.vendor, len);
+			vpn_progress(vpninfo, PRG_TRACE,
+				     _("received ESP config packet of %d bytes\n"),
+				     payload_len);
+			if (vpninfo->dump_http_traffic)
+				dump_buf_hex(vpninfo, PRG_TRACE, '<', (void *)&pkt->pulse.vendor, len);
 
 			ret = handle_esp_config_packet(vpninfo, (void *)&pkt->pulse.vendor, len);
 			if (ret) {
 				vpn_progress(vpninfo, PRG_ERR,
 					     _("ESP rekey failed\n"));
 				vpninfo->proto->udp_close(vpninfo);
-				continue;
+				break;
 			}
 			vpninfo->cstp_pkt = NULL;
-			pkt->len = load_be32(&pkt->pulse.len) - 16;
+			pkt->len = load_be32(&pkt->pulse.len) - hdr_size;
 			queue_packet(&vpninfo->tcp_control_queue, pkt);
 
 			print_esp_keys(vpninfo, _("new incoming"), &vpninfo->esp_in[vpninfo->current_esp_in]);
 			print_esp_keys(vpninfo, _("new outgoing"), &vpninfo->esp_out);
-			continue;
+			break;
 
 		case 0x93: {
 			/* Expected contents are "errorType=%d errorString=%s\n". Known values:
@@ -2951,11 +2966,28 @@ int pulse_mainloop(struct openconnect_info *vpninfo, int *timeout, int readable)
 		default:
 		unknown_pkt:
 			vpn_progress(vpninfo, PRG_ERR,
-				     _("Unknown Pulse packet of %d bytes (vendor 0x%03x, type 0x%02x, hdr_len %d, ident %d)\n"),
+				     _("Unknown Pulse packet of %d bytes (vendor 0x%03x, type 0x%02x, hdr_len 0x%04x, ident %u)\n"),
 				     len, load_be32(&pkt->pulse.vendor), load_be32(&pkt->pulse.type),
 				     load_be32(&pkt->pulse.len), load_be32(&pkt->pulse.ident));
-			dump_buf_hex(vpninfo, PRG_TRACE, '<', (void *)&vpninfo->cstp_pkt->pulse.vendor, len);
+			dump_buf_hex(vpninfo, PRG_TRACE, '<', (void *)&pkt->pulse.vendor, len);
 			continue;
+		}
+
+		if (len > hdr_len) {
+			/* Need to copy to a new struct pkt, not just move pointers, because data
+			 * packets will get stolen for incoming queue and free()'d. Allocate a
+			 * full sized packet so it can remain in vpninfo->cstp_pkt and be reused
+			 * for receiving the next packet, if it's something other than data and
+			 * doesn't get queued and freed. */
+			len -= hdr_len;
+			if (vpninfo->cstp_pkt == NULL) {
+				vpninfo->cstp_pkt = alloc_pkt(vpninfo, receive_mtu);
+				if (!vpninfo->cstp_pkt)
+					return -ENOMEM;
+			}
+			memcpy((char *)&vpninfo->cstp_pkt->pulse.vendor, (char *)&pkt->pulse.vendor + hdr_len, len);
+			pkt = vpninfo->cstp_pkt;
+			goto next_pkt;
 		}
 	}
 
@@ -2969,14 +3001,17 @@ int pulse_mainloop(struct openconnect_info *vpninfo, int *timeout, int readable)
 		unmonitor_write_fd(vpninfo, ssl);
 
 
-		vpn_progress(vpninfo, PRG_TRACE, _("Packet outgoing:\n"));
-		dump_buf_hex(vpninfo, PRG_TRACE, '>',
-			     (void *)&vpninfo->current_ssl_pkt->pulse.vendor,
-			     vpninfo->current_ssl_pkt->len + 16);
+		vpn_progress(vpninfo, PRG_TRACE,
+			     _("Sending IPv%d data packet of %d bytes\n"),
+			     (vpninfo->current_ssl_pkt->data[0] >> 4), vpninfo->current_ssl_pkt->len);
+		if (vpninfo->dump_http_traffic)
+			dump_buf_hex(vpninfo, PRG_TRACE, '>',
+				     (void *)&vpninfo->current_ssl_pkt->pulse.vendor,
+				     vpninfo->current_ssl_pkt->len + hdr_size);
 
 		ret = ssl_nonblock_write(vpninfo, 0,
 					 &vpninfo->current_ssl_pkt->pulse.vendor,
-					 vpninfo->current_ssl_pkt->len + 16);
+					 vpninfo->current_ssl_pkt->len + hdr_size);
 		if (ret < 0) {
 			do_reconnect:
 			/* XXX: Do we have to do this or can we leave it open?
@@ -3015,10 +3050,10 @@ int pulse_mainloop(struct openconnect_info *vpninfo, int *timeout, int readable)
 #endif
 		}
 
-		if (ret != vpninfo->current_ssl_pkt->len + 16) {
+		if (ret != vpninfo->current_ssl_pkt->len + hdr_size) {
 			vpn_progress(vpninfo, PRG_ERR,
 				     _("SSL wrote too few bytes! Asked for %d, sent %d\n"),
-				     vpninfo->current_ssl_pkt->len + 8, ret);
+				     vpninfo->current_ssl_pkt->len + hdr_size, ret);
 			vpninfo->quit_reason = "Internal error";
 			return 1;
 		}
@@ -3127,7 +3162,7 @@ int pulse_mainloop(struct openconnect_info *vpninfo, int *timeout, int readable)
 
 		store_be32(&this->pulse.vendor, VENDOR_JUNIPER);
 		store_be32(&this->pulse.type, 4);
-		store_be32(&this->pulse.len, this->len + 16);
+		store_be32(&this->pulse.len, this->len + hdr_size);
 		store_be32(&this->pulse.ident, vpninfo->ift_seq++);
 
 		vpn_progress(vpninfo, PRG_TRACE,
