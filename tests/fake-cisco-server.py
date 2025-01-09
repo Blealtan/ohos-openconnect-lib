@@ -202,7 +202,7 @@ def auth_reply(dict_req):
 
 
 def main(args):
-    context = ssl.SSLContext()
+    context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
 
     # Verify that TLS requests include the appropriate client certificate
     context.load_cert_chain(args.cert, args.key)
