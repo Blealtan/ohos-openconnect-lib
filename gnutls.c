@@ -908,6 +908,7 @@ static int import_openssl_pem(struct openconnect_info *vpninfo, struct cert_info
 	return ret;
 }
 
+#if defined(HAVE_P11KIT)
 static void fill_token_info(char *buf, size_t s, unsigned char *dst, size_t dstlen)
 {
 	if (s && !gtls_ver(3,6,0))
@@ -918,6 +919,7 @@ static void fill_token_info(char *buf, size_t s, unsigned char *dst, size_t dstl
 	if (s < dstlen)
 		memset(dst + s, ' ', dstlen - s);
 }
+#endif
 
 struct gtls_cert_info {
 	gnutls_x509_crl_t crl;

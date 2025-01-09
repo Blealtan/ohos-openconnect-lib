@@ -294,7 +294,9 @@ AS_COMPILER_FLAGS(WFLAGS,
          -Wmissing-declarations
          -Wmissing-include-dirs
          -Wnested-externs
+         -Wparentheses
          -Wpointer-arith
+         -Wunused-function
          -Wwrite-strings")
 AC_SUBST(WFLAGS, [$WFLAGS])
 
