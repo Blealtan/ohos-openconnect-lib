@@ -1019,7 +1019,7 @@ msgstr "Kratek zapis pri zapisovanju paketa BYE\n"
 
 #: digest.c:252
 msgid "Attempting Digest authentication to proxy\n"
-msgstr "Poskus preverjanja pristnosti Digest na posredniškim strežniku"
+msgstr "Poskus preverjanja pristnosti Digest na posredniškim strežniku\n"
 
 #: digest.c:255
 #, c-format
