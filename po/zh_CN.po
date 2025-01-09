@@ -10,7 +10,7 @@ msgstr ""
 "Project-Id-Version: NetworkManager-openconnect master\n"
 "Report-Msgid-Bugs-To: openconnect-devel@lists.infradead.org\n"
 "POT-Creation-Date: 2024-01-29 09:41-0800\n"
-"PO-Revision-Date: 2023-08-27 09:51-0400\n"
+"PO-Revision-Date: 2025-01-09 16:13+0800\n"
 "Last-Translator: Boyuan Yang <073plan@gmail.com>\n"
 "Language-Team: Chinese - China <i18n-zh@googlegroups.com>\n"
 "Language: zh_CN\n"
@@ -18,7 +18,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
-"X-Generator: Poedit 3.3.2\n"
+"X-Generator: Poedit 3.5\n"
 
 #: array.c:130
 msgid "No ANsession cookie found\n"
@@ -112,22 +112,22 @@ msgstr "分配失败\n"
 #: array.c:846
 #, c-format
 msgid "Received %d more bytes after partial %d\n"
-msgstr ""
+msgstr "部分 %d 后收到 %d 个更多字节\n"
 
 #: array.c:860
 #, c-format
 msgid "Received partial packet, %d bytes\n"
-msgstr ""
+msgstr "收到部分数据包，%d 字节\n"
 
 #: array.c:875
 #, c-format
 msgid "Unrecognised data packet, len %d\n"
-msgstr ""
+msgstr "无法识别的数据包，len %d\n"
 
 #: array.c:886
 #, c-format
 msgid "Received partial packet, %d of %d bytes\n"
-msgstr ""
+msgstr "接收到部分数据包，%d 字节中的 %d 字节\n"
 
 #: array.c:896 array.c:1256
 #, c-format
@@ -144,7 +144,7 @@ msgstr ""
 #: array.c:924
 #, c-format
 msgid "Moved down %d bytes after previous packet\n"
-msgstr ""
+msgstr "在前一个数据包之后向下移动 %d 字节\n"
 
 #: array.c:961 cstp.c:1107 gpst.c:1275 oncp.c:1118 ppp.c:1376 pulse.c:3020
 #, c-format
@@ -260,13 +260,13 @@ msgstr "登出成功。\n"
 #: auth-globalprotect.c:101
 msgid ""
 "SAML authentication required; using portal-userauthcookie to continue SAML.\n"
-msgstr ""
+msgstr "需要 SAML 验证；使用 portal-userauthcookie 继续进行 SAML。\n"
 
 #: auth-globalprotect.c:103
 msgid ""
 "SAML authentication required; using portal-prelogonuserauthcookie to "
 "continue SAML.\n"
-msgstr ""
+msgstr "需要 SAML 验证；使用 portal-prelogonuserauthcookie 继续 SAML。\n"
 
 #: auth-globalprotect.c:105
 #, c-format
@@ -325,7 +325,7 @@ msgstr "GlobalProtect 登录返回了 %s=%s\n"
 #: auth-globalprotect.c:396
 #, c-format
 msgid "Please report %d unexpected values above (of which %d fatal) to <%s>\n"
-msgstr ""
+msgstr "请将上述 %d 个意外值（其中 %d 个是致命值）报告给 <%s>\n"
 
 #: auth-globalprotect.c:438
 msgid "Please select GlobalProtect gateway."
@@ -356,7 +356,7 @@ msgstr "门户已设定 HIP 报告间隔为 %d 分钟）。\n"
 msgid ""
 "Portal reports GlobalProtect version %s; we will report the same client "
 "version.\n"
-msgstr ""
+msgstr "门户网站报告 GlobalProtect 版本 %s；我们将报告相同的客户端版本。\n"
 
 #: auth-globalprotect.c:532
 msgid "GlobalProtect portal configuration lists no gateway servers.\n"
@@ -552,12 +552,12 @@ msgstr "接收到未预期的 <client-cert-request>。\n"
 
 #: auth.c:643
 msgid "Received <multiple-client-cert-request> when not expected.\n"
-msgstr ""
+msgstr "收到了非预期的 <multiple-client-cert-request>。\n"
 
 #: auth.c:680
 #, c-format
 msgid "Server reported certificate error: %s.\n"
-msgstr ""
+msgstr "服务器报告证书错误：%s 。\n"
 
 #: auth.c:687
 msgid "XML response has no \"auth\" node\n"
@@ -716,7 +716,7 @@ msgstr "服务器请求了 SSL 客户端证书；还未配置\n"
 msgid ""
 "Multiple-certificate authentication requires a second certificate; none were "
 "configured.\n"
-msgstr ""
+msgstr "多证书身份验证需要第二个证书；但尚未配置。\n"
 
 #: auth.c:1550
 msgid "XML POST enabled\n"
@@ -744,21 +744,21 @@ msgstr "请求了不支持的哈希算法“%s”。\n"
 #: auth.c:1849
 #, c-format
 msgid "Duplicate hash algorithm '%s' requested.\n"
-msgstr ""
+msgstr "请求了重复的哈希算法‘ %s ’。\n"
 
 #: auth.c:1935
 msgid ""
 "Multiple-certificate authentication signature hash algorithm negotiation "
 "failed.\n"
-msgstr ""
+msgstr "多证书认证签名哈希算法协商失败。\n"
 
 #: auth.c:1949
 msgid "Error exporting multiple-certificate signer's certificate chain.\n"
-msgstr ""
+msgstr "导出多证书签名者的证书链时出错。\n"
 
 #: auth.c:1963
 msgid "Error encoding the challenge response.\n"
-msgstr ""
+msgstr "对质询响应进行编码时出错。\n"
 
 #: compat.c:250
 #, c-format
@@ -852,7 +852,7 @@ msgstr "CSTP 已连接。DPD %d，持久连接（Keepalive）%d\n"
 #: cstp.c:702
 #, c-format
 msgid "Ingested STRAP public key %s\n"
-msgstr ""
+msgstr "已获取 STRAP 公钥 %s\n"
 
 #: cstp.c:746
 msgid "Compression setup failed\n"
@@ -1273,7 +1273,7 @@ msgstr "为 ESP 包生成随机 IV 失败\n"
 msgid ""
 "WARNING: Unknown F5 JSON form field type '%s', treating as 'text'. Please "
 "report to <%s>"
-msgstr ""
+msgstr "警告：未知的 F5 JSON 表单字段类型“%s”，视为“文本”。请报告给 <%s>"
 
 #: f5.c:316
 #, c-format
@@ -1282,6 +1282,8 @@ msgid ""
 "embedded\n"
 "  JSON. This is EXPERIMENTAL. Please report results to <%s>.\n"
 msgstr ""
+"警告：未找到 HTML 身份验证表单。从 F5 嵌入的 JSON 中提取表单。\n"
+"这是实验性的。请将结果报告给 <%s>。\n"
 
 #: f5.c:325
 msgid ""
@@ -1401,7 +1403,7 @@ msgstr "无效的凭据；请重试。"
 #: fortinet.c:345
 #, c-format
 msgid "Got IPv%d exclude route %s\n"
-msgstr ""
+msgstr "已获得 IPv%d 排除路由 %s\n"
 
 #: fortinet.c:350
 #, c-format
@@ -1423,15 +1425,15 @@ msgstr ""
 #, c-format
 msgid ""
 "Server reports that reconnect-after-drop is allowed within %d seconds, %s\n"
-msgstr ""
+msgstr "服务器报告允许在 %d 秒内断线后重新连接，%s\n"
 
 #: fortinet.c:468
 msgid "but only from the same source IP address"
-msgstr ""
+msgstr "但只能来自同一源 IP 地址"
 
 #: fortinet.c:468
 msgid "even if source IP address changes"
-msgstr ""
+msgstr "即使源 IP 地址发生变化"
 
 #: fortinet.c:471
 #, c-format
@@ -1441,6 +1443,8 @@ msgid ""
 "be able to reconnect if dead peer is detected. If reconnection DOES work,\n"
 "please report to <%s>\n"
 msgstr ""
+"服务器报告不允许断线后重新连接。如果检测到对端已死，OpenConnect 将无法\n"
+"重新连接。如果重新连接确实有效，请向 <%s> 报告\n"
 
 #: fortinet.c:487
 #, c-format
@@ -1470,6 +1474,8 @@ msgid ""
 "    without reauthentication. If automatic reconnection does work, please\n"
 "    report results to <%s>\n"
 msgstr ""
+"警告：Fortinet 服务器不会专门启用或禁用无需重新认证的重新连接。\n"
+"如果自动重新连接确实有效，请将结果报告给 <%s>\n"
 
 #: fortinet.c:579
 #, c-format
@@ -1480,20 +1486,24 @@ msgid ""
 "DOES,\n"
 "work please report to <%s>\n"
 msgstr ""
+"服务器未发送 <auth-ses tun-connect-without-reauth=\"0/1\"/>。如果检测到对端\n"
+"失效，OpenConnect 可能无法重新连接。如果重新连接成功，请向 <%s> 报告\n"
 
 #: fortinet.c:586
 msgid "Received split routes; not setting default Legacy IP route\n"
-msgstr ""
+msgstr "收到分割路由；未设置默认传统 IP 路由\n"
 
 #: fortinet.c:588
 msgid "No split routes received; setting default Legacy IP route\n"
-msgstr ""
+msgstr "未收到分割路由；设置默认传统 IP 路由\n"
 
 #: fortinet.c:665
 msgid ""
 "Ancient Fortinet server (<v5?) only supports ancient HTML config, which is "
 "not implemented by OpenConnect.\n"
 msgstr ""
+"古老的 Fortinet 服务器（<v5?）仅支持古老的 HTML 配置，而 OpenConnect 并未实现"
+"这一点。\n"
 
 #: fortinet.c:668
 #, c-format
@@ -1504,6 +1514,11 @@ msgid ""
 "%s and\n"
 "%s.\n"
 msgstr ""
+"Fortinet 服务器拒绝连接选项请求。在某些情况下，重新连接后会出现这种情况。请"
+"向\n"
+"<%s> 报告，或参阅\n"
+"%s 和\n"
+"%s 上的讨论。\n"
 
 #: fortinet.c:708
 msgid "Error establishing Fortinet connection\n"
@@ -2139,7 +2154,7 @@ msgstr "签名验证失败"
 
 #: gnutls.c:2208 openssl.c:1702
 msgid "certificate does not match SNI"
-msgstr ""
+msgstr "证书与 SNI 不匹配"
 
 #: gnutls.c:2210 openssl.c:1561 openssl.c:1706
 msgid "certificate does not match hostname"
@@ -2153,7 +2168,7 @@ msgstr "服务器证书验证失败：%s\n"
 #: gnutls.c:2240
 #, c-format
 msgid "TLS Finished message larger than expected (%u bytes)\n"
-msgstr ""
+msgstr "TLS 完成消息大于预期（%u 字节）\n"
 
 #: gnutls.c:2302
 msgid "Failed to allocate memory for cafile certs\n"
@@ -2194,7 +2209,7 @@ msgstr "SLL 连接已取消\n"
 #: gnutls.c:2528
 #, c-format
 msgid "SSL connection failure due to fatal alert: %s\n"
-msgstr ""
+msgstr "由于严重警报导致 SSL 连接失败：%s\n"
 
 #: gnutls.c:2531
 #, c-format
@@ -2249,7 +2264,7 @@ msgstr "计算 OATH HMAC 失败：%s\n"
 #: gnutls.c:2818
 #, c-format
 msgid "%s %dms\n"
-msgstr ""
+msgstr "%s %d毫秒\n"
 
 #: gnutls.c:2859
 #, c-format
@@ -2263,79 +2278,79 @@ msgstr "已建立 EAP-TTLS 会话\n"
 #: gnutls.c:2959
 #, c-format
 msgid "Failed to generate STRAP key: %s\n"
-msgstr ""
+msgstr "无法生成 STRAP 密钥：%s\n"
 
 #: gnutls.c:2968
 #, c-format
 msgid "Failed to generate STRAP DH key: %s\n"
-msgstr ""
+msgstr "无法生成 STRAP DH 密钥：%s\n"
 
 #: gnutls.c:3001
 #, c-format
 msgid "Failed to decode server DH key: %s\n"
-msgstr ""
+msgstr "无法解码服务器 DH 密钥：%s\n"
 
 #: gnutls.c:3013
 #, c-format
 msgid "Failed to export DH private key parameters: %s\n"
-msgstr ""
+msgstr "导出 DH 私钥参数失败：%s\n"
 
 #: gnutls.c:3019
 #, c-format
 msgid "Failed to export server DH key parameters: %s\n"
-msgstr ""
+msgstr "无法导出服务器 DH 密钥参数：%s\n"
 
 #: gnutls.c:3027
 #, c-format
 msgid "HPKE uses unsupported EC curve (%d, %d)\n"
-msgstr ""
+msgstr "HPKE 使用不受支持的 EC 曲线 (%d, %d)\n"
 
 #: gnutls.c:3040
 msgid "Failed to create ECC public point for ECDH\n"
-msgstr ""
+msgstr "无法为 ECDH 创建 ECC 公共点\n"
 
 #: gnutls.c:3083
 #, c-format
 msgid "HKDF extract failed: %s\n"
-msgstr ""
+msgstr "HKDF 提取失败：%s\n"
 
 #: gnutls.c:3093
 #, c-format
 msgid "HKDF expand failed: %s\n"
-msgstr ""
+msgstr "HKDF 扩展失败：%s\n"
 
 #: gnutls.c:3112
 #, c-format
 msgid "Failed to init AES-256-GCM cipher: %s\n"
-msgstr ""
+msgstr "无法初始化 AES-256-GCM 密码：%s\n"
 
 #: gnutls.c:3121
 #, c-format
 msgid "SSO token decryption failed: %s\n"
-msgstr ""
+msgstr "SSO 令牌解密失败：%s\n"
 
 #: gnutls.c:3164
 #, c-format
 msgid "Failed to decode STRAP key: %s\n"
-msgstr ""
+msgstr "无法解码 STRAP 密钥：%s\n"
 
 #: gnutls.c:3190
 #, c-format
 msgid "Failed to regenerate STRAP key: %s\n"
-msgstr ""
+msgstr "无法重新生成 STRAP 密钥：%s\n"
 
 #: gnutls.c:3205 openssl.c:2558
 msgid "Failed to generate STRAP key DER\n"
-msgstr ""
+msgstr "无法生成 STRAP 密钥 DER\n"
 
 #: gnutls.c:3230
 #, c-format
 msgid "STRAP signature failed: %s\n"
-msgstr ""
+msgstr "STRAP 签名失败：%s\n"
 
 #: gnutls.c:3321
 msgid "Certificate may be multiple certificate authentication incompatible.\n"
-msgstr ""
+msgstr "证书可能与多个证书认证不兼容。\n"
 
 #: gnutls.c:3359
 #, c-format
@@ -2350,26 +2365,26 @@ msgstr ""
 #: gnutls.c:3399
 msgid ""
 "The certificate specifies key usages incompatible with authentication.\n"
-msgstr ""
+msgstr "该证书指定的密钥用法与身份验证不兼容。\n"
 
 #: gnutls.c:3408
 msgid "Certificate doesn't specify key usage.\n"
-msgstr ""
+msgstr "证书未指定密钥用途。\n"
 
 #: gnutls.c:3426
 #, c-format
 msgid "Precondition failed %s[%s]:%d\n"
-msgstr ""
+msgstr "先决条件失败 %s[%s]:%d\n"
 
 #: gnutls.c:3480
 #, c-format
 msgid "Failed to generate the PKCS#7 structure: %s.\n"
-msgstr ""
+msgstr "无法生成 PKCS#7 结构：%s。\n"
 
 #: gnutls.c:3514
 #, c-format
 msgid "Precondition failed %s[%s]:%d.\n"
-msgstr ""
+msgstr "先决条件失败 %s[%s]:%d\n"
 
 #: gnutls.c:3549
 #, c-format
@@ -2379,7 +2394,7 @@ msgstr ""
 #: gnutls.c:3574
 #, c-format
 msgid "Failed to sign data with second certificate: %s.\n"
-msgstr ""
+msgstr "使用第二个证书签署数据失败：%s。\n"
 
 #: gnutls_tpm.c:56
 #, c-format
@@ -2716,7 +2731,7 @@ msgstr "质询：%s\n"
 
 #: gpst.c:259
 msgid "Failed to parse non-XML server response\n"
-msgstr ""
+msgstr "无法解析非 XML 服务器响应\n"
 
 #: gpst.c:260 gpst.c:327
 #, c-format
@@ -2725,17 +2740,17 @@ msgstr "响应为：%s\n"
 
 #: gpst.c:325
 msgid "Failed to parse XML server response\n"
-msgstr ""
+msgstr "无法解析 XML 服务器响应\n"
 
 #: gpst.c:364
 #, c-format
 msgid "Unknown ESP MAC algorithm: %s\n"
-msgstr ""
+msgstr "未知的 ESP MAC 算法：%s\n"
 
 #: gpst.c:372
 #, c-format
 msgid "Unknown ESP encryption algorithm: %s\n"
-msgstr ""
+msgstr "未知的 ESP 加密算法：%s\n"
 
 #: gpst.c:449
 #, c-format
@@ -2771,6 +2786,9 @@ msgid ""
 "<%s>, including any problems\n"
 "with ESP or other apparent loss of connectivity or performance.\n"
 msgstr ""
+"配置 XML <connected-gw-ip> 地址 (%s) 与外部网关地址 (%s) 不同。\n"
+"请将此情况报告给 <%s>，包括 ESP 的任何问题或其他明显的连接\n"
+"或性能损失。\n"
 
 #: gpst.c:560
 #, c-format
@@ -2795,7 +2813,7 @@ msgstr "未知的 GlobalProtect 配置标记 <%s>：%s\n"
 #, c-format
 msgid ""
 "GlobalProtect IPv6 support is experimental. Please report results to <%s>.\n"
-msgstr ""
+msgstr "GlobalProtect IPv6 支持处于实验阶段。请将结果报告给 <%s>。\n"
 
 #: gpst.c:620
 msgid ""
@@ -3102,43 +3120,43 @@ msgstr "SOCKS 代理要求保护未知类型 0x%02x\n"
 #: hpke.c:58 hpke.c:86
 #, c-format
 msgid "Spawning external browser '%s'\n"
-msgstr ""
+msgstr "生成外部浏览器‘%s’\n"
 
 #: hpke.c:73
 msgid "Spawn browser"
-msgstr ""
+msgstr "生成浏览器"
 
 #: hpke.c:135
 #, c-format
 msgid "Failed to listen on local port 29786: %s\n"
-msgstr ""
+msgstr "无法监听本地端口 29786：%s\n"
 
 #: hpke.c:169
 #, c-format
 msgid "Failed to spawn external browser for %s\n"
-msgstr ""
+msgstr "无法为 %s 生成外部浏览器\n"
 
 #: hpke.c:184
 msgid "Accepted incoming external-browser connection on port 29786\n"
-msgstr ""
+msgstr "接受端口 29786 上的外部浏览器传入连接\n"
 
 #: hpke.c:191
 msgid "Invalid incoming external-browser request\n"
-msgstr ""
+msgstr "无效的外部浏览器传入请求\n"
 
 #: hpke.c:267
 #, c-format
 msgid "Got encrypted SSO token of %d bytes\n"
-msgstr ""
+msgstr "已获得 %d 字节的加密 SSO 令牌\n"
 
 #: hpke.c:335
 #, c-format
 msgid "Failed to decode SSO token at %d:\n"
-msgstr ""
+msgstr "无法解码位于 %d 的 SSO 令牌：\n"
 
 #: hpke.c:363
 msgid "SSO token not alphanumeric\n"
-msgstr ""
+msgstr "SSO 令牌不是字母数字\n"
 
 #: http-auth.c:69
 msgid "Attempting HTTP Basic authentication to proxy\n"
@@ -3233,7 +3251,7 @@ msgstr "提取分块头部时出错\n"
 #, c-format
 msgid ""
 "Error in chunked decoding. Expected hexadecimal chunk length, got: '%s'\n"
-msgstr ""
+msgstr "分块解码时出错。预期十六进制块长度，结果为：“%s”\n"
 
 #: http.c:454
 #, c-format
@@ -3508,7 +3526,7 @@ msgstr "构建使用的 SSL 库没有思科 DTLS 支持\n"
 
 #: library.c:517
 msgid "No IP address received with Juniper rekey/reconnection.\n"
-msgstr ""
+msgstr "Juniper 重新密钥/重新连接时未收到 IP 地址。\n"
 
 #: library.c:522
 msgid "No IP address received. Aborting\n"
@@ -3566,16 +3584,16 @@ msgstr "没有表单处理程序；无法验证。\n"
 
 #: library.c:1648
 msgid "No form ID. This is a bug in OpenConnect's authentication code.\n"
-msgstr ""
+msgstr "没有表单 ID。这是 OpenConnect 身份验证代码中的一个错误。\n"
 
 #: library.c:1719
 msgid "No SSO handler\n"
-msgstr ""
+msgstr "没有 SSO 处理程序\n"
 
 #: main.c:402
 #, c-format
 msgid "CommandLineToArgv() failed: %s\n"
-msgstr ""
+msgstr "CommandLineToArgvw() 失败：%s\n"
 
 #: main.c:415
 #, c-format
@@ -3590,17 +3608,17 @@ msgstr "ReadConsole() 失败：%s\n"
 #: main.c:471
 #, c-format
 msgid "Operation aborted by user\n"
-msgstr ""
+msgstr "用户已中止操作\n"
 
 #. Should never happen
 #: main.c:474
 #, c-format
 msgid "ReadConsole() didn't read any input\n"
-msgstr ""
+msgstr "ReadConsole() 没有读取任何输入\n"
 
 #: main.c:482
 msgid "fgetws (stdin)"
-msgstr ""
+msgstr "fgetws (标准输入)"
 
 #: main.c:501 main.c:514
 #, c-format
@@ -3609,7 +3627,7 @@ msgstr "转换控制台输入时出错：%s\n"
 
 #: main.c:508
 msgid "Allocation failure for string from stdin"
-msgstr ""
+msgstr "标准输入的字符串分配失败"
 
 #: main.c:669
 #, c-format
@@ -3661,7 +3679,7 @@ msgstr "fgets (stdin)"
 #: main.c:849
 #, c-format
 msgid "WARNING: Cannot set handler for signal %d: %s\n"
-msgstr ""
+msgstr "警告：无法为信号 %d：%s 设置处理程序\n"
 
 #: main.c:860
 #, c-format
@@ -3675,7 +3693,7 @@ msgstr "vpnc 脚本路径分配失败\n"
 
 #: main.c:907
 msgid "Default vpnc-script (override with --script):"
-msgstr ""
+msgstr "默认 vpnc-script（使用 --script 覆盖）："
 
 #: main.c:922
 #, c-format
@@ -3730,11 +3748,11 @@ msgstr "从标准输入读取密码"
 
 #: main.c:949
 msgid "Select GROUP from authentication dropdown (may be known"
-msgstr ""
+msgstr "从身份验证下拉菜单中选择 GROUP（可能已知"
 
 #: main.c:950
 msgid "as \"realm\", \"domain\", \"gateway\"; protocol-dependent)"
-msgstr ""
+msgstr "作为“领域”、“域”、“网关”；依赖于协议）"
 
 #: main.c:951
 msgid "Provide authentication form responses"
@@ -3754,7 +3772,7 @@ msgstr "当证书有效期小于 DAYS 时提示"
 
 #: main.c:955
 msgid "Set path of initial request URL"
-msgstr ""
+msgstr "设置初始请求URL的路径"
 
 #: main.c:956
 msgid "Set key passphrase or TPM SRK PIN"
@@ -3762,7 +3780,7 @@ msgstr "设定密钥密码短语或 TPM SRK PIN"
 
 #: main.c:957
 msgid "Set external browser executable"
-msgstr ""
+msgstr "设置外部浏览器可执行文件"
 
 #: main.c:958
 msgid "Key passphrase is fsid of file system"
@@ -3830,7 +3848,7 @@ msgstr "（注意：libproxy 在此构建版本中已禁用）"
 
 #: main.c:982
 msgid "Reconnection retry timeout (default is 300 seconds)"
-msgstr ""
+msgstr "重新连接重试超时（默认为300秒）"
 
 #: main.c:983
 msgid "Use IP when connecting to HOST"
@@ -3838,7 +3856,7 @@ msgstr "连接到 HOST 时使用 IP"
 
 #: main.c:984
 msgid "Always send HOST as TLS client SNI (domain fronting)"
-msgstr ""
+msgstr "始终将 HOST 作为 TLS 客户端 SNI 发送（域前置）"
 
 #: main.c:985
 msgid "Copy TOS / TCLASS field into DTLS and ESP packets"
@@ -3962,7 +3980,7 @@ msgstr "禁用所有压缩"
 
 #: main.c:1026
 msgid "Set Dead Peer Detection interval (in seconds)"
-msgstr ""
+msgstr "设置无效对等体检测间隔（以秒为单位）"
 
 #: main.c:1027
 msgid "Require perfect forward secrecy"
@@ -3994,7 +4012,7 @@ msgstr "通告到服务器的本地主机"
 
 #: main.c:1035
 msgid "OS type to report. Allowed values are the following:"
-msgstr ""
+msgstr "要报告的操作系统类型。允许的值如下："
 
 #: main.c:1036
 msgid "linux, linux-64, win, mac-intel, android, apple-ios"
@@ -4022,7 +4040,7 @@ msgstr "运行 SCRIPT 而不是木马二进制程序"
 
 #: main.c:1045
 msgid "Set minimum interval between trojan runs (in seconds)"
-msgstr ""
+msgstr "设置木马运行之间的最小间隔（以秒为单位）"
 
 #: main.c:1047
 msgid "Server bugs"
@@ -4030,7 +4048,7 @@ msgstr "服务器缺陷（bug）"
 
 #: main.c:1048
 msgid "Do not offer or use auth methods requiring external browser"
-msgstr ""
+msgstr "不提供或使用需要外部浏览器的身份验证方法"
 
 #: main.c:1049
 msgid "Disable HTTP connection re-use"
@@ -4046,19 +4064,19 @@ msgstr "允许使用过时、不安全的 3DES 和 RC4 加密算法"
 
 #: main.c:1053
 msgid "Multiple certificate authentication (MCA)"
-msgstr ""
+msgstr "多证书认证 (MCA)"
 
 #: main.c:1054
 msgid "Use MCA certificate MCACERT"
-msgstr ""
+msgstr "使用 MCA 证书 MCACERT"
 
 #: main.c:1055
 msgid "Use MCA key MCAKEY"
-msgstr ""
+msgstr "使用 MCA 密钥 MCAKEY"
 
 #: main.c:1056
 msgid "Passphrase MCAPASS for MCACERT/MCAKEY"
-msgstr ""
+msgstr "MCACERT/MCAKEY 的密码 MCAPASS"
 
 #: main.c:1078
 #, c-format
@@ -4089,7 +4107,7 @@ msgstr "选项 \"%s\" 需要行 %d 上的参数\n"
 #: main.c:1221
 #, c-format
 msgid "Internal error; option '%s' unexpectedly yielded null config_arg\n"
-msgstr ""
+msgstr "内部错误；选项“%s”意外产生空的 config_arg\n"
 
 #: main.c:1237
 #, c-format
@@ -4138,13 +4156,15 @@ msgstr "已配置为 %s%s%s，使用 SSL%s%s %s 和 %s%s%s %s\n"
 #: main.c:1592
 #, c-format
 msgid "Session authentication will expire at %s\n"
-msgstr ""
+msgstr "会话身份验证将于 %s 过期\n"
 
 #: main.c:1607
 #, c-format
 msgid ""
 "RX: %<PRIu64> packets (%<PRIu64> B); TX: %<PRIu64> packets (%<PRIu64> B)\n"
 msgstr ""
+"接收量: %<PRIu64> 数据包 (%<PRIu64> 字节); 发送量: %<PRIu64> 数据包 "
+"(%<PRIu64> 字节)\n"
 
 #: main.c:1611
 #, c-format
@@ -4178,7 +4198,7 @@ msgstr "打开 \"%s\" 以写入失败：%s\n"
 
 #: main.c:1651
 msgid "Failed to continue in background"
-msgstr ""
+msgstr "无法在后台继续"
 
 #: main.c:1659
 #, c-format
@@ -4224,7 +4244,7 @@ msgstr "分配 vpninfo 结构体失败\n"
 #: main.c:1839
 #, c-format
 msgid "WARNING: --juniper is deprecated, use --protocol=nc instead.\n"
-msgstr ""
+msgstr "警告：--juniper 已弃用，请改用--protocol=nc。\n"
 
 #: main.c:1844
 #, c-format
@@ -4267,6 +4287,9 @@ msgid ""
 "         This probably won't work since recent macOS versions use utun\n"
 "         instead. Perhaps try --interface='u%s', or omit altogether.\n"
 msgstr ""
+"警告：您正在 macOS 上运行并指定了 --interface='%s'\n"
+"这可能不起作用，因为最近的 macOS 版本改用 utun\n"
+"。或许可以尝试 --interface='u%s'，或者完全省略。\n"
 
 #: main.c:2014 main.c:2024
 #, c-format
@@ -4313,6 +4336,8 @@ msgid ""
 "Invalid OS identity \"%s\"\n"
 "Allowed values: linux, linux-64, win, mac-intel, android, apple-ios\n"
 msgstr ""
+"无效的操作系统标识“%s”\n"
+"允许的值：linux、linux-64、win、mac-intel、android、apple-ios\n"
 
 #: main.c:2187
 #, c-format
@@ -4322,6 +4347,8 @@ msgid ""
 "         override is necessary to connect to a server\n"
 "         to <%s>.\n"
 msgstr ""
+"警告：您指定了 %s。这应该不是必需的；\n"
+"请将需要优先级字符串覆盖才能连接到服务器的情况报告给 <%s>。\n"
 
 #: main.c:2225
 #, c-format
@@ -4341,7 +4368,7 @@ msgstr "此版本的 OpenConnect 的构建没有 libproxy 支持\n"
 #: main.c:2281
 #, c-format
 msgid "Error opening cmd pipe: %s\n"
-msgstr ""
+msgstr "打开 cmd 管道时出错：%s\n"
 
 #: main.c:2319
 #, c-format
@@ -4524,7 +4551,7 @@ msgstr "libstoken 里有一般错误\n"
 #: main.c:2981
 #, c-format
 msgid "General failure in TOTP/HOTP support\n"
-msgstr ""
+msgstr "TOTP/HOTP 的一般支持失败\n"
 
 #: main.c:2992
 #, c-format
@@ -4895,7 +4922,7 @@ msgstr "读取长度 %d 的连续记录失败\n"
 
 #: oncp.c:691
 msgid "Discarding Legacy IP frame in the middle of oNCP config\n"
-msgstr ""
+msgstr "在 oNCP 配置过程中丢弃旧式 IP 帧\n"
 
 #: oncp.c:696
 #, c-format
@@ -5042,6 +5069,10 @@ msgid ""
 "See %s\n"
 "Use the --no-dtls command line option to avoid this message\n"
 msgstr ""
+"SSL_set_session() 因 DTLS 协议版本 0x%x 而失败\n"
+"您使用的 OpenSSL 版本是否早于 0.9.8m？\n"
+"请参阅 %s\n"
+"使用 --no-dtls 命令行选项可避免出现此消息\n"
 
 #: openssl-dtls.c:576
 msgid "SSL_set_session() failed\n"
@@ -5049,7 +5080,7 @@ msgstr "SSL_set_session() 失败\n"
 
 #: openssl-dtls.c:592
 msgid "Create DTLS dgram BIO failed\n"
-msgstr ""
+msgstr "创建 DTLS dgram BIO 失败\n"
 
 #: openssl-dtls.c:677
 #, c-format
@@ -5059,7 +5090,7 @@ msgstr "已建立 DTLS 连接（使用 OpenSSL）。密码套件 %s-%s。\n"
 #: openssl-dtls.c:714
 msgid ""
 "Your OpenSSL is older than the one you built against, so DTLS may fail!\n"
-msgstr ""
+msgstr "您的 OpenSSL 比您构建的 OpenSSL 更旧，因此 DTLS 可能会失败！\n"
 
 #: openssl-dtls.c:780
 msgid ""
@@ -5527,52 +5558,52 @@ msgstr "生成 STRAP 密钥失败"
 
 #: openssl.c:2404
 msgid "Failed to generate STRAP DH key\n"
-msgstr ""
+msgstr "无法生成 STRAP DH 密钥\n"
 
 #: openssl.c:2427
 msgid "Failed to decode STRAP key\n"
-msgstr ""
+msgstr "无法解码 STRAP 密钥\n"
 
 #: openssl.c:2455
 msgid "Failed to decode server DH key\n"
-msgstr ""
+msgstr "无法解码服务器 DH 密钥\n"
 
 #: openssl.c:2465
 msgid "Failed to compute DH secret\n"
-msgstr ""
+msgstr "无法计算 DH 密钥\n"
 
 #: openssl.c:2488
 msgid "HKDF key derivation failed\n"
-msgstr ""
+msgstr "HKDF 密钥派生失败\n"
 
 #: openssl.c:2509
 msgid "SSO token decryption failed\n"
-msgstr ""
+msgstr "SSO 令牌解密失败\n"
 
 #: openssl.c:2525
 #, c-format
 msgid "SSL Finished message too large (%zu bytes)\n"
-msgstr ""
+msgstr "SSL 完成消息太大（%zu 字节）\n"
 
 #: openssl.c:2535 openssl.c:2580
 msgid "STRAP signature failed\n"
-msgstr ""
+msgstr "STRAP 签名失败\n"
 
 #: openssl.c:2551
 msgid "Failed to regenerate STRAP key\n"
-msgstr ""
+msgstr "无法重新生成 STRAP 密钥\n"
 
 #: openssl.c:2622
 msgid "Failed to create PKCS#7 structure\n"
-msgstr ""
+msgstr "无法创建 PKCS#7 结构\n"
 
 #: openssl.c:2658
 msgid "Failed to output PKCS#7 structure\n"
-msgstr ""
+msgstr "无法输出 PKCS#7 结构\n"
 
 #: openssl.c:2752
 msgid "Failed to generate signature for multiple certificate authentication\n"
-msgstr ""
+msgstr "无法生成多证书认证签名\n"
 
 #: ppp.c:113
 msgid "HDLC initial flag sequence (0x7e) is missing\n"
@@ -5959,22 +5990,22 @@ msgstr "仅 ESP：%d\n"
 #: pulse.c:498
 #, c-format
 msgid "Received internal gateway IPv6 address %s\n"
-msgstr ""
+msgstr "已收到内部网关 IPv6 地址 %s\n"
 
 #: pulse.c:506
 #, c-format
 msgid "Received proxy auto-config (PAC) payload of size %d\n"
-msgstr ""
+msgstr "已收到大小为 %d 的代理自动配置 (PAC) 负载\n"
 
 #: pulse.c:511
 #, c-format
 msgid "Received proxy auto-config (PAC) URL: %.*s\n"
-msgstr ""
+msgstr "已收到代理自动配置 (PAC) URL：%.*s\n"
 
 #: pulse.c:525
 #, c-format
 msgid "Pulse ESP tunnel allowed to carry 6in4 or 4in6 traffic: %d\n"
-msgstr ""
+msgstr "Pulse ESP 隧道被允许承载 6in4 或 4in6 流量：%d\n"
 
 #: pulse.c:549
 #, c-format
@@ -6030,11 +6061,11 @@ msgstr "选择 Pulse 用户域："
 
 #: pulse.c:821
 msgid "Choose Pulse region:"
-msgstr ""
+msgstr "选择 Pulse 区域："
 
 #: pulse.c:823
 msgid "Region:"
-msgstr ""
+msgstr "地区："
 
 #: pulse.c:837 pulse.c:1596 pulse.c:1686
 msgid "Failed to parse AVP\n"
@@ -6201,11 +6232,17 @@ msgid ""
 "        --useragent=\"Pulse-Secure/3.0.0\"\n"
 "Please report results to <%s>.\n"
 msgstr ""
+"Pulse 服务器正在尝试通过 EAP-TLS 而非 EAP-TTLS 进行身份验证，我们\n"
+"不知道该如何处理。当服务器选择性地接受 TLS 客户端证书，但您的\n"
+"身份验证不需要证书时，就会发生这种情况。您可以通过使用以下\n"
+"方法欺骗非常旧的 Pulse 客户端来解决这个问题：\n"
+"--useragent=\"Pulse-Secure/3.0.0\"\n"
+"请将结果报告给 <%s>。\n"
 
 #: pulse.c:1864
 #, c-format
 msgid "Pulse server requested unexpected EAP type 0x%x\n"
-msgstr ""
+msgstr "Pulse 服务器请求意外的 EAP 类型 0x%x\n"
 
 #: pulse.c:1877
 msgid "Unhandled Pulse authentication packet, or authentication failure\n"
@@ -6287,29 +6324,29 @@ msgstr "意外的 Pulse 配置包：\n"
 
 #: pulse.c:2416
 msgid "Processing Pulse main config packet for server version >= 9.1R14\n"
-msgstr ""
+msgstr "处理服务器版本 >= 9.1R14 的 Pulse 主配置包\n"
 
 #: pulse.c:2428
 msgid "attr_flag 0x2c00: known for Pulse version >= 9.1R14\n"
-msgstr ""
+msgstr "attr_flag 0x2c00：已知 Pulse 版本 >= 9.1R14\n"
 
 #: pulse.c:2432
 msgid "attr_flag 0x2e00: known for Pulse version >= 9.1R16\n"
-msgstr ""
+msgstr "attr_flag 0x2e00：已知 Pulse 版本 >= 9.1R16\n"
 
 #: pulse.c:2436
 #, c-format
 msgid "attr_flag 0x%04x: unknown Pulse version. Please report to <%s>\n"
-msgstr ""
+msgstr "attr_flag 0x%04x：未知 Pulse 版本。请报告给 <%s>\n"
 
 #: pulse.c:2451
 #, c-format
 msgid "If any of the above attributes are meaningful, please report to <%s>\n"
-msgstr ""
+msgstr "如果以上任何属性有意义，请报告给<%s>\n"
 
 #: pulse.c:2456
 msgid "Processing Pulse main config packet for server version < 9.1R14\n"
-msgstr ""
+msgstr "处理服务器版本 < 9.1R14 的 Pulse 主配置包\n"
 
 #: pulse.c:2524
 #, c-format
@@ -6318,7 +6355,7 @@ msgstr "接收到未知类型 0x%08x 的路由\n"
 
 #: pulse.c:2578
 msgid "Processing Pulse ESP config packet\n"
-msgstr ""
+msgstr "处理 Pulse ESP 配置包\n"
 
 #: pulse.c:2584
 msgid "Invalid ESP config packet:\n"
@@ -6330,26 +6367,26 @@ msgstr "无效的 ESP 设置\n"
 
 #: pulse.c:2682
 msgid "Short IF-T/TLS packet when expecting configuration:\n"
-msgstr ""
+msgstr "预期配置时的短 IF-T/TLS 数据包：\n"
 
 #: pulse.c:2690
 msgid "Unexpected IF-T/TLS packet when expecting configuration: wrong vendor\n"
-msgstr ""
+msgstr "预期配置时出现意外 IF-T/TLS 数据包：供应商错误\n"
 
 #: pulse.c:2699
 #, c-format
 msgid ""
 "Unreasonably large IF-T/TLS packet (%u > 1 MiB) when expecting configuration"
-msgstr ""
+msgstr "预期配置时，IF-T/TLS 数据包过大 (%u > 1 MiB)"
 
 #: pulse.c:2726 pulse.c:2731 pulse.c:2738 pulse.c:2743 pulse.c:2782
 #, c-format
 msgid "Unexpected Pulse configuration packet: %s\n"
-msgstr ""
+msgstr "意外的 Pulse 配置包：%s\n"
 
 #: pulse.c:2727
 msgid "wrong type field (!= 1)"
-msgstr ""
+msgstr "错误类型字段 (!= 1)"
 
 #: pulse.c:2732
 msgid "too short"
@@ -6357,15 +6394,15 @@ msgstr "过短"
 
 #: pulse.c:2739
 msgid "non-zero values at offsets 0x10, 0x14, 0x18, 0x1c, or 0x24"
-msgstr ""
+msgstr "偏移量 0x10、0x14、0x18、0x1c 或 0x24 处的非零值"
 
 #: pulse.c:2744
 msgid "length at offset 0x28 != packet length - 0x10"
-msgstr ""
+msgstr "偏移量 0x28 处的长度 != 数据包长度 - 0x10"
 
 #: pulse.c:2783
 msgid "identifier at offset 0x20 is unknown"
-msgstr ""
+msgstr "偏移量 0x20 处的标识符未知"
 
 #: pulse.c:2790
 msgid "Insufficient configuration found\n"
@@ -6386,6 +6423,8 @@ msgid ""
 "Unknown Pulse packet of %d bytes (vendor 0x%03x, type 0x%02x, hdr_len %d, "
 "ident %d)\n"
 msgstr ""
+"%d 字节的未知 Pulse 数据包（供应商 0x%03x、类型 0x%02x、hdr_len %d、ident "
+"%d）\n"
 
 #: pulse.c:3134
 #, c-format
@@ -6427,7 +6466,7 @@ msgstr "正忽略传统网络因其子网掩码 \"%s\" 无效。\n"
 #: script.c:601
 #, c-format
 msgid "Failed to get script exit status: %s\n"
-msgstr ""
+msgstr "无法获取脚本退出状态：%s\n"
 
 #: script.c:610
 #, c-format
@@ -6463,16 +6502,16 @@ msgstr "套接字连接已取消\n"
 
 #: ssl.c:192
 msgid "Failed select() for socket accept"
-msgstr ""
+msgstr "套接字接受 select() 失败"
 
 #: ssl.c:198
 msgid "Socket accept cancelled\n"
-msgstr ""
+msgstr "套接字接受已取消\n"
 
 #: ssl.c:209
 #, c-format
 msgid "Failed to accept local connection: %s\n"
-msgstr ""
+msgstr "无法接受本地连接：%s\n"
 
 #: ssl.c:254
 msgid "Failed setsockopt(TCP_NODELAY) on TLS socket:"
@@ -6608,15 +6647,15 @@ msgstr "未知错误"
 #. legacy openconnect_set_cancel_fd() users
 #: ssl.c:885
 msgid "Got cancel on legacy fd\n"
-msgstr ""
+msgstr "收到了旧版 fd\n"
 
 #: ssl.c:900
 msgid "Got cancel command\n"
-msgstr ""
+msgstr "收到取消命令\n"
 
 #: ssl.c:905
 msgid "Got pause command\n"
-msgstr ""
+msgstr "收到了暂停命令\n"
 
 #: ssl.c:943
 msgid "Failed select() for command socket"
@@ -6625,7 +6664,7 @@ msgstr "对命令套接字调用 select() 失败"
 #: ssl.c:1010
 #, c-format
 msgid "%s() used with unsupported mode '%s'\n"
-msgstr ""
+msgstr "%s() 与不受支持的模式 '%s' 一起使用\n"
 
 #: ssl.c:1032
 #, c-format
@@ -6879,14 +6918,14 @@ msgstr "GetAdaptersAddresses() 失败：%s\n"
 #, c-format
 msgid ""
 "Adapter \"%S\" / %ld is UP and using our IPv%d address. Cannot resolve.\n"
-msgstr ""
+msgstr "适配器“%S”/%ld 已启动并使用我们的 IPv%d 地址。无法解析。\n"
 
 #: tun-win32.c:301
 #, c-format
 msgid ""
 "Adapter \"%S\" / %ld is DOWN and using our IPv%d address. We will reclaim "
 "the address from it.\n"
-msgstr ""
+msgstr "适配器“%S”/%ld 已关闭并使用我们的 IPv%d 地址。我们将从中回收该地址。\n"
 
 #: tun-win32.c:314
 #, c-format
@@ -6900,7 +6939,7 @@ msgstr "DeleteUnicastIpAddressEntry() 失败：%s\n"
 
 #: tun-win32.c:342
 msgid "GetUnicastIpAddressTable() did not find matching address to reclaim\n"
-msgstr ""
+msgstr "GetUnicastIpAddressTable() 未找到要回收的匹配地址\n"
 
 #: tun-win32.c:370
 #, c-format
@@ -6967,13 +7006,13 @@ msgstr "无法构造接口名称\n"
 msgid ""
 "Access denied creating Wintun adapter. Are you running with Administrator "
 "privileges?\n"
-msgstr ""
+msgstr "创建 Wintun 适配器被拒绝。请问您是否以管理员权限运行了？\n"
 
 #: tun-win32.c:542
 msgid ""
 "Neither Windows-TAP nor Wintun adapters were found. Is the driver "
 "installed?\n"
-msgstr ""
+msgstr "未找到 Windows-TAP 或 Wintun 适配器。驱动程序是否已安装？\n"
 
 #: tun-win32.c:569
 msgid "TAP device aborted connectivity. Disconnecting.\n"
@@ -7053,7 +7092,7 @@ msgstr "tun 设备在此平台上不支持\n"
 #: tun.c:197
 #, c-format
 msgid "Requested tun device name '%s' is too long\n"
-msgstr ""
+msgstr "请求的 tun 设备名称“%s”太长\n"
 
 #: tun.c:239 tun.c:421
 #, c-format
@@ -7151,41 +7190,41 @@ msgstr "写入传入的包失败：%s\n"
 #: vhost.c:78
 #, c-format
 msgid "Failed to set vring #%d size: %s\n"
-msgstr ""
+msgstr "无法设置 vring #%d 大小：%s\n"
 
 #: vhost.c:86 vhost.c:98
 #, c-format
 msgid "Failed to set vring #%d base: %s\n"
-msgstr ""
+msgstr "无法设置 vring #%d 基本：%s\n"
 
 #: vhost.c:108
 #, c-format
 msgid "Failed to set vring #%d RX backend: %s\n"
-msgstr ""
+msgstr "无法设置 vring #%d RX 后端：%s\n"
 
 #: vhost.c:116
 #, c-format
 msgid "Failed to set vring #%d call eventfd: %s\n"
-msgstr ""
+msgstr "无法设置 vring #%d 调用 eventfd: %s\n"
 
 #: vhost.c:124
 #, c-format
 msgid "Failed to set vring #%d kick eventfd: %s\n"
-msgstr ""
+msgstr "无法设置 vring #%d kick eventfd: %s\n"
 
 #: vhost.c:183
 msgid "Failed to find virtual task size; search reached zero"
-msgstr ""
+msgstr "无法找到虚拟任务大小；搜索已达零"
 
 #: vhost.c:233
 #, c-format
 msgid "Detected virtual address range 0x%lx-0x%lx\n"
-msgstr ""
+msgstr "检测到的虚拟地址范围 0x%lx-0x%lx\n"
 
 #: vhost.c:250
 #, c-format
 msgid "Not using vhost-net due to low queue length %d\n"
-msgstr ""
+msgstr "由于队列长度 %d 太短，不使用 vhost-net\n"
 
 #: vhost.c:264
 #, c-format
@@ -7200,85 +7239,85 @@ msgstr "设置 vhost 所有权失败：%s\n"
 #: vhost.c:280
 #, c-format
 msgid "Failed to get vhost features: %s\n"
-msgstr ""
+msgstr "无法获取 vhost 功能：%s\n"
 
 #: vhost.c:285
 #, c-format
 msgid "vhost-net lacks required features: %llx\n"
-msgstr ""
+msgstr "vhost-net 缺少所需功能：%llx\n"
 
 #: vhost.c:293
 #, c-format
 msgid "Failed to set vhost features: %s\n"
-msgstr ""
+msgstr "无法设置 vhost 功能：%s\n"
 
 #: vhost.c:301
 #, c-format
 msgid "Failed to open vhost kick eventfd: %s\n"
-msgstr ""
+msgstr "无法打开 vhost kick eventfd: %s\n"
 
 #: vhost.c:308
 #, c-format
 msgid "Failed to open vhost call eventfd: %s\n"
-msgstr ""
+msgstr "无法打开 vhost 调用 eventfd: %s\n"
 
 #: vhost.c:324
 #, c-format
 msgid "Failed to set vhost memory map: %s\n"
-msgstr ""
+msgstr "无法设置 vhost 内存映射：%s\n"
 
 #: vhost.c:347
 #, c-format
 msgid "Failed to set tun sndbuf: %s\n"
-msgstr ""
+msgstr "无法设置 tun sndbuf: %s\n"
 
 #: vhost.c:352
 #, c-format
 msgid "Using vhost-net for tun acceleration, ring size %d\n"
-msgstr ""
+msgstr "使用 vhost-net 进行 tun 加速，环大小 %d\n"
 
 #: vhost.c:475
 #, c-format
 msgid "Error: vhost gave back invalid descriptor %d, len %d\n"
-msgstr ""
+msgstr "错误：vhost 返回了无效的描述符 %d，长度 %d\n"
 
 #: vhost.c:485
 #, c-format
 msgid "vhost gave back empty descriptor %d\n"
-msgstr ""
+msgstr "vhost 返回了空描述符 %d\n"
 
 #: vhost.c:496
 #, c-format
 msgid "Free TX packet %p [%d] [used %d]\n"
-msgstr ""
+msgstr "空闲 发送的数据包 %p [%d] [已使用 %d]\n"
 
 #: vhost.c:508
 #, c-format
 msgid "RX packet %p(%d) [%d] [used %d]\n"
-msgstr ""
+msgstr "接收的数据包 %p(%d) [%d] [已使用 %d]\n"
 
 #: vhost.c:576
 #, c-format
 msgid "Queue TX packet %p at desc %d avail %d\n"
-msgstr ""
+msgstr "队列中的发送数据包 %p 在队列中 %d 可用 %d\n"
 
 #: vhost.c:584
 #, c-format
 msgid "Queue RX packet %p at desc %d avail %d\n"
-msgstr ""
+msgstr "队列中的接收数据包 %p 描述 %d 可用 %d\n"
 
 #: vhost.c:618
 #, c-format
 msgid "Immediate wake because vhost ring moved on from 0x%x to 0x%x\n"
-msgstr ""
+msgstr "立即唤醒，因为虚拟主机环从 0x%x 移动到 0x%x\n"
 
 #: vhost.c:645
 msgid "Failed to kick vhost-net eventfd\n"
-msgstr ""
+msgstr "无法启动 vhost-net eventfd\n"
 
 #: vhost.c:648
 msgid "Kick vhost ring\n"
-msgstr ""
+msgstr "踢虚拟主机环\n"
 
 #: wintun.c:71
 msgid "Could not load wintun.dll\n"
@@ -7301,17 +7340,17 @@ msgstr "创建 Wintun 会话失败：%s\n"
 #: wintun.c:167
 #, c-format
 msgid "Could not retrieve packet from Wintun adapter '%S': %s\n"
-msgstr ""
+msgstr "无法从 Wintun 适配器“%S”检索数据包：%s\n"
 
 #: wintun.c:179
 #, c-format
 msgid "Drop oversized packet retrieved from Wintun adapter '%S' (%ld > %d)\n"
-msgstr ""
+msgstr "丢弃从 Wintun 适配器‘%S’检索到的超大数据包（%ld > %d）\n"
 
 #: wintun.c:194
 #, c-format
 msgid "Could not send packet through Wintun adapter '%S': %s\n"
-msgstr ""
+msgstr "无法通过 Wintun 适配器“%S”发送数据包：%s\n"
 
 #: xml.c:75 xml.c:100
 #, c-format
