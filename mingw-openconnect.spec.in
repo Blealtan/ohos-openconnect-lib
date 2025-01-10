@@ -115,12 +115,16 @@ fi
 install -m 0644 build_win32/openconnect-installer-MinGW32-GnuTLS-*.exe $RPM_BUILD_ROOT/%{mingw32_bindir}/openconnect-installer-MinGW32-GnuTLS-%{version}-%{release}.exe
 install -m 0644 build_win64/openconnect-installer-MinGW64-GnuTLS-*.exe $RPM_BUILD_ROOT/%{mingw64_bindir}/openconnect-installer-MinGW64-GnuTLS-%{version}-%{release}.exe
 
+rm -f $RPM_BUILD_ROOT/%{mingw32_bindir}/wintun.dll
+rm -f $RPM_BUILD_ROOT/%{mingw32_bindir}/vpnc-script-win.js
 rm -f $RPM_BUILD_ROOT/%{mingw32_libdir}/libopenconnect.la
 rm -rf $RPM_BUILD_ROOT/%{mingw32_libexecdir}/openconnect
 rm -rf $RPM_BUILD_ROOT/%{mingw32_mandir}/man8/openconnect.8*
 rm -rf $RPM_BUILD_ROOT/%{mingw32_docdir}/openconnect
 rm -rf $RPM_BUILD_ROOT/%{mingw32_datadir}/bash-completion
 
+rm -f $RPM_BUILD_ROOT/%{mingw64_bindir}/wintun.dll
+rm -f $RPM_BUILD_ROOT/%{mingw64_bindir}/vpnc-script-win.js
 rm -f $RPM_BUILD_ROOT/%{mingw64_libdir}/libopenconnect.la
 rm -rf $RPM_BUILD_ROOT/%{mingw64_libexecdir}/openconnect
 rm -rf $RPM_BUILD_ROOT/%{mingw64_mandir}/man8/openconnect.8*
