@@ -68,7 +68,7 @@ static int process_attr(struct openconnect_info *vpninfo,
 	char buf[80];
 	int i;
 
-	switch(GRP_ATTR(group, attr)) {
+	switch (GRP_ATTR(group, attr)) {
 	case GRP_ATTR(6, 2):
 		if (attrlen != 4) {
 		badlen:
@@ -968,7 +968,7 @@ int oncp_mainloop(struct openconnect_info *vpninfo, int *timeout, int readable)
 			/* Need at least 6 bytes of payload to check the IP packet length */
 			if (vpninfo->cstp_pkt->len < 26)
 				continue;
-			switch(vpninfo->cstp_pkt->data[0] >> 4) {
+			switch (vpninfo->cstp_pkt->data[0] >> 4) {
 			case 4:
 				iplen = load_be16(vpninfo->cstp_pkt->data + 2);
 				break;

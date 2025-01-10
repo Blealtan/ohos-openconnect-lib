@@ -2182,7 +2182,7 @@ int hotp_hmac(struct openconnect_info *vpninfo, const void *challenge)
 	unsigned int hashlen = sizeof(hash);
 	const EVP_MD *alg;
 
-	switch(vpninfo->oath_hmac_alg) {
+	switch (vpninfo->oath_hmac_alg) {
 	case OATH_ALG_HMAC_SHA1:
 		alg = EVP_sha1();
 		break;
@@ -2276,7 +2276,7 @@ static int ttls_pull_func(BIO *b, char *buf, int len)
 
 static long ttls_ctrl_func(BIO *b, int cmd, long larg, void *iarg)
 {
-	switch(cmd) {
+	switch (cmd) {
 	case BIO_CTRL_FLUSH:
 		return 1;
 	default:

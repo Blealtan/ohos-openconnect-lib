@@ -2779,7 +2779,7 @@ int hotp_hmac(struct openconnect_info *vpninfo, const void *challenge)
 	unsigned char hash[64]; /* Enough for a SHA256 */
 	gnutls_mac_algorithm_t alg;
 
-	switch(vpninfo->oath_hmac_alg) {
+	switch (vpninfo->oath_hmac_alg) {
 	case OATH_ALG_HMAC_SHA1:
 		alg = GNUTLS_MAC_SHA1;
 		hpos = 19;

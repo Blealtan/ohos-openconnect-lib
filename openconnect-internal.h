@@ -930,7 +930,7 @@ static inline void free_pkt(struct openconnect_info *vpninfo, struct pkt *pkt)
 #define vpn_progress(_v, lvl, ...) do {				\
 	if ((_v)->verbose >= (lvl))				\
 		(_v)->progress((_v)->cbdata, lvl, __VA_ARGS__);	\
-	} while(0)
+	} while (0)
 #define vpn_perror(vpninfo, msg) vpn_progress((vpninfo), PRG_ERR, "%s: %s\n", (msg), strerror(errno))
 
 #ifdef _WIN32
@@ -946,7 +946,7 @@ static inline void free_pkt(struct openconnect_info *vpninfo, struct pkt *pkt)
 
 #define __unmonitor_fd(_v, _n) do { CloseHandle(_v->_n##_event); \
 		_v->_n##_event = (HANDLE)0;			 \
-	} while(0)
+	} while (0)
 
 #else
 
@@ -988,10 +988,10 @@ static inline void __remove_epoll_fd(struct openconnect_info *vpninfo, int fd)
 
 #define __unmonitor_fd(_v, _n) do {		    \
 		__remove_epoll_fd(_v, _v->_n##_fd); \
-		_v->_n##_epoll = 0; } while(0)
+		_v->_n##_epoll = 0; } while (0)
 
 #else /* !HAVE_POLL */
-#define __unmonitor_fd(_v, _n) do { } while(0)
+#define __unmonitor_fd(_v, _n) do { } while (0)
 #endif
 
 static inline void __monitor_fd_event(struct openconnect_info *vpninfo,
@@ -1053,7 +1053,7 @@ static inline void __monitor_fd_new(struct openconnect_info *vpninfo,
 		unmonitor_write_fd(_v, _n);	\
 		unmonitor_except_fd(_v, _n);	\
 		__unmonitor_fd(_v, _n);		\
-	} while(0)
+	} while (0)
 
 /* Key material for DTLS-PSK */
 #define PSK_LABEL "EXPORTER-openconnect-psk"
@@ -1634,12 +1634,12 @@ void http_common_headers(struct openconnect_info *vpninfo, struct oc_text_buf *b
 		if ((vpninfo)->verbose >= PRG_DEBUG) {		\
 			do_dump_buf(vpninfo, prefix, buf);	\
 		}						\
-	} while(0)
+	} while (0)
 #define dump_buf_hex(vpninfo, loglevel, prefix, buf, len) do {			\
 		if ((vpninfo)->verbose >= (loglevel)) {				\
 			do_dump_buf_hex(vpninfo, loglevel, prefix, buf, len);	\
 		}								\
-	} while(0)
+	} while (0)
 
 /* http-auth.c */
 void *openconnect_base64_decode(int *len, const char *in);
@@ -1708,7 +1708,7 @@ static inline int strprefix_match(const char *str, int len, const char *match)
 				if (res == NULL) return -ENOMEM;	\
 			} else res = NULL;				\
 		}							\
-	} while(0)
+	} while (0)
 
 #define UTF8CHECK(arg) \
 	do {								\
@@ -1718,7 +1718,7 @@ static inline int strprefix_match(const char *str, int len, const char *match)
 			             __func__, #arg);			\
 			return -EILSEQ;					\
 		}							\
-	} while(0)
+	} while (0)
 
 #define UTF8CHECK_VOID(arg) \
 	do {								\
@@ -1728,7 +1728,7 @@ static inline int strprefix_match(const char *str, int len, const char *match)
 			             __func__, #arg);			\
 			return;						\
 		}							\
-	} while(0)
+	} while (0)
 
 /* Let's stop open-coding big-endian and little-endian loads/stores.
  *

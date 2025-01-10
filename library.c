@@ -1606,7 +1606,7 @@ const char *openconnect_get_peer_cert_hash(struct openconnect_info *vpninfo)
 int openconnect_set_compression_mode(struct openconnect_info *vpninfo,
 				     oc_compression_mode_t mode)
 {
-	switch(mode) {
+	switch (mode) {
 	case OC_COMPRESSION_MODE_NONE:
 		vpninfo->req_compr = 0;
 		return 0;

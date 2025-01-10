@@ -35,7 +35,7 @@ int print_esp_keys(struct openconnect_info *vpninfo, const char *name, struct es
 	const char *enctype, *mactype;
 	char enckey[256], mackey[256];
 
-	switch(vpninfo->esp_enc) {
+	switch (vpninfo->esp_enc) {
 	case ENC_AES_128_CBC:
 		enctype = "AES-128-CBC (RFC3602)";
 		break;
@@ -45,7 +45,7 @@ int print_esp_keys(struct openconnect_info *vpninfo, const char *name, struct es
 	default:
 		return -EINVAL;
 	}
-	switch(vpninfo->esp_hmac) {
+	switch (vpninfo->esp_hmac) {
 	case HMAC_MD5:
 		mactype = "HMAC-MD5-96 (RFC2403)";
 		break;

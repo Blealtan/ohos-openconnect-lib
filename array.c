@@ -862,7 +862,7 @@ int array_mainloop(struct openconnect_info *vpninfo, int *timeout, int readable)
 			continue;
 		}
 
-		switch(buf[0] >> 4) {
+		switch (buf[0] >> 4) {
 		case 4:
 			iplen = load_be16(buf + 2);
 			break;
@@ -1106,7 +1106,7 @@ int array_dtls_mainloop(struct openconnect_info *vpninfo, int *timeout, int read
 	/* Nothing to do here for Cisco DTLS as it is preauthenticated */
 	if (vpninfo->dtls_state == DTLS_CONNECTED) {
 		/* First, see if there's a response for us. */
-		while(readable) {
+		while (readable) {
 			int receive_mtu = MAX(16384, vpninfo->ip_info.mtu);
 			int len;
 

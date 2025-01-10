@@ -205,7 +205,7 @@ int udp_tos_update(struct openconnect_info *vpninfo, struct pkt *pkt)
 	int tos;
 
 	/* Extract TOS field from IP header (IPv4 and IPv6 differ) */
-	switch(pkt->data[0] >> 4) {
+	switch (pkt->data[0] >> 4) {
 	case 4:
 		tos = pkt->data[1];
 		break;

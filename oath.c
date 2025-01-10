@@ -75,7 +75,7 @@ static int decode_b32_group(unsigned char *out, const char *in)
 
 	store_be32(out + 1, d);
 
-	switch(len) {
+	switch (len) {
 	case 8:
 		return 5;
 	case 7:

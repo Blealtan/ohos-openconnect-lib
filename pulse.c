@@ -2745,7 +2745,7 @@ int pulse_connect(struct openconnect_info *vpninfo)
 			goto bad_pkt;
 		}
 
-		switch(load_be32(bytes + 0x20)) {
+		switch (load_be32(bytes + 0x20)) {
 		case 0x2c20f000:
 		case 0x2e20f000: /* Variant seen on Pulse 9.1R14 */
 			ret = handle_main_config_packet(vpninfo, bytes, config_len);
@@ -2879,7 +2879,7 @@ int pulse_mainloop(struct openconnect_info *vpninfo, int *timeout, int readable)
 		vpninfo->ssl_times.last_rx = time(NULL);
 		len = payload_len + 0x10;
 
-		switch(load_be32(&pkt->pulse.type)) {
+		switch (load_be32(&pkt->pulse.type)) {
 		case 4:
 			vpn_progress(vpninfo, PRG_TRACE,
 				     _("Received data packet of %d bytes\n"),

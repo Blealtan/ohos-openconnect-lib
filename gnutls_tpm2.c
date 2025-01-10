@@ -338,7 +338,7 @@ int load_tpm2_key(struct openconnect_info *vpninfo, struct cert_info *certinfo,
 
 	gnutls_privkey_init(pkey);
 
-	switch(ret) {
+	switch (ret) {
 	case GNUTLS_PK_RSA:
 #if GNUTLS_VERSION_NUMBER >= 0x030600
 		gnutls_privkey_import_ext4(*pkey, certinfo, NULL, tpm2_rsa_sign_hash_fn, NULL, NULL, rsa_key_info, 0);
@@ -607,7 +607,7 @@ static int oc_pss_mgf1_pad(struct openconnect_info *vpninfo, gnutls_digest_algor
 int oc_pad_rsasig(struct openconnect_info *vpninfo, gnutls_sign_algorithm_t algo,
 		  unsigned char *buf, int size, const gnutls_datum_t *data, int keybits)
 {
-	switch(algo) {
+	switch (algo) {
 	case GNUTLS_SIGN_UNKNOWN:
 	case GNUTLS_SIGN_RSA_SHA1:
 	case GNUTLS_SIGN_RSA_SHA256:
