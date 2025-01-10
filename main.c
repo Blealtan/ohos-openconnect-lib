@@ -2247,9 +2247,9 @@ int main(int argc, char *argv[])
 			if (!strcmp(config_arg, "android") || !strcmp(config_arg, "apple-ios")) {
 				/* generic defaults */
 				openconnect_set_mobile_info(vpninfo,
-					xstrdup("1.0"),
-					dup_config_arg(),
-					xstrdup("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"));
+					"1.0",
+					config_arg,
+					"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
 			}
 			break;
 		case OPT_PASSTOS:
