@@ -395,8 +395,11 @@ struct sockaddr_un {
  *   sockets must be closed with closesocket() regardless.
  */
 
-int dumb_socketpair(OPENCONNECT_CMD_SOCKET socks[2], int make_overlapped)
+int dumb_socketpair_full(OPENCONNECT_CMD_SOCKET socks[2], int make_overlapped, int no_inherit_flag)
 {
+	/* 
+	 *  WSA_FLAG_NO_HANDLE_INHERIT flag is a Windows equivalent for SOCK_CLOEXEC
+	 */
     union {
         struct sockaddr_un unaddr;
         struct sockaddr_in inaddr;
@@ -406,7 +409,7 @@ int dumb_socketpair(OPENCONNECT_CMD_SOCKET socks[2], int make_overlapped)
     int e, ii;
     int domain = AF_UNIX;
     socklen_t addrlen = sizeof(a.unaddr);
-    DWORD flags = (make_overlapped ? WSA_FLAG_OVERLAPPED : 0);
+    DWORD flags = (make_overlapped ? WSA_FLAG_OVERLAPPED : 0) | (no_inherit_flag ? WSA_FLAG_NO_HANDLE_INHERIT : 0);
     int reuse = 1;
 
     if (socks == 0) {
@@ -423,7 +426,7 @@ int dumb_socketpair(OPENCONNECT_CMD_SOCKET socks[2], int make_overlapped)
      * on earlier versions of Windows.
      */
     for (ii = 0; ii < 2; ii++) {
-        listener = socket(domain, SOCK_STREAM, domain == AF_INET ? IPPROTO_TCP : 0);
+        listener = WSASocket(domain, SOCK_STREAM, domain == AF_INET ? IPPROTO_TCP : 0, NULL, 0, (WSA_FLAG_OVERLAPPED | (no_inherit_flag ? WSA_FLAG_NO_HANDLE_INHERIT : 0)));
         if (listener == INVALID_SOCKET)
             goto fallback;
 
@@ -513,7 +516,12 @@ int dumb_socketpair(OPENCONNECT_CMD_SOCKET socks[2], int make_overlapped)
         if (domain == AF_UNIX)
             DeleteFile(a.unaddr.sun_path);  // Socket file no longer needed
 
-        socks[1] = accept(listener, NULL, NULL);
+        socks[1] = WSAAccept(listener, NULL, NULL, NULL, 0);
+		/*
+		 *    This is how WSAAccept works: once WSAAccept(listener, NULL, NULL, NULL, 0)
+		 *    has done its work, the newly created socket (socks[1]) copies
+		 *    WSA_FLAG_NO_HANDLE_INHERIT flag value from listener to itself
+		 */
         if (socks[1] == INVALID_SOCKET)
             goto fallback;
 
@@ -533,5 +541,10 @@ int dumb_socketpair(OPENCONNECT_CMD_SOCKET socks[2], int make_overlapped)
 
     socks[0] = socks[1] = -1;
     return SOCKET_ERROR;
+}
+
+int dumb_socketpair(OPENCONNECT_CMD_SOCKET socks[2], int make_overlapped)
+{
+	dumb_socketpair_full(socks, make_overlapped, 0);
 }
 #endif
