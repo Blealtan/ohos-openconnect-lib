@@ -651,7 +651,7 @@ static int gpst_get_config(struct openconnect_info *vpninfo)
 
 	/* submit getconfig request */
 	buf_append(request_body, "client-type=1&protocol-version=p1&internal=no");
-	append_opt(request_body, "app-version", vpninfo->csd_ticket ? : "6.1.2-82");
+	append_opt(request_body, "app-version", vpninfo->csd_ticket ? : "6.3.0-33");
 	append_opt(request_body, "ipv6-support", vpninfo->disable_ipv6 ? "no" : "yes");
 	append_opt(request_body, "clientos", gpst_os_name(vpninfo));
 	append_opt(request_body, "os-version", vpninfo->platname);
