@@ -272,6 +272,17 @@ static const struct vpn_proto openconnect_protos[] = {
 		.udp_close = dtls_close,
 		.udp_shutdown = dtls_shutdown,
 #endif
+	}, {
+		.name = "h3c",
+		.pretty_name = N_("H3C TLS VPN"),
+		.description = N_("H3C TLS VPN compatible with iNode SSL VPN client"),
+		.proto = PROTO_H3C,
+		.flags = OC_PROTO_PROXY,
+		.vpn_close_session = h3c_bye,
+		.tcp_connect = h3c_connect,
+		.tcp_mainloop = h3c_mainloop,
+		.add_http_headers = h3c_http_headers,
+		.obtain_cookie = h3c_obtain_cookie,
 	},
 };
 

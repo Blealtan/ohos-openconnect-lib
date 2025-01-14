@@ -218,6 +218,11 @@ struct pkt {
 			uint16_t proto;
 			unsigned char hdr[18];
 		} ppp;
+		struct {
+			unsigned char pad[20];
+			uint16_t type;
+			uint16_t len;
+		} h3c;
 #ifdef HAVE_VHOST
 		struct {
 			unsigned char pad[12];
@@ -258,6 +263,7 @@ struct pkt {
 #define PROTO_FORTINET		5
 #define PROTO_NULLPPP		6
 #define PROTO_ARRAY		7
+#define PROTO_H3C		8
 
 /* All supported PPP packet framings/encapsulations */
 #define PPP_ENCAP_RFC1661	1	/* Plain/synchronous/pre-framed PPP (RFC1661) */
@@ -1365,6 +1371,13 @@ int fortinet_obtain_cookie(struct openconnect_info *vpninfo);
 int fortinet_connect(struct openconnect_info *vpninfo);
 int fortinet_bye(struct openconnect_info *vpninfo, const char *reason);
 int fortinet_dtls_catch_svrhello(struct openconnect_info *vpninfo, struct pkt *pkt);
+
+/* h3c.c */
+int h3c_connect(struct openconnect_info *vpninfo);
+int h3c_bye(struct openconnect_info *vpninfo, const char *reason);
+int h3c_mainloop(struct openconnect_info *vpninfo, int *timeout, int readable);
+void h3c_http_headers(struct openconnect_info *vpninfo, struct oc_text_buf *buf);
+int h3c_obtain_cookie(struct openconnect_info *vpninfo);
 
 /* ppp.c */
 struct oc_ppp;
