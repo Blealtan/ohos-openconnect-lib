@@ -62,9 +62,62 @@ certificate, and receive an authcookie.  The username, authcookie, and a
 couple other bits of information obtained at login are combined into the
 OpenConnect cookie.</p>
 
+<h4>SAML multi-factor authentication</h4>
+
 <p>Some servers are configured to authenticate through SAML for
-multi-factor authentication. Support for this is provided in
-combination with network-manager-openconnect.</p>
+multi-factor authentication. Support for this is provided on the
+command line and in combination with network-manager-openconnect.</p>
+
+<p>SAML authentication may be aided by such helpers as <a
+href="https://github.com/dlenski/gp-saml-gui">gp-saml-gui</a>, which
+is particularly handy at using URLs to produce SAML cookie values and
+might be a good choice to use instead of a regular browser when
+working with openconnect from the command line, or <a
+href="https://github.com/zdave/openconnect-gp-okta">openconnect-gp-okta</a>.</p>
+
+<p>Authenticating with SAML from the command line involves using an
+URL, which openconnect displays, to get a cookie.  This generally
+involves giving the URL to a web browser, which will ask for username
+and then other authentication secrets.  The cookie you need to give to
+openconnect to authenticate will always be in the final HTTP response.
+Although cookies are passed in HTTP headers, the cookie you need may
+often be obtained by looking at the HTML source of the final HTTP
+response.</p>
+
+<p>So SAML authentication from the command line happens in multiple
+steps.  Openconnect is invoked to give your username to the VPN
+portal, which produces an URL.  Then the URL is used to obtain a
+cookie.  This cookie has a name.  Known possibilities for the name
+are <tt>portal-userauthcookie</tt> and <tt>prelogin-cookie</tt>, but
+the actual name should be clear from final SAML authentication HTTP
+response, the one that delivers the cookie.</p>
+
+<p>Once the SAML cookie is obtained, openconnect is invoked a second
+time to create the VPN connection.  This second invocation of
+openconnect must be given the name of the cookie and the cookie's
+value.  The name of the cookie can be given in the URL used to connect
+to the VPN server endpoint, but it is more clear to use the
+<tt>--usergroup</tt> argument, for example, as follows:
+<tt>--usergroup=:prelogin-cookie</tt> (As noted above,
+<tt>--usergroup</tt> may also specify a "gateway", in which case the
+gateway host is given before the colon.)  The cookie's value is best
+supplied by using <tt>--passwd-on-stdin</tt>, and pasting when
+openconnect pauses (without any textual prompt) and waits for the
+authentication secret, followed by a press of the "Enter" key.  (This
+keeps the cookie, a secret that grants access, from being recorded in
+the shell's command history!)</p>
+
+<p>The GlobalProtect VPN server may be configured so that both the
+portal and the gateway require SAML authentication.  In this case the
+second openconnect invocation uses the supplied SAML cookie to
+authenticate against the portal, but SAML authentication must occur a
+second time to obtain a new cookie to authenticate with the gateway.
+In this case, after using the first cookie to authenticate with the
+portal, the second openconnect invocation displays a new URL and
+pauses with a prompt.  This prompt consists of the name of the cookie
+(likely <tt>prelogin-cookie</tt>).  Use the new URL to obtain a second
+cookie, paste the new cookie at the prompt, and press enter.  The VPN
+should then be created.</p>
 
 <h3>Tunnel configuration</h3>
 
