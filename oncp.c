@@ -467,7 +467,7 @@ int oncp_connect(struct openconnect_info *vpninfo)
 {
 	int ret, len, kmp, kmplen, group, check_len;
 	struct oc_text_buf *reqbuf;
-	unsigned char bytes[65536];
+	unsigned char bytes[65538];
 
 	if (!vpninfo->cookies) {
 		/* XX: This will happen if authentication was separate/external */
@@ -602,6 +602,18 @@ int oncp_connect(struct openconnect_info *vpninfo)
 	vpn_progress(vpninfo, PRG_TRACE,
 		     _("Read %d bytes of SSL record\n"), len);
 
+	/* The NC frame might be split across multiple TLS records. Read the whole frame */
+	while (len < check_len + 2) {
+		int thislen = vpninfo->ssl_read(vpninfo, (void *)(bytes + len), sizeof(bytes) - len);
+		if (len < 0) {
+			ret = len;
+			goto out;
+		}
+		len += thislen;
+		vpn_progress(vpninfo, PRG_TRACE,
+			     _("Read additional %d bytes of SSL record\n"), thislen);
+	}
+
 	if (len < 0x16 || check_len + 2 != len) {
 		vpn_progress(vpninfo, PRG_ERR,
 			     _("Invalid packet waiting for KMP 301\n"));
@@ -639,7 +651,7 @@ int oncp_connect(struct openconnect_info *vpninfo)
 
 	while (kmplen + 22 > len) {
 		char l[2];
-		int thislen;
+		int reclen;
 
 		if (vpninfo->ssl_read(vpninfo, (void *)l, 2) != 2) {
 			vpn_progress(vpninfo, PRG_ERR,
@@ -655,13 +667,18 @@ int oncp_connect(struct openconnect_info *vpninfo)
 			goto out;
 		}
 
-		thislen = vpninfo->ssl_read(vpninfo, (void *)(bytes + len), load_le16(l));
-		if (thislen != load_le16(l)) {
-			vpn_progress(vpninfo, PRG_ERR,
-				     _("Failed to read continuation record of length %d\n"),
-				     load_le16(l));
-			ret = -EINVAL;
-			goto out;
+		/* The NC frame might be split across multiple TLS records. Read the whole frame */
+		reclen = 0;
+		while (reclen < load_le16(l)) {
+			int thislen = vpninfo->ssl_read(vpninfo, (void *)(bytes + len), load_le16(l) - reclen);
+			if (thislen < 0) {
+				vpn_progress(vpninfo, PRG_ERR,
+					     _("Failed to read continuation record of length %d\n"),
+					     load_le16(l));
+				ret = thislen;
+				goto out;
+			}
+			reclen += thislen;
 		}
 
 		/*
@@ -683,9 +700,9 @@ int oncp_connect(struct openconnect_info *vpninfo)
 		 * get a new frame, attempt to find a set of frames which add up to the
 		 * correct size and see if they parse sanely. But let's try this for now.
 		 */
-		if (thislen >= 21 && !memcmp(bytes + len, kmp_head, sizeof(kmp_head)) &&
+		if (reclen >= 21 && !memcmp(bytes + len, kmp_head, sizeof(kmp_head)) &&
 		    !bytes[len + 8] && !memcmp(bytes + len + 9, kmp_tail + 1, sizeof(kmp_tail) - 1) &&
-		    load_be16(bytes + len + 6) == 300 && load_be16(bytes + len + 18) + 20 == thislen &&
+		    load_be16(bytes + len + 6) == 300 && load_be16(bytes + len + 18) + 20 == reclen &&
 		    bytes[len + 20] == 0x45 /* Only Legacy IP over oNCP anyway */) {
 			vpn_progress(vpninfo, PRG_INFO,
 				     _("Discarding Legacy IP frame in the middle of oNCP config\n"));
@@ -694,12 +711,12 @@ int oncp_connect(struct openconnect_info *vpninfo)
 
 		vpn_progress(vpninfo, PRG_TRACE,
 			     _("Read additional %d bytes of KMP 301 message\n"),
-			     thislen);
+			     reclen);
 
 		if (vpninfo->dump_http_traffic)
-			dump_buf_hex(vpninfo, PRG_TRACE, '<', bytes + len, thislen);
+			dump_buf_hex(vpninfo, PRG_TRACE, '<', bytes + len, reclen);
 
-		len += thislen;
+		len += reclen;
 	}
 
 	ret = parse_conf_pkt(vpninfo, bytes + 2, len - 2, ret);
