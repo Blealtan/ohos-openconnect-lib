@@ -676,8 +676,11 @@ int script_config_tun(struct openconnect_info *vpninfo, const char *reason)
 		return 0;
 
 	pid = fork();
-	if (!pid) {
+	if (pid == 0) {
 		/* Child */
+		if (setpgid(0, 0) < 0)
+			perror(_("setpgid"));
+
 		char *script = openconnect_utf8_to_legacy(vpninfo, vpninfo->vpnc_script);
 
 		apply_script_env(vpninfo->script_env);

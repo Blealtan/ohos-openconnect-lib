@@ -467,7 +467,7 @@ int openconnect_setup_tun_fd(struct openconnect_info *vpninfo, int tun_fd)
 int openconnect_setup_tun_script(struct openconnect_info *vpninfo,
 				 const char *tun_script)
 {
-	pid_t child;
+	pid_t pid;
 	int fds[2];
 
 	STRDUP(vpninfo->vpnc_script, tun_script);
@@ -478,12 +478,13 @@ int openconnect_setup_tun_script(struct openconnect_info *vpninfo,
 		vpn_progress(vpninfo, PRG_ERR, _("socketpair failed: %s\n"), strerror(errno));
 		return -EIO;
 	}
-	child = fork();
-	if (child < 0) {
+	pid = fork();
+	if (pid < 0) {
 		vpn_progress(vpninfo, PRG_ERR, _("fork failed: %s\n"), strerror(errno));
 		return -EIO;
-	} else if (!child) {
-		if (setpgid(0, getpid()) < 0)
+	} else if (pid == 0) {
+		/* Child */
+		if (setpgid(0, 0) < 0)
 			perror(_("setpgid"));
 		close(fds[0]);
 		script_setenv_int(vpninfo, "VPNFD", fds[1]);
@@ -493,7 +494,7 @@ int openconnect_setup_tun_script(struct openconnect_info *vpninfo,
 		exit(1);
 	}
 	close(fds[1]);
-	vpninfo->script_tun = child;
+	vpninfo->script_tun = pid;
 	vpninfo->ifname = strdup(_("(script)"));
 
 	return openconnect_setup_tun_fd(vpninfo, fds[0]);
