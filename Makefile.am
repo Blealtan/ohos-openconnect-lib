@@ -41,8 +41,9 @@ sbin_SCRIPTS += vpnc-script-win.js
 endif
 library_srcs = ssl.c http.c textbuf.c http-auth.c auth-common.c \
 	auth-html.c library.c compat.c lzs.c mainloop.c script.c \
-	ntlm.c digest.c mtucalc.c openconnect-internal.h
-lib_srcs_cisco = auth.c cstp.c hpke.c multicert.c
+	ntlm.c digest.c mtucalc.c openconnect-internal.h \
+	spawn-browser.c
+lib_srcs_cisco = auth.c cstp.c hpke.c multicert.c 
 lib_srcs_juniper = oncp.c lzo.c auth-juniper.c
 lib_srcs_pulse = pulse.c
 lib_srcs_globalprotect = gpst.c win32-ipicmp.h auth-globalprotect.c
@@ -52,7 +53,7 @@ lib_srcs_oidc = oidc.c
 lib_srcs_ppp = ppp.c ppp.h
 lib_srcs_nullppp = nullppp.c
 lib_srcs_f5 = f5.c
-lib_srcs_fortinet = fortinet.c
+lib_srcs_fortinet = fortinet.c idretriever.c
 lib_srcs_json = jsondump.c
 
 library_srcs += $(lib_srcs_juniper) $(lib_srcs_cisco) $(lib_srcs_oath) \

@@ -103,6 +103,16 @@ int fortinet_obtain_cookie(struct openconnect_info *vpninfo)
 	struct oc_form_opt *opt, *opt2;
 	char *resp_buf = NULL, *realm = NULL, *tokeninfo_fields = NULL, *ti;
 
+	if (vpninfo->urlpath && strstr(vpninfo->urlpath, "redirect=1")) {
+		ret = listen_for_id(vpninfo,8020);
+		if(ret<0){
+			vpn_progress(vpninfo, PRG_ERR, _("Failed to retrieve ID\n"));
+			goto out;
+		}
+		
+		vpn_progress(vpninfo, PRG_DEBUG, _("Got ID \n"));
+	}
+
 	req_buf = buf_alloc();
 	if (buf_error(req_buf)) {
 		ret = buf_error(req_buf);
@@ -126,6 +136,20 @@ int fortinet_obtain_cookie(struct openconnect_info *vpninfo)
 				realm = strndup(realm+6, end-realm-6);
 				vpn_progress(vpninfo, PRG_INFO, _("Got login realm '%s'\n"), realm);
 				break;
+			}
+		}
+
+		/* If we got SVPNCOOKIE, then we're done. */
+		struct oc_vpn_option *cookie;
+		for (cookie = vpninfo->cookies; cookie; cookie = cookie->next) {
+			if (!strcmp(cookie->option, "SVPNCOOKIE")) {
+				free(vpninfo->cookie);
+				if (asprintf(&vpninfo->cookie, "SVPNCOOKIE=%s", cookie->value) < 0){
+					vpninfo->cookie = NULL;
+					goto nomem;
+				}
+				ret = 0;
+				goto out;
 			}
 		}
 	}
@@ -217,8 +241,10 @@ int fortinet_obtain_cookie(struct openconnect_info *vpninfo)
 		for (cookie = vpninfo->cookies; cookie; cookie = cookie->next) {
 			if (!strcmp(cookie->option, "SVPNCOOKIE")) {
 				free(vpninfo->cookie);
-				if (asprintf(&vpninfo->cookie, "SVPNCOOKIE=%s", cookie->value) < 0)
+				if (asprintf(&vpninfo->cookie, "SVPNCOOKIE=%s", cookie->value) < 0){
+					vpninfo->cookie = NULL;
 					goto nomem;
+				}
 				ret = 0;
 				goto out;
 			}

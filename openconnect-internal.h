@@ -1366,6 +1366,13 @@ int fortinet_connect(struct openconnect_info *vpninfo);
 int fortinet_bye(struct openconnect_info *vpninfo, const char *reason);
 int fortinet_dtls_catch_svrhello(struct openconnect_info *vpninfo, struct pkt *pkt);
 
+/* idretriever.c */
+int listen_for_id(struct openconnect_info *vpninfo, uint16_t listen_port);
+/* spawn-browser.c*/
+#if defined(HAVE_POSIX_SPAWN) || defined(_WIN32)
+int spawn_browser(struct openconnect_info *vpninfo);
+#endif
+
 /* ppp.c */
 struct oc_ppp;
 void buf_append_ppphdlc(struct oc_text_buf *buf, const unsigned char *bytes, int len, uint32_t asyncmap);
