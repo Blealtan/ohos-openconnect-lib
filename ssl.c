@@ -167,13 +167,48 @@ static inline int accept_pending(void)
 #endif
 }
 
-int cancellable_accept(struct openconnect_info *vpninfo, int sockfd)
+int cancellable_accept(struct openconnect_info *vpninfo, int *fds,
+		       int num_fds)
 {
-	fd_set wr_set, rd_set, ex_set;
-	int accept_fd, maxfd = sockfd;
+	fd_set wr_set, rd_set, ex_set, sock_set;
+	int accept_fd, maxfd, sockfd;
 	char *errstr;
 
 	do {
+		maxfd = -1;
+		sockfd = -1;
+		FD_ZERO(&wr_set);
+		FD_ZERO(&rd_set);
+		FD_ZERO(&ex_set);
+		FD_ZERO(&sock_set);
+
+		for (int idx = 0; idx < num_fds; ++idx) {
+			FD_SET(fds[idx], &sock_set);
+			if (fds[idx] > maxfd)
+				maxfd = fds[idx];
+		}
+
+		if (select(maxfd + 1, &sock_set, NULL, NULL, NULL) < 0 &&
+		    errno != EINTR) {
+			vpn_perror(vpninfo, _("Failed select() for socket choice"));
+			return -EIO;
+		} else if (errno == EINTR)
+			continue;
+
+		for (int idx = 0; idx < num_fds; ++idx) {
+			if (FD_ISSET(fds[idx], &sock_set)) {
+				sockfd = fds[idx];
+				maxfd = sockfd;
+				break;
+			}
+		}
+
+		if (sockfd == -1) {
+			vpn_progress(vpninfo, PRG_ERR,
+				     _("Read ready socket not found from select()\n"));
+			return -EBADF;
+		}
+
 		accept_fd = accept(sockfd, NULL, NULL);
 		if (accept_fd >= 0)
 			return accept_fd;
@@ -181,9 +216,6 @@ int cancellable_accept(struct openconnect_info *vpninfo, int sockfd)
 		if (!accept_pending())
 			break;
 
-		FD_ZERO(&wr_set);
-		FD_ZERO(&rd_set);
-		FD_ZERO(&ex_set);
 		FD_SET(sockfd, &rd_set);
 
 		cmd_fd_set(vpninfo, &rd_set, &maxfd);

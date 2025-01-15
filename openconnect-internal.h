@@ -1445,7 +1445,8 @@ int cancellable_send(struct openconnect_info *vpninfo, int fd,
 		     const char *buf, size_t len);
 int cancellable_recv(struct openconnect_info *vpninfo, int fd,
 		     char *buf, size_t len);
-int cancellable_accept(struct openconnect_info *vpninfo, int fd);
+int cancellable_accept(struct openconnect_info *vpninfo, int *fds,
+		       int num_fds);
 
 #if defined(OPENCONNECT_OPENSSL)
 /* openssl-pkcs11.c */

@@ -111,18 +111,28 @@ static int spawn_browser(struct openconnect_info *vpninfo)
 int handle_external_browser(struct openconnect_info *vpninfo)
 {
 	int ret = 0;
+	uint16_t nport = htons(29786);
 	struct sockaddr_in6 sin6 = { };
+	struct sockaddr_in slegacy = { };
+	sin6.sin6_port = nport;
+	slegacy.sin_port = nport;
 	sin6.sin6_family = AF_INET6;
-	sin6.sin6_port = htons(29786);
+	slegacy.sin_family = AF_INET;
 	sin6.sin6_addr = in6addr_loopback;
+	slegacy.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 
-	int listen_fd;
+	int legacy_listen_fd, ipv6_listen_fd;
 #ifdef SOCK_CLOEXEC
-	listen_fd = socket(AF_INET6, SOCK_STREAM | SOCK_CLOEXEC, IPPROTO_TCP);
-	if (listen_fd < 0)
+	legacy_listen_fd = socket(AF_INET, SOCK_STREAM | SOCK_CLOEXEC, IPPROTO_TCP);
+	ipv6_listen_fd = socket(AF_INET6, SOCK_STREAM | SOCK_CLOEXEC, IPPROTO_TCP);
+	if (ipv6_listen_fd < 0 && legacy_listen_fd < 0) {
 #endif
-	listen_fd = socket(AF_INET6, SOCK_STREAM, IPPROTO_TCP);
-	if (listen_fd < 0) {
+	legacy_listen_fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+	ipv6_listen_fd = socket(AF_INET6, SOCK_STREAM, IPPROTO_TCP);
+#ifdef SOCK_CLOEXEC
+	}
+#endif
+	if (ipv6_listen_fd < 0 && legacy_listen_fd < 0) {
 		char *errstr;
 	sockerr:
 #ifdef _WIN32
@@ -137,22 +147,64 @@ int handle_external_browser(struct openconnect_info *vpninfo)
 #ifdef _WIN32
 		free(errstr);
 #endif
-		if (listen_fd >= 0)
-			closesocket(listen_fd);
+		if (ipv6_listen_fd >= 0)
+			closesocket(ipv6_listen_fd);
+		if (legacy_listen_fd >= 0)
+			closesocket(legacy_listen_fd);
 		return -EIO;
 	}
 
 	int optval = 1;
-	(void)setsockopt(listen_fd, SOL_SOCKET, SO_REUSEADDR, (void *)&optval, sizeof(optval));
+	uint8_t ipv6_err = 0, legacy_err = 0;
+	if (legacy_listen_fd >= 0) {
+		(void)setsockopt(legacy_listen_fd, SOL_SOCKET, SO_REUSEADDR, (void *)&optval, sizeof(optval));
 
-	if (bind(listen_fd, (void *)&sin6, sizeof(sin6)) < 0)
-		goto sockerr;
+		if (bind(legacy_listen_fd, (void *)&slegacy, sizeof(slegacy)) < 0) {
+			legacy_err = 1;
+			goto ipv6_listen;
+		}
 
-	if (listen(listen_fd, 1))
-		goto sockerr;
+		if (listen(legacy_listen_fd, 1)) {
+			legacy_err = 1;
+			goto ipv6_listen;
+		}
 
-	if (set_sock_nonblock(listen_fd))
+		if (set_sock_nonblock(legacy_listen_fd)) {
+			legacy_err = 1;
+			goto ipv6_listen;
+		}
+	}
+ipv6_listen:
+	if (ipv6_listen_fd >= 0) {
+		(void)setsockopt(ipv6_listen_fd, SOL_SOCKET, SO_REUSEADDR, (void *)&optval, sizeof(optval));
+		(void)setsockopt(ipv6_listen_fd, IPPROTO_IPV6, IPV6_V6ONLY, (void *)&optval, sizeof(optval));
+
+		if (bind(ipv6_listen_fd, (void *)&sin6, sizeof(sin6)) < 0) {
+			ipv6_err = 1;
+			goto listen_err;
+		}
+
+		if (listen(ipv6_listen_fd, 1)) {
+			ipv6_err = 1;
+			goto listen_err;
+		}
+
+		if (set_sock_nonblock(ipv6_listen_fd)) {
+			ipv6_err = 1;
+			goto listen_err;
+		}
+	}
+listen_err:
+	if (ipv6_err && legacy_err)
 		goto sockerr;
+	if (ipv6_err) {
+		closesocket(ipv6_listen_fd);
+		ipv6_listen_fd = -1;
+	}
+	if (legacy_err) {
+		closesocket(legacy_listen_fd);
+		legacy_listen_fd = -1;
+	}
 
 	/* Now that we are listening on the socket, we can spawn the browser */
 	if (vpninfo->open_ext_browser) {
@@ -170,12 +222,19 @@ int handle_external_browser(struct openconnect_info *vpninfo)
 			     vpninfo->sso_login);
 
 	char *returl = NULL;
+	int listen_nfds = 0;
+	int listen_fds[2] = {-1};
 	struct oc_text_buf *b64_buf = NULL;
+
+	if (ipv6_listen_fd >= 0)
+	        listen_fds[listen_nfds++] = ipv6_listen_fd;
+	if (legacy_listen_fd >= 0)
+	        listen_fds[listen_nfds++] = legacy_listen_fd;
 
 	/* There may be other stray connections. Repeat until we have one
 	 * that looks like the actual auth attempt from the browser. */
 	while (1) {
-		int accept_fd = cancellable_accept(vpninfo, listen_fd);
+		int accept_fd = cancellable_accept(vpninfo, listen_fds, listen_nfds);
 		if (accept_fd < 0) {
 			ret = accept_fd;
 			goto out;
@@ -373,7 +432,10 @@ int handle_external_browser(struct openconnect_info *vpninfo)
  out_b64:
 	buf_free(b64_buf);
  out:
-	closesocket(listen_fd);
+	if (ipv6_listen_fd >= 0)
+	        closesocket(ipv6_listen_fd);
+	if (legacy_listen_fd >= 0)
+	        closesocket(legacy_listen_fd);
 	return ret;
 }
 #endif /* HAVE_HPKE_SUPPORT */
