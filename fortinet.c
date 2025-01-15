@@ -369,9 +369,12 @@ static int parse_split_routes(struct openconnect_info *vpninfo, xmlNode *split_t
   <dtls-config heartbeat-interval="10" heartbeat-fail-count="10" heartbeat-idle-timeout="10" client-hello-timeout="10"/>
   <tunnel-method value="ppp"/>
   <tunnel-method value="tun"/>
+  <auth-ses check-src-ip='1' tun-connect-without-reauth='1' tun-user-ses-timeout='240' />
   <fos platform="FG100E" major="5" minor="06" patch="6" build="1630" branch="1630"/>
   <auth-ses check-src-ip='1' tun-connect-without-reauth='1' tun-user-ses-timeout='240' />
   <client-config save-password="off" keep-alive="on" auto-connect="off"/>
+  <exclusive-routing>on</exclusive-routing>
+  <ipv6-exclusive-routing>on</ipv6-exclusive-routing>
   <ipv4>
     <dns ip="1.1.1.1"/>
     <dns ip="8.8.8.8" domain="foo.com"/>
@@ -485,6 +488,21 @@ static int parse_fortinet_xml_config(struct openconnect_info *vpninfo, char *buf
 				if (!xmlnode_get_prop(xml_node, "mr_num", &s))    snprintf(p, e-p, " mr_num %s", s);
 				vpn_progress(vpninfo, PRG_INFO,
 					     _("Reported platform is %s\n"), platform);
+			}
+		} else if (xmlnode_is_named(xml_node, "exclusive-routing")) {
+			/* XX: Server wants us to make Legacy IP unreachable except through the VPN.
+			 * https://docs.fortinet.com/document/fortigate/6.4.0/cli-reference/349620/vpn-ssl-web-portal
+			 * https://kb.fortinet.com/kb/documentLink.do?externalID=FD45992
+			 */
+			if (xmlnode_bool_or_int_value(xml_node) == 1) {
+				new_ip_info.unreachable_ipv4 = 1;
+				vpn_progress(vpninfo, PRG_INFO, _("Server asked us to disable Legacy IP traffic except through VPN.\n"));
+			}
+		} else if (xmlnode_is_named(xml_node, "ipv6-exclusive-routing")) {
+			/* XX: Same, but for IPv6 */
+			if (xmlnode_bool_or_int_value(xml_node) == 1) {
+				new_ip_info.unreachable_ipv6 = 1;
+				vpn_progress(vpninfo, PRG_INFO, _("Server asked us to disable IPv6 traffic except through VPN.\n"));
 			}
 		} else if (xmlnode_is_named(xml_node, "ipv4")) {
 			for (x = xml_node->children; x; x=x->next) {

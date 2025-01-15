@@ -450,6 +450,10 @@ void prepare_script_env(struct openconnect_info *vpninfo)
 		if (nr_v6_split_excludes)
 			script_setenv_int(vpninfo, "CISCO_IPV6_SPLIT_EXC", nr_v6_split_excludes);
 	}
+
+	script_setenv(vpninfo, "IP4_UNREACHABLE", vpninfo->ip_info.unreachable_ipv4 ? "true" : "false", 0, 0);
+	script_setenv(vpninfo, "IP6_UNREACHABLE", vpninfo->ip_info.unreachable_ipv6 ? "true" : "false", 0, 0);
+
 	setenv_cstp_opts(vpninfo);
 }
 

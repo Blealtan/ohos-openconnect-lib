@@ -486,6 +486,27 @@ static int process_attr(struct openconnect_info *vpninfo, struct oc_vpn_option *
 			     data[0]);
 		break;
 
+	case 0x4020:
+		if (attrlen != 1)
+			goto badlen;
+
+		if (data[0]) {
+			new_ip_info->unreachable_ipv4 = 1;
+			vpn_progress(vpninfo, PRG_INFO, _("Server asked us to disable Legacy IP traffic except through VPN.\n"));
+		}
+		break;
+
+	case 0x4021:
+		if (attrlen != 1)
+			goto badlen;
+
+		if (data[0]) {
+			new_ip_info->unreachable_ipv6 = 1;
+			vpn_progress(vpninfo, PRG_INFO, _("Server asked us to disable IPv6 traffic except through VPN.\n"));
+		}
+		break;
+
+
 	case 0x401e:
 		if (attrlen != 16)
 			goto badlen;
@@ -533,8 +554,6 @@ static int process_attr(struct openconnect_info *vpninfo, struct oc_vpn_option *
 	   0x4015: tos copy
 	   0x4001:  tunnel routes take precedence
 	   0x401f:  tunnel routes with subnet access (also 4001 set)
-	   0x4020: Enforce IPv4
-	   0x4021: Enforce IPv6
 	   0x0014: Prefer FQDN resources over IP resources in case of a split tunneling conflict
 	*/
 

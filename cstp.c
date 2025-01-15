@@ -389,6 +389,7 @@ static int start_cstp_connection(struct openconnect_info *vpninfo, int strap_rek
 	struct oc_vpn_option **next_cstp_option = &new_cstp_opts;
 	struct oc_ip_info new_ip_info = {};
 	int ret = 0;
+	int disable_client_bypass = 0;
 
 	while ((ret = vpninfo->ssl_gets(vpninfo, buf, sizeof(buf)))) {
 		struct oc_vpn_option *new_option;
@@ -541,6 +542,9 @@ static int start_cstp_connection(struct openconnect_info *vpninfo, int strap_rek
 				vpninfo->auth_expiration = time(NULL) + j;
 		} else if (!strcmp(buf + 7, "Idle-Timeout")) {
 			vpninfo->idle_timeout = atol(colon);
+		} else if (!strcmp(buf + 7, "Client-Bypass-Protocol")) {
+			if (!strcmp(colon, "false"))
+				   disable_client_bypass = 1;
 		} else if (!strcmp(buf + 7, "DPD")) {
 			int j = atol(colon);
 			if (j && !vpninfo->ssl_times.dpd)
@@ -645,6 +649,17 @@ static int start_cstp_connection(struct openconnect_info *vpninfo, int strap_rek
 		goto err;
 	}
 	new_ip_info.mtu = mtu;
+
+	if (disable_client_bypass) {
+		/* XX: For whichever address family isn't used by the VPN, the server wants
+		 * us to make it unreachable EXCEPT through the VPN. If we haven't received
+		 * an address for EITHER family, install_vpn_opts() will fail.
+		 */
+		if (!new_ip_info.addr6 && !new_ip_info.netmask6)
+			new_ip_info.unreachable_ipv6 = 1;
+		if (!new_ip_info.addr)
+			new_ip_info.unreachable_ipv4 = 1;
+	}
 
 	ret = install_vpn_opts(vpninfo, new_cstp_opts, &new_ip_info);
 	if (ret) {

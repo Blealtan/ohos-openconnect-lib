@@ -529,6 +529,22 @@ static int parse_options(struct openconnect_info *vpninfo, char *buf, int len,
 			default_route = xmlnode_bool_or_int_value(xml_node);
 			if (default_route)
 				vpn_progress(vpninfo, PRG_INFO, _("Got default routes\n"));
+		} else if (xmlnode_is_named(xml_node, "AllowLocalSubnetAccess0")) {
+			if (xmlnode_bool_or_int_value(xml_node) == 0) {
+				/* XX: Server wants us to make the local network unreachable except through the VPN.
+				 * (See https://techdocs.f5.com/content/kb/en-us/products/big-ip_apm/manuals/product/apm-network-access-13-0-0/2.html
+				 * for reference information, and https://techdocs.f5.com/kb/en-us/products/big-ip_apm/manuals/related/apm-f5-access-macos-2-0-0/2.html
+				 * for how poorly this seems to work in practice.)
+				 *
+				 * "Select this option to enable local subnet access and local access to any host or
+				 * subnet in routes that you have specified in the client routing table."
+				 */
+				new_ip_info.unreachable_ipv4 = new_ip_info.unreachable_ipv6 = 0;
+				vpn_progress(vpninfo, PRG_INFO, _("Server asked us to disable all IP traffic except through VPN.\n"));
+			}
+		} else if (   xmlnode_is_named(xml_node, "AllowLocalDNSServersAccess0")
+			   || xmlnode_is_named(xml_node, "AllowLocalDHCPAccess0")) {
+			/* XX: Implementing these requires "integrated IP filtering" (deep packet inspection). No. Just no. */
 		} else if (xmlnode_is_named(xml_node, "SplitTunneling0")) {
 			int st = xmlnode_bool_or_int_value(xml_node);
 			vpn_progress(vpninfo, PRG_INFO, _("Got SplitTunneling0 value of %d\n"), st);

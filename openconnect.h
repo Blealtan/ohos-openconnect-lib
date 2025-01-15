@@ -309,6 +309,13 @@ struct oc_ip_info {
 	const char *proxy_pac;
 	int mtu;
 
+	/* Server wants us to make Legacy IP or IPv6 unreachable except through the VPN.
+	 * This will be passed through to the tunnel configuration script, which will
+	 * need to ensure an exception for the VPN gateway.
+	 */
+	int unreachable_ipv4;
+	int unreachable_ipv6;
+
 	struct oc_split_include *split_dns;
 	struct oc_split_include *split_includes;
 	struct oc_split_include *split_excludes;

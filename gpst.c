@@ -438,7 +438,15 @@ static int gpst_parse_config_xml(struct openconnect_info *vpninfo, xmlNode *xml_
 			new_ip_info.netmask = add_option_steal(&new_opts, "netmask", &s);
 		} else if (!xmlnode_get_val(xml_node, "mtu", &s))
 			new_ip_info.mtu = atoi(s);
-		else if (!xmlnode_get_val(xml_node, "lifetime", &s))
+		else if (!xmlnode_get_val(xml_node, "no-direct-access-to-local-network", &s)) {
+			if (!strcasecmp(s, "yes")) {
+				/* XX: Server wants us to make Legacy IPv4 unreachable except through the VPN.
+				 * "Note that this feature supports IPv4 only." (https://knowledgebase.paloaltonetworks.com/KCSArticleDetail?id=kA10g000000ClTmCAK)
+				 */
+				new_ip_info.unreachable_ipv4 = 1;
+				vpn_progress(vpninfo, PRG_INFO, _("Server asked us to disable Legacy IP traffic except through VPN.\n"));
+			}
+		} else if (!xmlnode_get_val(xml_node, "lifetime", &s))
 			vpninfo->auth_expiration = time(NULL) + atol(s);
 		else if (!xmlnode_get_val(xml_node, "quarantine", &s)) {
 			if (strcmp(s, "no"))
@@ -569,7 +577,6 @@ static int gpst_parse_config_xml(struct openconnect_info *vpninfo, xmlNode *xml_
 			   || xmlnode_is_named(xml_node, "bw-s2c")
 			   || xmlnode_is_named(xml_node, "default-gateway")
 			   || xmlnode_is_named(xml_node, "default-gateway-v6")
-			   || xmlnode_is_named(xml_node, "no-direct-access-to-local-network")
 			   || xmlnode_is_named(xml_node, "ip-address-preferred")
 			   || xmlnode_is_named(xml_node, "ip-address-v6-preferred")
 			   || xmlnode_is_named(xml_node, "ipv6-connection")
