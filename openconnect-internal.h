@@ -1535,6 +1535,7 @@ int can_gen_totp_code(struct openconnect_info *vpninfo,
 int can_gen_hotp_code(struct openconnect_info *vpninfo,
 		      struct oc_auth_form *form,
 		      struct oc_form_opt *opt);
+char *gen_totp(struct openconnect_info *vpninfo);
 int do_gen_totp_code(struct openconnect_info *vpninfo,
 		     struct oc_auth_form *form,
 		     struct oc_form_opt *opt);

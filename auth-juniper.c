@@ -442,6 +442,196 @@ static struct oc_auth_form *parse_roles_form_node(xmlNodePtr node)
 	return form;
 }
 
+static json_value *json_get_value(json_value *json, const char *key)
+{
+	unsigned int key_len = strlen(key);
+
+	if (json->type != json_object)
+		return NULL;
+
+	for (json_object_entry *entry = json->u.object.values + json->u.object.length;
+	     entry != json->u.object.values;) {
+		--entry;
+		if (key_len == entry->name_length &&
+		    !memcmp(key, entry->name, key_len)) {
+			return entry->value;
+		}
+	}
+
+	return NULL;
+}
+
+static char *json_get_string(json_value *json, const char *key)
+{
+	json_value *value = json_get_value(json, key);
+	return (
+		value && value->type == json_string
+		? strdup(value->u.string.ptr)
+		: NULL
+	);
+}
+
+static char *msftonline(struct openconnect_info *vpninfo, xmlDocPtr doc,
+			struct oc_text_buf *resp_buf)
+{
+	vpn_progress(vpninfo, PRG_INFO,
+		     _("No DSPREAUTH yet - attempting login.microsoftonline.com\n"));
+
+	/* Find a <script> tag with $Config JSON data. */
+	xmlNodePtr root, node;
+	for (root = node = xmlDocGetRootElement(doc); node; node = htmlnode_dive(root, node)) {
+		if (node->name && !strcasecmp((char *)node->name, "script"))
+			break;
+	}
+	if (!node) {
+		return NULL;
+	}
+	char *content = (char *)xmlNodeGetContent(node);
+	char *config_start = strchr(content, '{');
+	char *config_end = strrchr(content, '}');
+	json_value *config = NULL;
+	if (config_start && config_end && config_start < config_end) {
+		config = json_parse(config_start, 1 + config_end - config_start);
+	}
+	free(content);
+	if (!config) {
+		vpn_progress(vpninfo, PRG_INFO, _("JSON parse error.\n"));
+		return NULL;
+	}
+
+	/* First step: redirect to federated login page. */
+	char *ctx = json_get_string(config, "sCtx");
+	char *ft = json_get_string(config, "sFT");
+	char *url = json_get_string(config, "urlGetCredentialType");
+	if (url) {
+		char *recv_buf = NULL;
+
+		buf_append(resp_buf, "{\"flowToken\":\"%s\""
+				     ",\"originalRequest\":\"%s\""
+				     ",\"username\":\"%s\"}",
+				     ft, ctx, "user@example.com");
+		vpninfo->redirect_url = url;
+		url = NULL;
+		handle_redirect(vpninfo);
+
+		int ret = do_https_request(vpninfo, "POST", "application/json",
+					   resp_buf, &recv_buf, NULL, 2);
+		buf_truncate(resp_buf);
+		if (ret < 0) {
+			free(recv_buf);
+			free(url);
+			url = NULL;
+			goto out;
+		}
+
+		json_value *json = json_parse(recv_buf, strlen(recv_buf));
+		if (json) {
+			json_value *cred = json_get_value(json, "Credentials");
+			if (cred)
+				url = json_get_string(cred, "FederationRedirectUrl");
+			json_value_free(json);
+		}
+		free(recv_buf);
+		goto out;
+	}
+
+	/* Second step: perform authentication. */
+	url = json_get_string(config, "urlPost");
+	if (url) {
+		char *recv_buf = NULL;
+		char *auth = json_get_string(config, "urlBeginAuth");
+		char *sess = NULL;
+		char *token = NULL;
+		char *canary = NULL;
+
+		if (auth) {
+			vpninfo->redirect_url = auth;
+			auth = NULL;
+			handle_redirect(vpninfo);
+			buf_append(resp_buf,
+				   "{\"AuthMethodId\":\"PhoneAppOTP\""
+				   ",\"ctx\":\"%s\""
+				   ",\"flowToken\":\"%s\""
+				   ",\"Method\":\"BeginAuth\"}",
+				   ctx, ft);
+			if (do_https_request(vpninfo, "POST", "application/json",
+					     resp_buf, &recv_buf, NULL, 2) < 0) {
+				free(url);
+				url = NULL;
+				goto auth_out;
+			}
+			buf_truncate(resp_buf);
+
+			json_value *json = json_parse(recv_buf, strlen(recv_buf));
+			if (json) {
+				ft = json_get_string(json, "FlowToken");
+				sess = json_get_string(json, "SessionId");
+				json_value_free(json);
+			}
+			free(recv_buf);
+			recv_buf = NULL;
+		}
+
+		token = gen_totp(vpninfo);
+		auth = json_get_string(config, "urlEndAuth");
+		if (auth) {
+			vpninfo->redirect_url = auth;
+			auth = NULL;
+			handle_redirect(vpninfo);
+			buf_append(resp_buf,
+				   "{\"AdditionalAuthData\":\"%s\""
+				   ",\"AuthMethodId\":\"PhoneAppOTP\""
+				   ",\"Ctx\":\"%s\""
+				   ",\"FlowToken\":\"%s\""
+				   ",\"Method\":\"EndAuth\""
+				   ",\"PollCount\":1"
+				   ",\"SessionId\":\"%s\"}",
+				   token, ctx, ft, sess);
+			if (do_https_request(vpninfo, "POST", "application/json",
+					     resp_buf, &recv_buf, NULL, 2) < 0) {
+				free(url);
+				url = NULL;
+				goto auth_out;
+			}
+			buf_truncate(resp_buf);
+
+			json_value *json = json_parse(recv_buf, strlen(recv_buf));
+			if (json) {
+				ft = json_get_string(json, "FlowToken");
+				json_value_free(json);
+			}
+			free(recv_buf);
+			recv_buf = NULL;
+		}
+
+		canary = json_get_string(config, "canary");
+		buf_append(resp_buf, "request=");
+		buf_append_urlencoded(resp_buf, ctx);
+		buf_append(resp_buf, "&mfaAuthMethod=PhoneAppOTP&canary=");
+		buf_append_urlencoded(resp_buf, canary);
+		buf_append(resp_buf, "&otc=%s&login=", token);
+		buf_append_urlencoded(resp_buf, "user@example.com");
+		buf_append(resp_buf, "&flowToken=");
+		buf_append_urlencoded(resp_buf, ft);
+		buf_append(resp_buf, "&hpgrequestid=");
+		buf_append_urlencoded(resp_buf, sess);
+
+	auth_out:
+		free(canary);
+		free(token);
+		free(sess);
+		free(auth);
+		free(recv_buf);
+		goto out;
+	}
+
+out:
+	free(ft);
+	free(ctx);
+	json_value_free(config);
+	return url;
+}
+
 int oncp_obtain_cookie(struct openconnect_info *vpninfo)
 {
 	int ret;
@@ -505,6 +695,13 @@ int oncp_obtain_cookie(struct openconnect_info *vpninfo)
 
 		node = find_form_node(doc);
 		if (!node) {
+			if (!vpninfo->csd_token) {
+				char *url = msftonline(vpninfo, doc, resp_buf);
+				if (url) {
+					vpninfo->redirect_url = url;
+					goto do_redirect;
+				}
+			}
 			if (try_tncc) {
 				try_tncc = 0;
 				ret = tncc_preauth(vpninfo);
