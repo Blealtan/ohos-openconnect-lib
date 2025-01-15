@@ -594,7 +594,7 @@ static int parse_fortinet_xml_config(struct openconnect_info *vpninfo, char *buf
 		new_ip_info.domain = add_option_steal(&new_opts, "search", &domains->data);
 	}
 
-	ret = install_vpn_opts(vpninfo, new_opts, &new_ip_info);
+	ret = install_vpn_opts(vpninfo, new_opts, &new_ip_info, 0);
 	if (ret) {
 		free_optlist(new_opts);
                 free_split_routes(&new_ip_info);

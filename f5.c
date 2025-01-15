@@ -622,7 +622,7 @@ static int parse_options(struct openconnect_info *vpninfo, char *buf, int len,
 	}
 	buf_free(domains);
 
-	ret = install_vpn_opts(vpninfo, new_opts, &new_ip_info);
+	ret = install_vpn_opts(vpninfo, new_opts, &new_ip_info, 1);
 
 	if (ret || (*ipv4 < 1 && *ipv6 < 1) || !*ur_z || !*session_id) {
 		free_optlist(new_opts);

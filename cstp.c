@@ -646,7 +646,7 @@ static int start_cstp_connection(struct openconnect_info *vpninfo, int strap_rek
 	}
 	new_ip_info.mtu = mtu;
 
-	ret = install_vpn_opts(vpninfo, new_cstp_opts, &new_ip_info);
+	ret = install_vpn_opts(vpninfo, new_cstp_opts, &new_ip_info, 0);
 	if (ret) {
 	err:
 		free_optlist(new_cstp_opts);

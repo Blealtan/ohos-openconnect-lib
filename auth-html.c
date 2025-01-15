@@ -166,6 +166,7 @@ int parse_select_node(struct openconnect_info *vpninfo, struct oc_auth_form *for
 	opt->form.label = strdup(opt->form.name);
 	opt->form.type = OC_FORM_OPT_SELECT;
 	if ((vpninfo->proto->proto == PROTO_NC && !strcmp(opt->form.name, "realm")) ||
+	    (vpninfo->proto->proto == PROTO_NX && !strcmp(opt->form.name, "domain")) ||
 	    (vpninfo->proto->proto == PROTO_F5 && !strcmp(opt->form.name, "domain")))
 		form->authgroup_opt = opt;
 

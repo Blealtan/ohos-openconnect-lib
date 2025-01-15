@@ -173,6 +173,7 @@ static const char * const encap_names[PPP_ENCAP_MAX+1] = {
 	"F5",
 	"F5 HDLC",
 	"FORTINET",
+	"NX HDLC",
 };
 
 static const char * const lcp_names[] = {
@@ -276,6 +277,12 @@ int ppp_reset(struct openconnect_info *vpninfo)
 	case PPP_ENCAP_RFC1662_HDLC:
 		ppp->encap_len = 0;
 		ppp->hdlc = 1;
+		break;
+
+	case PPP_ENCAP_NX_HDLC:
+		ppp->encap_len = 4;
+		ppp->hdlc = 1;
+		ppp->check_http_response = 1;
 		break;
 
 	case PPP_ENCAP_RFC1661:
@@ -1198,6 +1205,7 @@ static int ppp_mainloop(struct openconnect_info *vpninfo, int dtls,
 
 		case PPP_ENCAP_F5_HDLC:
 		case PPP_ENCAP_RFC1662_HDLC:
+		case PPP_ENCAP_NX_HDLC:
 			payload_len = unhdlc_in_place(vpninfo, eh + ppp->encap_len, len - ppp->encap_len, &next);
 			if (payload_len < 0)
 				continue; /* unhdlc_in_place already logged */
@@ -1480,6 +1488,9 @@ static int ppp_mainloop(struct openconnect_info *vpninfo, int dtls,
 			store_be16(eh, this->len + this->ppp.hlen + 6);
 			store_be16(eh + 2, 0x5050);
 			store_be16(eh + 4, this->len + this->ppp.hlen);
+			break;
+		case PPP_ENCAP_NX_HDLC:
+			store_be32(eh, this->len + this->ppp.hlen);
 			break;
 		}
 		this->ppp.hlen += ppp->encap_len;

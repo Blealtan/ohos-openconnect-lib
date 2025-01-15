@@ -483,7 +483,7 @@ static int parse_interface_info(struct openconnect_info *vpninfo,
 	}
 
 	if (!ret)
-		ret = install_vpn_opts(vpninfo, new_opts, &new_ip_info);
+		ret = install_vpn_opts(vpninfo, new_opts, &new_ip_info, 0);
  out:
 	if (ret) {
 		free_optlist(new_opts);

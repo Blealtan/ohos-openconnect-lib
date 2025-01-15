@@ -245,6 +245,18 @@ static const struct vpn_proto openconnect_protos[] = {
 		.udp_catch_probe = fortinet_dtls_catch_svrhello,
 #endif
 	}, {
+		.name = "nx",
+		.pretty_name = N_("SonicWall NetExtender"),
+		.description = N_("Compatible with SonicWall NetExtender SSL VPN"),
+		.proto = PROTO_NX,
+		.flags = OC_PROTO_PROXY,
+		.vpn_close_session = nx_bye,
+		.tcp_connect = nx_connect,
+		.tcp_mainloop = ppp_tcp_mainloop,
+		.add_http_headers = nx_common_headers,
+		.obtain_cookie = nx_obtain_cookie,
+		.secure_cookie = "swap",
+	}, {
 		.name = "nullppp",
 		.pretty_name = N_("PPP over TLS"),
 		.description = N_("Unauthenticated RFC1661/RFC1662 PPP over TLS, for testing"),
@@ -497,16 +509,16 @@ void free_optlist(struct oc_vpn_option *opt)
 }
 
 int install_vpn_opts(struct openconnect_info *vpninfo, struct oc_vpn_option *opt,
-		     struct oc_ip_info *ip_info)
+		     struct oc_ip_info *ip_info, int allow_no_ip)
 {
 	/* XX: remove protocol-specific exceptions here, once we can test them
-	 * with F5 reconnections in addition to Juniper reconnections. See:
+	 * with F5 and NX reconnections in addition to Juniper reconnections. See:
 	 * https://gitlab.com/openconnect/openconnect/-/merge_requests/293#note_702388182
 	 */
 	if (!ip_info->addr && !ip_info->addr6 && !ip_info->netmask6) {
-		if (vpninfo->proto->proto == PROTO_F5) {
-			/* F5 doesn't get its IP address until it actually establishes the
-			 * PPP connection. */
+		if (allow_no_ip) {
+			/* Some protocols, such as F5 and NX don't get their IP address
+			 * until they actually establish the PPP connection. */
 		} else if (vpninfo->proto->proto == PROTO_NC && vpninfo->ip_info.addr) {
 			/* Juniper doesn't necessarily resend the Legacy IP address in the
 			 * event of a rekey/reconnection. */

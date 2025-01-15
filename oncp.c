@@ -452,7 +452,7 @@ static int parse_conf_pkt(struct openconnect_info *vpninfo, unsigned char *bytes
 	if (split_enc_hmac_keys)
 		memcpy(vpninfo->esp_out.hmac_key, vpninfo->esp_out.enc_key + vpninfo->enc_key_len, vpninfo->hmac_key_len);
 
-	int ret = install_vpn_opts(vpninfo, new_opts, &new_ip_info);
+	int ret = install_vpn_opts(vpninfo, new_opts, &new_ip_info, 0);
 	if (ret) {
 		free_optlist(new_opts);
 		free_split_routes(&new_ip_info);

@@ -258,6 +258,7 @@ struct pkt {
 #define PROTO_FORTINET		5
 #define PROTO_NULLPPP		6
 #define PROTO_ARRAY		7
+#define PROTO_NX		8
 
 /* All supported PPP packet framings/encapsulations */
 #define PPP_ENCAP_RFC1661	1	/* Plain/synchronous/pre-framed PPP (RFC1661) */
@@ -265,7 +266,8 @@ struct pkt {
 #define PPP_ENCAP_F5		3	/* F5 BigIP no HDLC */
 #define PPP_ENCAP_F5_HDLC	4	/* F5 BigIP HDLC */
 #define PPP_ENCAP_FORTINET	5	/* Fortinet no HDLC */
-#define PPP_ENCAP_MAX		PPP_ENCAP_FORTINET
+#define PPP_ENCAP_NX_HDLC	6	/* SonicWall NetExtender HDLC */
+#define PPP_ENCAP_MAX		PPP_ENCAP_NX_HDLC
 
 #define COMPR_DEFLATE	(1<<0)
 #define COMPR_LZS	(1<<1)
@@ -805,6 +807,16 @@ struct openconnect_info {
 
 	int verbose;
 	void *cbdata;
+	union {
+		struct nx_proto_data {
+			char *message;
+			int password_expiration_days;
+			char may_change_password;
+			char token_auth;
+			char saml_auth;
+			char pda;
+		} nx;
+	} proto_data;
 	openconnect_validate_peer_cert_vfn validate_peer_cert;
 	openconnect_write_new_config_vfn write_new_config;
 	openconnect_open_webview_vfn open_webview;
@@ -1248,7 +1260,7 @@ int script_config_tun(struct openconnect_info *vpninfo, const char *reason);
 int apply_script_env(struct oc_vpn_option *envs);
 void free_split_routes(struct oc_ip_info *ip_info);
 int install_vpn_opts(struct openconnect_info *vpninfo, struct oc_vpn_option *opt,
-		     struct oc_ip_info *ip_info);
+		     struct oc_ip_info *ip_info, int allow_no_ip);
 
 /* vhost.h */
 int setup_vhost(struct openconnect_info *vpninfo, int tun_fd);
@@ -1338,6 +1350,12 @@ int oncp_bye(struct openconnect_info *vpninfo, const char *reason);
 void oncp_esp_close(struct openconnect_info *vpninfo);
 int oncp_esp_send_probes(struct openconnect_info *vpninfo);
 int oncp_esp_catch_probe(struct openconnect_info *vpninfo, struct pkt *pkt);
+
+/* nx.c */
+int nx_obtain_cookie(struct openconnect_info *vpninfo);
+void nx_common_headers(struct openconnect_info *vpninfo, struct oc_text_buf *buf);
+int nx_connect(struct openconnect_info *vpninfo);
+int nx_bye(struct openconnect_info *vpninfo, const char *reason);
 
 /* pulse.c */
 int pulse_obtain_cookie(struct openconnect_info *vpninfo);
