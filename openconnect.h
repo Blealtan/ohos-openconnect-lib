@@ -33,9 +33,12 @@ extern "C" {
 #endif
 
 #define OPENCONNECT_API_VERSION_MAJOR 5
-#define OPENCONNECT_API_VERSION_MINOR 9
+#define OPENCONNECT_API_VERSION_MINOR 10
 
 /*
+ * API version 5.10:
+ *  - Add openconnect_set_no_external_auth()
+ *
  * API version 5.9 (v9.12; 2023-05-20):
  *  - Add openconnect_set_sni()
  *
@@ -580,6 +583,8 @@ char *openconnect_get_urlpath(struct openconnect_info *);
 int openconnect_set_urlpath(struct openconnect_info *, const char *);
 int openconnect_set_localname(struct openconnect_info *, const char *);
 int openconnect_set_sni(struct openconnect_info *, const char *);
+
+void openconnect_set_no_external_auth(struct openconnect_info *, int);
 
 /* Some software tokens, such as HOTP tokens, include a counter which
  * needs to be stored in persistent storage.
