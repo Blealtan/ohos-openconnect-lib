@@ -115,8 +115,15 @@ struct openconnect_info *openconnect_vpninfo_new(const char *useragent,
 	return vpninfo;
 
 err:
-	free(vpninfo->localname);
+	free(vpninfo->platname);
 	free(vpninfo->useragent);
+	free(vpninfo->localname);
+#ifdef HAVE_ICONV
+	if (vpninfo->ic_legacy_to_utf8 != (iconv_t)-1)
+		iconv_close(vpninfo->ic_legacy_to_utf8);
+	if (vpninfo->ic_utf8_to_legacy != (iconv_t)-1)
+		iconv_close(vpninfo->ic_legacy_to_utf8);
+#endif
 	free(vpninfo);
 	return NULL;
 }
