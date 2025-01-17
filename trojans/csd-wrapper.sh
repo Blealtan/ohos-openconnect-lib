@@ -62,6 +62,8 @@ while [ "$1" ]; do
     shift
 done
 
+URL=$(echo $URL | sed 's,/sdesktop/.*,,')
+
 OS="$(uname -s)"
 ARCH="$(uname -m)"
 
