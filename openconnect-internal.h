@@ -785,6 +785,7 @@ struct openconnect_info {
 
 	int is_dyndns; /* Attempt to redo DNS lookup on each CSTP reconnect */
 	char *useragent;
+	char *unique_id;
 	char *version_string;
 
 	const char *quit_reason;

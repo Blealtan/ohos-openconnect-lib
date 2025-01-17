@@ -843,6 +843,10 @@ static xmlDocPtr xmlpost_new_query(struct openconnect_info *vpninfo, const char 
 		    !xmlNewProp(node, XCAST("unique-id"), XCAST(vpninfo->mobile_device_uniqueid)))
 			goto bad;
 	}
+	if (vpninfo->unique_id) {
+		if (!xmlNewProp(node, XCAST("unique-id"), XCAST(vpninfo->unique_id)))
+			goto bad;
+	}
 
 	capabilities = xmlNewNode(NULL, XCAST("capabilities"));
 	if (!capabilities)

@@ -203,6 +203,7 @@ enum {
 	OPT_RESOLVE,
 	OPT_SNI,
 	OPT_USERAGENT,
+	OPT_UNIQUE_ID,
 	OPT_NON_INTER,
 	OPT_DTLS_LOCAL_PORT,
 	OPT_TOKEN_MODE,
@@ -293,6 +294,7 @@ static const struct option long_options[] = {
 	OPTION("sni", 1, OPT_SNI),
 	OPTION("key-password-from-fsid", 0, OPT_KEY_PASSWORD_FROM_FSID),
 	OPTION("useragent", 1, OPT_USERAGENT),
+	OPTION("unique-id", 1, OPT_UNIQUE_ID),
 	OPTION("version-string", 1, OPT_VERSION),
 	OPTION("local-hostname", 1, OPT_LOCAL_HOSTNAME),
 	OPTION("disable-ipv6", 0, OPT_DISABLE_IPV6),
@@ -1116,6 +1118,7 @@ static void usage(void)
 	printf("      --local-hostname=STRING     %s\n", _("Local hostname to advertise to server"));
 	printf("      --os=STRING                 %s\n", _("OS type to report. Allowed values are the following:"));
 	printf("                                  %s\n", _("linux, linux-64, win, mac-intel, android, apple-ios"));
+	printf("      --unique-id=STRING          %s\n", _("unique-id to report. Useful with instances that have whitelist of devices allowed to connect"));
 	printf("      --version-string=STRING     %s\n", _("reported version string during authentication"));
 	printf("                                  (%s %s)\n", _("default:"), openconnect_version_str);
 
@@ -1586,6 +1589,7 @@ static int autocomplete(int argc, char **argv)
 			case OPT_RESOLVE: /* --resolve */
 			case OPT_SNI: /* --sni */
 			case OPT_USERAGENT: /* --useragent */
+			case OPT_UNIQUE_ID: /* --unique-id */
 			case OPT_VERSION: /* --version-string */
 			case OPT_FORCE_DPD: /* --force-dpd */
 			case OPT_FORCE_TROJAN: /* --force-trojan */
@@ -2195,6 +2199,10 @@ int main(int argc, char *argv[])
 		case OPT_USERAGENT:
 			free(vpninfo->useragent);
 			vpninfo->useragent = dup_config_arg();
+			break;
+		case OPT_UNIQUE_ID:
+			free(vpninfo->unique_id);
+			vpninfo->unique_id = dup_config_arg();
 			break;
 		case OPT_VERSION:
 			free(vpninfo->version_string);

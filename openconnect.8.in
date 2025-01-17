@@ -72,6 +72,7 @@ openconnect \- Multi-protocol VPN client, for Cisco AnyConnect VPNs and others
 .OP \-\-version\-string string
 .OP \-\-local\-hostname string
 .OP \-\-os string
+.OP \-\-unique-id string
 .B [\-\-server] [https://]\fIhost\fB[:\fIport\fB][/\fIgroup\fB]
 .YS
 
@@ -859,6 +860,12 @@ OS type to report to gateway.  Recognized values are:
 Reporting a different OS type may affect the dynamic access policy (DAP)
 applied to the VPN session.  If the gateway requires CSD, it will also cause
 the corresponding CSD trojan binary to be downloaded, so you may need to use
+.TAG opt-unique-id
+.TP
+.B \-\-unique-id=STRING
+Use
+.I STRING
+as unique-id to report. Useful with instances that have whitelist of devices allowed to connect
 .B \-\-csd\-wrapper
 if this code is not executable on the local machine.
 .SH SIGNALS
