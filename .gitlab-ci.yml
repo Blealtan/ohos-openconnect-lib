@@ -128,7 +128,8 @@ Fedora/OpenSSL:
 # auth-swtpm: XFAIL until we understand the TPM error
 # obsolete-server-crypto: obsolete crypto has been removed from LEGACY crypto policies
 # ppp-over-tls-sync: https://gitlab.com/openconnect/openconnect/-/issues/287#note_641198529)
-  - make VERBOSE=1 XFAIL_TESTS="auth-swtpm obsolete-server-crypto ppp-over-tls-sync" -j4 check
+# auth-multicert: fake-cisco-server.py: seems to be broken on Fedora 39 with new openssl
+  - make VERBOSE=1 XFAIL_TESTS="auth-swtpm obsolete-server-crypto ppp-over-tls-sync auth-multicert" -j4 check
   tags:
   - saas-linux-small-amd64
   except:
