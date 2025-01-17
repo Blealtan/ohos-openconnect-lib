@@ -1589,7 +1589,7 @@ int can_gen_tokencode(struct openconnect_info *vpninfo,
 		      struct oc_auth_form *form,
 		      struct oc_form_opt *opt);
 
-/* textbuf,c */
+/* textbuf.c */
 struct oc_text_buf *buf_alloc(void);
 int buf_error(struct oc_text_buf *buf);
 int buf_free(struct oc_text_buf *buf);
