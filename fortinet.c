@@ -632,13 +632,6 @@ static int fortinet_configure(struct openconnect_info *vpninfo)
 	      https://gitlab.com/openconnect/openconnect/-/issues/235#note_552995833
 	*/
 
-	if (!vpninfo->cookies) {
-		/* XX: This will happen if authentication was separate/external */
-		ret = internal_split_cookies(vpninfo, 1, "SVPNCOOKIE");
-		if (ret)
-			return ret;
-	}
-
 	/* Fetch the connection options in XML format */
 	free(vpninfo->urlpath);
 	if (asprintf(&vpninfo->urlpath, "remote/fortisslvpn_xml%s", vpninfo->disable_ipv6 ? "" : "?dual_stack=1") < 0) {
