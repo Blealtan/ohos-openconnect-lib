@@ -790,6 +790,18 @@ int dtls_try_handshake(struct openconnect_info *vpninfo, int *timeout)
 			vpn_progress(vpninfo, PRG_ERR, _("DTLS handshake timed out\n"));
 			vpn_progress(vpninfo, PRG_ERR, _("This is probably because your OpenSSL is broken\n"
 				"See http://rt.openssl.org/Ticket/Display.html?id=2984\n"));
+		} else if (OPENSSL_VERSION_NUMBER >= 0x1010106fL && !badossl_bitched) {
+			/* Per https://github.com/openssl/openssl/commit/36eadf1f, this is 1.1.1f, which is
+			 * the earliest version of OpenSSL where we know that Ubuntu is patching it to
+			 * prevent use of pre-1.2 DTLS. As of 1.1.1k, Debian has picked up a similar patch.
+			 */
+			badossl_bitched = 1;
+			vpn_progress(vpninfo, PRG_ERR, _("DTLS handshake timed out\n"));
+			vpn_progress(vpninfo, PRG_ERR,
+				     _("This is probably because your system sets the OpenSSL security level to a\n"
+				       "value that blocks Cisco's pre-1.0 DTLS from working. Try adding the\n"
+				       "--allow-insecure-crypto option.\n"
+				       "See http://lists.infradead.org/pipermail/openconnect-devel/2022-March/005103.html\n"));
 		} else {
 			vpn_progress(vpninfo, PRG_DEBUG, _("DTLS handshake timed out\n"));
 		}

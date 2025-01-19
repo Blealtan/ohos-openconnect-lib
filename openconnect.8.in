@@ -687,6 +687,13 @@ any better.
 
 This option enables use of these insecure ciphers, as well as the use
 of SHA1 for server certificate validation.
+
+This option also attempts to disable system-level security policies which
+may aggressively block the use of somewhat obsolete but still widely-deployed
+.I potentially
+insecure crypto.
+For example, many Linux distributions have recently disabled TLS 1.0, TLS
+1.1, and DTLS 1.0 by default.
 .TAG opt-non-inter
 .TP
 .B \-\-non\-inter
