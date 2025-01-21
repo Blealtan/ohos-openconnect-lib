@@ -63,7 +63,7 @@ COMPUTER=$(echo "$COOKIE" | sed -rn 's/(.+&|^)computer=([^&]+)(&.+|$)/\2/p')
 
 case $CLIENTOS in
 	Linux)
-		OS="Linux Fedora 32"
+		OS="Ubuntu 22.04"
 		OS_VENDOR="Linux"
 		NETWORK_INTERFACE_NAME="virbr0"
 		NETWORK_INTERFACE_DESCRIPTION="virbr0"
@@ -138,7 +138,20 @@ cat <<EOF
 EOF
 
 case $CLIENTOS in
-	Linux)
+	Linux) cat <<EOF
+		<entry name="antivirus">
+			<list>
+				<entry>
+					<ProductInfo>
+						<Prod name="Eset Endpoint Security" version="10.2.2.0" prodType="1" osType="1" vendor="Eset, spol s r.o." dateday="$DAY" dateyear="$YEAR" datemon="$MONTH">
+						</Prod>
+						<real-time-protection>yes</real-time-protection>
+						<last-full-scan-time>$NOW</last-full-scan-time>
+					</ProductInfo>
+				</entry>
+			</list>
+		</entry>
+EOF
 	;;
 	Mac)
 	;;
@@ -170,7 +183,16 @@ esac
 case $CLIENTOS in
 	Linux) cat <<EOF
 		<entry name="anti-malware">
-			<list/>
+			<list>
+				<entry>
+					<ProductInfo>
+						<Prod name="Eset Endpoint Security" version="6.11.606.0" prodType="1" osType="1" vendor="Eset, spol s r.o." dateday="$DAY" dateyear="$YEAR" datemon="$MONTH">
+						</Prod>
+						<real-time-protection>yes</real-time-protection>
+						<last-full-scan-time>$NOW</last-full-scan-time>
+					</ProductInfo>
+				</entry>
+			</list>
 		</entry>
 EOF
 	;;
@@ -288,7 +310,7 @@ EOF
 			<list>
 				<entry>
 					<ProductInfo>
-						<Prod name="cryptsetup" version="2.3.3" vendor="GitLab Inc.">
+						<Prod name="cryptsetup" version="2.6.1" vendor="GitLab Inc.">
 						</Prod>
 						<drives>
 							<entry>
@@ -348,16 +370,9 @@ EOF
 			<list>
 				<entry>
 					<ProductInfo>
-						<Prod name="IPTables" version="1.8.4" vendor="IPTables">
+						<Prod name="nftables" version="1.0.2-1ubuntu3" vendor="Ubuntu Developers">
 						</Prod>
-						<is-enabled>no</is-enabled>
-					</ProductInfo>
-				</entry>
-				<entry>
-					<ProductInfo>
-						<Prod name="nftables" version="0.9.3" vendor="The Netfilter Project">
-						</Prod>
-						<is-enabled>n/a</is-enabled>
+						<is-enabled>yes</is-enabled>
 					</ProductInfo>
 				</entry>
 			</list>
@@ -401,7 +416,7 @@ EOF
 			<list>
 				<entry>
 					<ProductInfo>
-						<Prod name="Dandified Yum" version="4.2.23" vendor="Red Hat, Inc.">
+						<Prod name="apt" version="2.4.11" vendor="Ubuntu Developers">
 						</Prod>
 						<is-enabled>yes</is-enabled>
 					</ProductInfo>
