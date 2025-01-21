@@ -634,7 +634,7 @@ static int fortinet_configure(struct openconnect_info *vpninfo)
 
 	if (!vpninfo->cookies) {
 		/* XX: This will happen if authentication was separate/external */
-		ret = internal_split_cookies(vpninfo, 1, "SVPNCOOKIE");
+		ret = http_add_cookie(vpninfo, "SVPNCOOKIE", vpninfo->cookie, 1);
 		if (ret)
 			return ret;
 	}
