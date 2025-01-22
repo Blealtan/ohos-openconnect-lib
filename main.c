@@ -1796,6 +1796,7 @@ int main(int argc, char *argv[])
 #endif
 #ifndef _WIN32
 	struct sigaction sa;
+	struct sigaction sa_ignore;
 	struct utsname utsbuf;
 #endif
 
@@ -2342,6 +2343,7 @@ int main(int argc, char *argv[])
 
 #ifndef _WIN32
 	memset(&sa, 0, sizeof(sa));
+	memset(&sa, 0, sizeof(sa_ignore));
 
 	sa.sa_handler = handle_signal;
 	checked_sigaction(SIGTERM, &sa, NULL);
@@ -2349,6 +2351,9 @@ int main(int argc, char *argv[])
 	checked_sigaction(SIGHUP, &sa, NULL);
 	checked_sigaction(SIGUSR1, &sa, NULL);
 	checked_sigaction(SIGUSR2, &sa, NULL);
+
+	sa_ignore.sa_handler = SIG_IGN;
+	checked_sigaction(SIGPIPE, &sa_ignore, NULL);
 #else /* _WIN32 */
 	SetConsoleCtrlHandler(console_ctrl_handler, TRUE /* Add */);
 #endif
