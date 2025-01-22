@@ -172,6 +172,12 @@ DISTCLEANFILES += $(WINTUN_DLL)
 endif # OPENCONNECT_WINTUN
 endif # OPENCONNECT_WIN32
 
+if OPENCONNECT_WIN32
+C_TESTS += dumb_socketpair_test
+
+dumb_socketpair_test_SOURCES = dumb_socketpair_test.c
+endif # OPENCONNECT_WIN32
+
 if CHECK_DTLS
 C_TESTS += bad_dtls_test
 bad_dtls_test_SOURCES = bad_dtls_test.c
