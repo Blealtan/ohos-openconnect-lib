@@ -199,6 +199,7 @@ enum {
 	OPT_PASSWORD_ON_STDIN,
 	OPT_PRINTCOOKIE,
 	OPT_RECONNECT_TIMEOUT,
+	OPT_RECONNECT_INTERVAL,
 	OPT_SERVERCERT,
 	OPT_RESOLVE,
 	OPT_SNI,
@@ -285,6 +286,7 @@ static const struct option long_options[] = {
 	OPTION("passwd-on-stdin", 0, OPT_PASSWORD_ON_STDIN),
 	OPTION("no-passwd", 0, OPT_NO_PASSWD),
 	OPTION("reconnect-timeout", 1, OPT_RECONNECT_TIMEOUT),
+	OPTION("reconnect-interval", 1, OPT_RECONNECT_INTERVAL),
 	OPTION("dtls-ciphers", 1, OPT_DTLS_CIPHERS),
 	OPTION("dtls12-ciphers", 1, OPT_DTLS12_CIPHERS),
 	OPTION("authgroup", 1, OPT_AUTHGROUP),
@@ -1582,6 +1584,7 @@ static int autocomplete(int argc, char **argv)
 			case 'u': /* --user */
 			case 'Q': /* --queue-len */
 			case OPT_RECONNECT_TIMEOUT: /* --reconnect-timeout */
+			case OPT_RECONNECT_INTERVAL: /* --reconnect-interval */
 			case OPT_AUTHGROUP: /* --authgroup */
 			case OPT_RESOLVE: /* --resolve */
 			case OPT_SNI: /* --sni */
@@ -1789,6 +1792,8 @@ int main(int argc, char *argv[])
 	char *token_str = NULL;
 	oc_token_mode_t token_mode = OC_TOKEN_MODE_NONE;
 	int reconnect_timeout = 300;
+	int reconnect_interval = RECONNECT_INTERVAL_MIN;
+	unsigned is_progressive_reconnect_interval = 1;
 	int ret;
 	int verbose = PRG_INFO;
 #ifdef HAVE_NL_LANGINFO
@@ -2042,6 +2047,11 @@ int main(int argc, char *argv[])
 		case OPT_RECONNECT_TIMEOUT:
 			assert_nonnull_config_arg("reconnect-timeout", config_arg);
 			reconnect_timeout = atoi(config_arg);
+			break;
+		case OPT_RECONNECT_INTERVAL:
+			assert_nonnull_config_arg("reconnect-interval", config_arg);
+			reconnect_interval = atoi(config_arg);
+			is_progressive_reconnect_interval = 0;
 			break;
 		case OPT_DTLS_CIPHERS:
 			vpninfo->dtls_ciphers = keep_config_arg();
@@ -2300,6 +2310,8 @@ int main(int argc, char *argv[])
 		}
 	}
 
+	openconnect_set_progressive_reconnect_interval(vpninfo, is_progressive_reconnect_interval);
+
 	if (gai_overrides)
 		openconnect_override_getaddrinfo(vpninfo, gai_override_cb);
 
@@ -2467,7 +2479,7 @@ int main(int argc, char *argv[])
 	openconnect_set_stats_handler(vpninfo, print_connection_stats);
 
 	while (1) {
-		ret = openconnect_mainloop(vpninfo, reconnect_timeout, RECONNECT_INTERVAL_MIN);
+		ret = openconnect_mainloop(vpninfo, reconnect_timeout, reconnect_interval);
 		if (ret)
 			break;
 

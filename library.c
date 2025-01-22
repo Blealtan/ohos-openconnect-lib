@@ -101,6 +101,7 @@ struct openconnect_info *openconnect_vpninfo_new(const char *useragent,
 	vpninfo->try_http_auth = 1;
 	vpninfo->proxy_auth[AUTH_TYPE_BASIC].state = AUTH_DEFAULT_DISABLED;
 	vpninfo->http_auth[AUTH_TYPE_BASIC].state = AUTH_DEFAULT_DISABLED;
+	vpninfo->is_progressive_reconnect_interval = 1;
 	openconnect_set_reported_os(vpninfo, NULL);
 #ifdef HAVE_EPOLL
 	vpninfo->epoll_fd = epoll_create1(EPOLL_CLOEXEC);
@@ -1766,4 +1767,8 @@ int openconnect_webview_load_changed(struct openconnect_info *vpninfo,
 		return (vpninfo->proto->sso_detect_done)(vpninfo, result);
 
 	return -EOPNOTSUPP;
+}
+
+void openconnect_set_progressive_reconnect_interval(struct openconnect_info *vpninfo, unsigned val) {
+	vpninfo->is_progressive_reconnect_interval = val;
 }

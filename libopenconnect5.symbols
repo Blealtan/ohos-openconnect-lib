@@ -103,3 +103,4 @@ libopenconnect.so.5 libopenconnect5 #MINVER#
  openconnect_set_mca_key_password@OPENCONNECT_5_8 9.00
  openconnect_set_useragent@OPENCONNECT_5_8 9.00
  openconnect_set_sni@OPENCONNECT_5_9 9.12
+ openconnect_set_progressive_reconnect_interval@OPENCONNECT_5_10 9.12
