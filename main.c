@@ -2349,6 +2349,9 @@ int main(int argc, char *argv[])
 	checked_sigaction(SIGHUP, &sa, NULL);
 	checked_sigaction(SIGUSR1, &sa, NULL);
 	checked_sigaction(SIGUSR2, &sa, NULL);
+
+	sa.sa_handler = SIG_IGN;
+	checked_sigaction(SIGPIPE, &sa, NULL);
 #else /* _WIN32 */
 	SetConsoleCtrlHandler(console_ctrl_handler, TRUE /* Add */);
 #endif
