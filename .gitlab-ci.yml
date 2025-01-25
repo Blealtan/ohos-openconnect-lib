@@ -9,6 +9,7 @@ stages:
   - test-android     # Android
 
 variables:
+  GIT_DEPTH: 500
   BUILD_IMAGES_PROJECT: openconnect/build-images
   CENTOS7_BUILD: openconnect-cli-centos7
   CENTOS8_BUILD: openconnect-cli-centos8
@@ -28,7 +29,7 @@ Signoff:
   # Quoted to work around https://gitlab.com/gitlab-org/gitlab-foss/-/issues/20177
   - 'echo "Checking for new commits without Signed-off-by: tags as described in https://www.infradead.org/openconnect/contribute.html"'
   # Last bad commit
-  - 'git log ceab1765db11c15a18a0c605812dbc11afd63e8b.. --grep "(^Signed-off-by)|(^Merge branch)|(^This reverts commit)" --extended-regexp --invert-grep --exit-code'
+  - 'git log --grep "(^Signed-off-by)|(^Merge branch)|(^This reverts commit)" --extended-regexp --invert-grep --exit-code'
   - echo "None (good)"
 
 ################################################################################
