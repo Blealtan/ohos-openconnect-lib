@@ -644,6 +644,7 @@ struct openconnect_info {
 	int disable_ipv6;
 	int reconnect_timeout;
 	int reconnect_interval;
+	unsigned is_progressive_reconnect_interval;
 	int dtls_attempt_period;
 	int udp_probes_sent;
 	time_t auth_expiration;

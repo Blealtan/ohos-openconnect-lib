@@ -1155,6 +1155,16 @@ JNIEXPORT jint JNICALL Java_org_infradead_libopenconnect_LibOpenConnect_mainloop
 	return openconnect_mainloop(ctx->vpninfo, arg0, arg1);
 }
 
+JNIEXPORT void JNICALL Java_org_infradead_libopenconnect_LibOpenConnect_setProgressiveReconnectInterval(
+	JNIEnv *jenv, jobject jobj, jboolean arg)
+{
+	struct libctx *ctx = getctx(jenv, jobj);
+
+	if (!ctx)
+		return;
+	openconnect_set_progressive_reconnect_interval(ctx->vpninfo, arg);
+}
+
 JNIEXPORT void JNICALL Java_org_infradead_libopenconnect_LibOpenConnect_setLogLevel(
 	JNIEnv *jenv, jobject jobj, jint arg)
 {

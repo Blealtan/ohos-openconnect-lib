@@ -1216,25 +1216,42 @@ int ssl_reconnect(struct openconnect_info *vpninfo)
 		if (!ret)
 			break;
 
-		if (timeout <= 0)
+		/* -1 timeout is infinite reconnect */
+		if (timeout <= 0 && timeout != -1)
 			return ret;
 		if (ret == -EPERM) {
 			vpn_progress(vpninfo, PRG_ERR,
 				     _("Cookie is no longer valid, ending session\n"));
 			return ret;
 		}
-		vpn_progress(vpninfo, PRG_INFO,
+		/* -1 timeout is infinite reconnect */
+		if (timeout == -1) {
+			vpn_progress(vpninfo, PRG_INFO,
+				 _("sleep %ds\n"),
+				 interval);
+		}
+		else {
+			vpn_progress(vpninfo, PRG_INFO,
 			     _("sleep %ds, remaining timeout %ds\n"),
 			     interval, timeout);
+		}
 		poll_cmd_fd(vpninfo, interval);
 		if (vpninfo->got_cancel_cmd)
 			return -EINTR;
 		if (vpninfo->got_pause_cmd)
 			return 0;
-		timeout -= interval;
-		interval += vpninfo->reconnect_interval;
-		if (interval > RECONNECT_INTERVAL_MAX)
-			interval = RECONNECT_INTERVAL_MAX;
+		/* -1 timeout is infinite reconnect */
+		if (timeout != -1) {
+			timeout -= interval;
+			/* to avoid wrong infinite loop */
+			if (timeout == -1)
+				timeout = 0;
+		}
+		if (vpninfo->is_progressive_reconnect_interval) {
+			interval += vpninfo->reconnect_interval;
+			if (interval > RECONNECT_INTERVAL_MAX)
+				interval = RECONNECT_INTERVAL_MAX;
+		}
 	}
 
 	if (tun_up) {

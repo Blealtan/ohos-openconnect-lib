@@ -33,7 +33,7 @@ extern "C" {
 #endif
 
 #define OPENCONNECT_API_VERSION_MAJOR 5
-#define OPENCONNECT_API_VERSION_MINOR 9
+#define OPENCONNECT_API_VERSION_MINOR 10
 
 /*
  * API version 5.9 (v9.12; 2023-05-20):
@@ -730,6 +730,8 @@ int openconnect_setup_dtls(struct openconnect_info *vpninfo, int dtls_attempt_pe
 int openconnect_mainloop(struct openconnect_info *vpninfo,
 			 int reconnect_timeout,
 			 int reconnect_interval);
+
+void openconnect_set_progressive_reconnect_interval(struct openconnect_info *vpninfo, unsigned val);
 
 /* The first (privdata) argument to each of these functions is either
    the privdata argument provided to openconnect_vpninfo_new_with_cbdata(),
