@@ -95,6 +95,59 @@ static int filter_opts(struct oc_text_buf *buf, const char *query, const char *i
 	return buf_error(buf);
 }
 
+/* The availability of SAML seems to be indicated by the value of a hidden input
+ * on the login page:
+ * <body>
+ *   <input type="hidden" name="saml_login" id="saml_login_id" value="1">
+ * </body>
+*/
+static int is_saml_available(struct openconnect_info *vpninfo, char *resp_buf)
+{
+	int ret = 0;
+	xmlDocPtr doc = NULL;
+	xmlNodePtr body, child;
+	char *saml_login_val = NULL;
+
+	char *url = internal_get_url(vpninfo);
+
+	if (!url) {
+		ret = -ENOMEM;
+		goto out;
+	}
+
+	doc = htmlReadMemory(resp_buf, strlen(resp_buf), url, NULL,
+						 HTML_PARSE_RECOVER | HTML_PARSE_NOERROR | HTML_PARSE_NOWARNING | HTML_PARSE_NONET);
+	free(url);
+
+	body = find_node(doc, "body");
+	if (!body) {
+		ret = 0;
+		goto out;
+	}
+
+	for (child = htmlnode_next(body, body); child; child = htmlnode_next(body, child)) {
+		if (!child->name)
+			continue;
+
+		if (xmlnode_is_named(child, "input")) {
+			if (!xmlnode_match_prop(child, "name", "saml_login")) {
+				xmlnode_get_prop(child, "value", &saml_login_val);
+				if (!saml_login_val)
+					goto out;
+
+				ret = atoi(saml_login_val);
+				goto out;
+			}
+		}
+	}
+
+	out:
+	if (doc)
+		xmlFreeDoc(doc);
+	free(saml_login_val);
+	return ret;
+}
+
 int fortinet_obtain_cookie(struct openconnect_info *vpninfo)
 {
 	int ret, ftmpush;
@@ -127,6 +180,76 @@ int fortinet_obtain_cookie(struct openconnect_info *vpninfo)
 				vpn_progress(vpninfo, PRG_INFO, _("Got login realm '%s'\n"), realm);
 				break;
 			}
+		}
+	} else {
+		/* If no realm is passed, no HTTP redirect to /remote/login is issued.
+		 * Instead the redirect is handled via JavaScript.
+		 * Copy of the page:
+		 * <html><script type="text/javascript">
+		 *   if (window!=top) top.location=window.location;top.location="/remote/login";
+		 * </script></html>
+		 * Let's rewrite the URL accordingly, so we can fetch the actual login site.
+		 */
+		free(vpninfo->urlpath);
+		vpninfo->urlpath = strdup("remote/login");
+		if (!vpninfo->urlpath) {
+			ret = -ENOMEM;
+			goto out;
+		}
+	}
+
+	ret = do_https_request(vpninfo, "GET", NULL, NULL, &resp_buf, NULL, HTTP_REDIRECT);
+	if (ret < 0)
+		goto out;
+
+	if (is_saml_available(vpninfo, resp_buf)) {
+		// clear urlpath, so we construct a clean sso_login url
+		free(vpninfo->urlpath);
+		vpninfo->urlpath = NULL;
+
+		char *url = internal_get_url(vpninfo);
+		if (realm) {
+			if (asprintf(&vpninfo->sso_login, "%sremote/saml/start?realm=%s", url, realm) == -1) {
+				free(url);
+				ret = -ENOMEM;
+				goto out;
+			}
+		} else {
+			if (asprintf(&vpninfo->sso_login, "%sremote/saml/start", url) == -1) {
+				free(url);
+				ret = -ENOMEM;
+				goto out;
+			}
+		}
+		free(url);
+
+		form = calloc(1, sizeof(*form));
+		if (!form) {
+			ret = -ENOMEM;
+			goto out;
+		}
+		form->auth_id = strdup("_login");
+		if (!form->auth_id) {
+			ret = -ENOMEM;
+			goto out;
+		}
+		opt = form->opts = calloc(1, sizeof(*opt));
+		if (!opt) {
+			ret = -ENOMEM;
+			goto out;
+		}
+		opt->type = OC_FORM_OPT_SSO_TOKEN;
+
+		ret = process_auth_form(vpninfo, form);
+		if (ret == OC_FORM_RESULT_CANCELLED || ret < 0)
+			goto out;
+
+		if (vpninfo->cookie) {
+			ret = 0;
+			goto out;
+		} else {
+			ret = -EINVAL;
+			goto out;
 		}
 	}
 
@@ -869,4 +992,23 @@ int fortinet_bye(struct openconnect_info *vpninfo, const char *reason)
 
 	free(res_buf);
 	return ret;
+}
+
+int fortinet_sso_detect_done(struct openconnect_info *vpninfo,
+			     const struct oc_webview_result *result)
+{
+	for (int i = 0; result->cookies[i] != NULL; i += 2) {
+		const char *cname = result->cookies[i], *cval = result->cookies[i + 1];
+		if (!strcmp("SVPNCOOKIE", cname) && cval && cval[0] != '\0') {
+			free(vpninfo->cookie);
+			asprintf(&vpninfo->cookie, "SVPNCOOKIE=%s", cval);
+			break;
+		}
+	}
+
+	if (vpninfo->cookie) {
+		/* Tell the webview to terminate */
+		return 0;
+	} else
+		return -EAGAIN;
 }

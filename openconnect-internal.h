@@ -1316,6 +1316,7 @@ int cstp_sso_detect_done(struct openconnect_info *vpninfo, const struct oc_webvi
 /* auth-html.c */
 xmlNodePtr htmlnode_next(xmlNodePtr top, xmlNodePtr node);
 xmlNodePtr htmlnode_dive(xmlNodePtr top, xmlNodePtr node);
+xmlNodePtr find_node(xmlDocPtr doc, const char *name);
 xmlNodePtr find_form_node(xmlDocPtr doc);
 int parse_input_node(struct openconnect_info *vpninfo, struct oc_auth_form *form,
 		     xmlNodePtr node, const char *submit_button,
@@ -1365,6 +1366,7 @@ int fortinet_obtain_cookie(struct openconnect_info *vpninfo);
 int fortinet_connect(struct openconnect_info *vpninfo);
 int fortinet_bye(struct openconnect_info *vpninfo, const char *reason);
 int fortinet_dtls_catch_svrhello(struct openconnect_info *vpninfo, struct pkt *pkt);
+int fortinet_sso_detect_done(struct openconnect_info *vpninfo, const struct oc_webview_result *result);
 
 /* ppp.c */
 struct oc_ppp;

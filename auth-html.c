@@ -42,15 +42,20 @@ xmlNodePtr htmlnode_dive(xmlNodePtr top, xmlNodePtr node)
 }
 
 
-xmlNodePtr find_form_node(xmlDocPtr doc)
+xmlNodePtr find_node(xmlDocPtr doc, const char *name)
 {
 	xmlNodePtr root, node;
 
 	for (root = node = xmlDocGetRootElement(doc); node; node = htmlnode_dive(root, node)) {
-		if (node->name && !strcasecmp((char *)node->name, "form"))
+		if (node->name && !strcasecmp((char *)node->name, name))
 			return node;
 	}
 	return NULL;
+}
+
+xmlNodePtr find_form_node(xmlDocPtr doc)
+{
+	return find_node(doc, "form");
 }
 
 int parse_input_node(struct openconnect_info *vpninfo, struct oc_auth_form *form,
