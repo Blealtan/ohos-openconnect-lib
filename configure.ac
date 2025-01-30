@@ -230,7 +230,7 @@ elif test "$have_win" = "yes"; then
    with_vpnc_script="$(echo "${with_vpnc_script}" | sed s/\\\\/\\\\\\\\/g)"
 fi
 
-AC_DEFINE_UNQUOTED(DEFAULT_VPNCSCRIPT, "${with_vpnc_script}", [Default vpnc-script locatin])
+AC_DEFINE_UNQUOTED(DEFAULT_VPNCSCRIPT, "${with_vpnc_script}", [Default vpnc-script location])
 AC_SUBST(DEFAULT_VPNCSCRIPT, "${with_vpnc_script}")
 
 AC_CHECK_FUNC(fdevname_r, [AC_DEFINE(HAVE_FDEVNAME_R, 1, [Have fdevname_r() function])], [])

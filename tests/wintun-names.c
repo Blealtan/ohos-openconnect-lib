@@ -257,7 +257,7 @@ int main(void)
     } while ( (len < (MAX_ADAPTER_NAME - 1)) && (ret == VALID_WINTUN_HANDLE) );
 
     if (ret != VALID_WINTUN_HANDLE) {
-        /* last test was not succesful*/
+        /* last test was not successful */
         FreeLibrary(Wintun);
         return 1;
     }

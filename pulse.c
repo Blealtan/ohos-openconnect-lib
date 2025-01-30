@@ -2352,7 +2352,7 @@ static int handle_attr_elements(struct openconnect_info *vpninfo,
    address range is in bytes 8-11 (starting address) and the highest address
    of the range (traditionally a broadcast address) is in bytes 12-15.
 
-   After the routing inforamation (in this example at 0xa4) comes another
+   After the routing information (in this example at 0xa4) comes another
    length field, this time for the information elements which comprise
    the rest of the packet. Not sure what the 03 00 00 00 at 0xa8 means;
    it *could* be an element type 0x3000 with payload length zero but if it

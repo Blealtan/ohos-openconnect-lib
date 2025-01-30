@@ -1128,7 +1128,7 @@ static void usage(void)
 
 	printf("\n%s:\n", _("Server bugs"));
 	printf("      --no-external-auth          %s\n", _("Do not offer or use auth methods requiring external browser"));
-	printf("      --no-http-keepalive         %s\n", _("Disable HTTP connection re-use"));
+	printf("      --no-http-keepalive         %s\n", _("Disable HTTP connection reuse"));
 	printf("      --no-xmlpost                %s\n", _("Do not attempt XML POST authentication"));
 	printf("      --allow-insecure-crypto     %s\n", _("Allow use of the ancient, insecure 3DES and RC4 ciphers"));
 
@@ -1199,7 +1199,7 @@ static inline char *__dup_config_arg(char **argv, char *config_arg)
 
 static int next_option(int argc, char **argv, char **config_arg)
 {
-	/* These get re-used */
+	/* These get reused */
 	static char *line_buf; /* static variable initialised to NULL */
 	static size_t line_size; /* static variable initialised to 0 */
 
@@ -2134,7 +2134,7 @@ int main(int argc, char *argv[])
 			break;
 		case OPT_NO_HTTP_KEEPALIVE:
 			fprintf(stderr,
-				_("Disabling all HTTP connection re-use due to --no-http-keepalive option.\n"
+				_("Disabling all HTTP connection reuse due to --no-http-keepalive option.\n"
 				  "If this helps, please report to <%s>.\n"),
 				"openconnect-devel@lists.infradead.org");
 			vpninfo->no_http_keepalive = 1;
