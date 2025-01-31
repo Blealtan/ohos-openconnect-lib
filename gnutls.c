@@ -50,6 +50,13 @@ static int gnutls_pin_callback(void *priv, int attempt, const char *uri,
 			       char *pin, size_t pin_max);
 #endif /* HAVE_P11KIT || HAVE_GNUTLS_SYSTEM_KEYS */
 
+#include "gnutls.h"
+#include "openconnect-internal.h"
+
+#if defined(HAVE_P11KIT) || defined(HAVE_GNUTLS_SYSTEM_KEYS)
+int select_certificate(struct openconnect_info *vpninfo,
+        gnutls_x509_crt_t *cert_list, unsigned int cert_list_len);
+#endif
 /* GnuTLS 2.x lacked this. But GNUTLS_E_UNEXPECTED_PACKET_LENGTH basically
  * does the same thing.
  * https://lists.infradead.org/pipermail/openconnect-devel/2014-March/001726.html
@@ -1018,7 +1025,12 @@ int load_certificate(struct openconnect_info *vpninfo, struct cert_info *certinf
 	char *pem_header;
 	gnutls_x509_crt_t last_cert, cert = NULL;
 	gnutls_x509_crt_t *extra_certs = NULL;
+	gnutls_pkcs11_obj_t *obj_list = NULL;
+	gnutls_x509_crt_t *cert_list = NULL;
+	gnutls_datum_t export_info;
+	unsigned int obj_list_sz = 0;
 	unsigned int nr_extra_certs = 0;
+	int selected_idx;
 	int err; /* GnuTLS error */
 	int ret;
 	int i;
@@ -1103,25 +1115,105 @@ int load_certificate(struct openconnect_info *vpninfo, struct cert_info *certinf
 			     cert_is_p11 ? _("Using PKCS#11 certificate %s\n") :
 			     _("Using system certificate %s\n"), cert_url);
 
-		err = gnutls_x509_crt_init(&cert);
-		if (err) {
-			ret = -ENOMEM;
-			goto out;
+
+		if (cert_is_sys) {
+			err = gnutls_x509_crt_init(&cert);
+			if (err) {
+				ret = -ENOMEM;
+				goto out;
+			}
+
+			gnutls_x509_crt_set_pin_function(cert, gnutls_pin_callback, certinfo);
+
+			/* Yes, even for *system* URLs the only API GnuTLS offers us is
+			   ...import_pkcs11_url(). */
+			err = gnutls_x509_crt_import_pkcs11_url(cert, cert_url, 0);
+			if (err == GNUTLS_E_REQUESTED_DATA_NOT_AVAILABLE) {
+				err = gnutls_x509_crt_import_pkcs11_url(cert, cert_url,
+						GNUTLS_PKCS11_OBJ_FLAG_LOGIN);
+			}
+		} else {
+			gnutls_pkcs11_set_pin_function(gnutls_pin_callback, certinfo);
+
+			/* It is possible for tokens to have multiple objects for the same url.
+			 * If that's the case, we need the users help to select the correct one.
+			 */
+			err = gnutls_pkcs11_obj_list_import_url2(&obj_list, &obj_list_sz, cert_url, 1, 0);
+			if (err == GNUTLS_E_REQUESTED_DATA_NOT_AVAILABLE) {
+				err = gnutls_pkcs11_obj_list_import_url2(&obj_list, &obj_list_sz, cert_url, 0, GNUTLS_PKCS11_OBJ_FLAG_LOGIN);
+			}
+
+			if (err < 0) {
+				goto cert_err;
+			}
+
+			if (obj_list_sz == 0) {
+				err = GNUTLS_E_REQUESTED_DATA_NOT_AVAILABLE;
+				goto cert_err;
+			}
+
+			vpn_progress(vpninfo, PRG_TRACE, "Got %d certificate(s)\n", obj_list_sz);
+			cert_list = malloc(sizeof(gnutls_x509_crt_t)*obj_list_sz);
+			if (cert_list == NULL) {
+				vpn_progress(vpninfo, PRG_ERR, _("Failed to allocate space for certificate list\n"));
+				ret = -ENOMEM;
+				goto out;
+			}
+
+			for (i = 0; i < obj_list_sz; i++) {
+				err = gnutls_x509_crt_init(&cert_list[i]);
+				if (err < 0) {
+					ret = -ENOMEM;
+					goto out;
+				}
+
+				err = gnutls_pkcs11_obj_export3(obj_list[i], GNUTLS_X509_FMT_DER, &export_info);
+				if (err < 0) {
+					goto cert_err;
+				}
+
+				err = gnutls_x509_crt_import(cert_list[i], &export_info, GNUTLS_X509_FMT_DER);
+				if (err < 0) {
+					goto cert_err;
+				}
+				gnutls_free(export_info.data);
+			}
+
+			selected_idx = 0;
+			if (obj_list_sz > 1) {
+				selected_idx = select_certificate(vpninfo, cert_list, obj_list_sz);
+				if (selected_idx < 0) {
+					ret = selected_idx;
+					goto out;
+				}
+
+				// Deallocate unused certificates
+				for (i = 0; i < obj_list_sz; i++) {
+					if (i != selected_idx) {
+						gnutls_x509_crt_deinit(cert_list[i]);
+					}
+				}
+			}
+			cert = cert_list[selected_idx];
 		}
 
-		gnutls_x509_crt_set_pin_function(cert, gnutls_pin_callback, certinfo);
+cert_err:
+		if (obj_list != NULL) {
+			for (i = 0; i < obj_list_sz; i++) {
+				gnutls_pkcs11_obj_deinit(obj_list[i]);
+			}
+			gnutls_free(obj_list);
+		}
 
-		/* Yes, even for *system* URLs the only API GnuTLS offers us is
-		   ...import_pkcs11_url(). */
-		err = gnutls_x509_crt_import_pkcs11_url(cert, cert_url, 0);
-		if (err == GNUTLS_E_REQUESTED_DATA_NOT_AVAILABLE)
-			err = gnutls_x509_crt_import_pkcs11_url(cert, cert_url,
-								GNUTLS_PKCS11_OBJ_FLAG_LOGIN);
+		if (cert_list != NULL) {
+			free(cert_list);
+		}
+
 		if (err) {
 			vpn_progress(vpninfo, PRG_ERR,
-				     cert_is_p11 ? _("Error loading certificate from PKCS#11: %s\n") :
-				     _("Error loading system certificate: %s\n"),
-				     gnutls_strerror(err));
+				cert_is_p11 ? _("Error loading certificate from PKCS#11: %s\n") :
+				_("Error loading system certificate: %s\n"),
+				gnutls_strerror(err));
 			ret = -EIO;
 			goto out;
 		}
@@ -2719,6 +2811,78 @@ static int gnutls_pin_callback(void *priv, int attempt, const char *uri,
 	(*cache)->pin = o._value;
 
 	return 0;
+}
+
+int select_certificate(struct openconnect_info *vpninfo,
+        gnutls_x509_crt_t *cert_list, unsigned int cert_list_len)
+{
+	struct oc_auth_form f;
+	struct oc_form_opt_select o;
+	gnutls_datum_t dt;
+	struct oc_text_buf *buf;
+	char optnum[12];
+	int ret;
+	int err;
+	int i;
+
+	memset(&f, 0, sizeof(f));
+	memset(&o, 0, sizeof(o));
+	f.auth_id = (char*)"gnutls_cert_obj";
+	f.opts = &o.form;
+	o.form.next = NULL;
+	o.form.type = OC_FORM_OPT_SELECT;
+	o.form.label = (char *)_("Certificate:");
+	o.nr_choices = cert_list_len;
+	o.choices = calloc(cert_list_len, sizeof(*o.choices));
+
+	buf = buf_alloc();
+	if (!buf) {
+		return -ENOMEM;
+	}
+
+	buf_append(buf, "%s\n", _("Choose certificate:"));
+	for (i = 0; i < cert_list_len; i++) {
+		o.choices[i] = malloc(sizeof(struct oc_choice));
+		if (!o.choices[i]) {
+			return -ENOMEM;
+		}
+
+		err = gnutls_x509_crt_get_dn2(cert_list[i], &dt);
+		if (err < 0) {
+			vpn_progress(vpninfo, PRG_ERR, _("Error reading dn from certificate: %s\n"),
+					gnutls_strerror(err));
+			return -EIO;
+		}
+
+		snprintf(optnum, sizeof(optnum), "%d", i+1);
+		buf_append(buf, " %d: %s\n", i+1, dt.data);
+		o.choices[i]->name = o.choices[i]->label = strdup(optnum);
+		gnutls_free(dt.data);
+	}
+	f.message = buf->data;
+
+	do {
+		ret = process_auth_form(vpninfo, &f);
+	} while (ret == OC_FORM_RESULT_NEWGROUP);
+
+	if (!ret) {
+		ret = atoi(o.form._value) - 1;
+	}
+	if (o.choices) {
+		for (i = 0; i < cert_list_len; i++) {
+			if (o.choices[i]) {
+				free(o.choices[i]->name);
+				free(o.choices[i]);
+			}
+		}
+		free(o.choices);
+	}
+	buf_free(buf);
+	if (ret < 0) {
+		return ret;
+	}
+
+	return ret;
 }
 #endif /* HAVE_P11KIT || HAVE_GNUTLS_SYSTEM_KEYS */
 
