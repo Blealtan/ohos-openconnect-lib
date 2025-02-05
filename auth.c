@@ -833,6 +833,12 @@ static xmlDocPtr xmlpost_new_query(struct openconnect_info *vpninfo, const char 
 		goto bad;
 	if (!xmlNewProp(node, XCAST("who"), XCAST("vpn")))
 		goto bad;
+	
+	char hostname[256];
+	if (gethostname(hostname, sizeof(hostname)) == -1) {
+		perror("gethostname");
+		goto bad;
+	}
 
 	node = xmlNewTextChild(root, NULL, XCAST("device-id"), XCAST(vpninfo->platname));
 	if (!node)
@@ -842,6 +848,8 @@ static xmlDocPtr xmlpost_new_query(struct openconnect_info *vpninfo, const char 
 		    !xmlNewProp(node, XCAST("device-type"), XCAST(vpninfo->mobile_device_type)) ||
 		    !xmlNewProp(node, XCAST("unique-id"), XCAST(vpninfo->mobile_device_uniqueid)))
 			goto bad;
+	} else if(!xmlNewProp(node, XCAST("computer-name"), XCAST(hostname))) {
+		goto bad;
 	}
 
 	capabilities = xmlNewNode(NULL, XCAST("capabilities"));
