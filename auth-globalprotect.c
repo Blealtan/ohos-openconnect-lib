@@ -150,7 +150,7 @@ static int parse_prelogin_xml(struct openconnect_info *vpninfo, xmlNode *xml_nod
 			/* Legacy flow (when not called by n-m-oc) */
 			if (!vpninfo->open_webview) {
 				vpn_progress(vpninfo,
-					PRG_ERR, _("When SAML authentication is complete, specify destination form field by appending :field_name to login URL.\n"));
+					PRG_ERR, _("When SAML authentication is complete, specify destination form field by appending field_name to login URL.\n"));
 				goto out;
 			}
 		}
