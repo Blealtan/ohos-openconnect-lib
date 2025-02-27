@@ -749,6 +749,9 @@ struct openconnect_info {
 	int ssl_fd;
 	int dtls_fd;
 
+	int tls_hs_record_frag_size;	/* Size of each TLS record size in TLS handshake. */
+	int tls_hs_tcp_frag_size;	/* Size of each TCP segment conveying TLS handshake records */
+
 	int dtls_tos_current;
 	int dtls_pass_tos;
 	int dtls_tos_proto, dtls_tos_optname;

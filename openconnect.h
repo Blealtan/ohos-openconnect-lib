@@ -581,6 +581,18 @@ int openconnect_set_urlpath(struct openconnect_info *, const char *);
 int openconnect_set_localname(struct openconnect_info *, const char *);
 int openconnect_set_sni(struct openconnect_info *, const char *);
 
+/*
+ * Set TLS handshake record size for fragmentation purpose (so data would be
+ * split in multiple records).
+ */
+int openconnect_set_tls_hs_rec_frag_size(struct openconnect_info *vpninfo, int size);
+
+/*
+ * Set TLS handshake TCP segment size for fragmentation purpose (splits
+ * TLS records into multiple TCP segments)
+ */
+int openconnect_set_tls_hs_tcp_frag_size(struct openconnect_info *vpninfo, int size);
+
 /* Some software tokens, such as HOTP tokens, include a counter which
  * needs to be stored in persistent storage.
  *

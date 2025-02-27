@@ -202,6 +202,8 @@ enum {
 	OPT_SERVERCERT,
 	OPT_RESOLVE,
 	OPT_SNI,
+	OPT_TLS_REC_FRAG,
+	OPT_TLS_TCP_FRAG,
 	OPT_USERAGENT,
 	OPT_NON_INTER,
 	OPT_DTLS_LOCAL_PORT,
@@ -291,6 +293,8 @@ static const struct option long_options[] = {
 	OPTION("servercert", 1, OPT_SERVERCERT),
 	OPTION("resolve", 1, OPT_RESOLVE),
 	OPTION("sni", 1, OPT_SNI),
+	OPTION("tls-hs-record-frag", 1, OPT_TLS_REC_FRAG),
+	OPTION("tls-hs-tcp-frag", 1, OPT_TLS_TCP_FRAG),
 	OPTION("key-password-from-fsid", 0, OPT_KEY_PASSWORD_FROM_FSID),
 	OPTION("useragent", 1, OPT_USERAGENT),
 	OPTION("version-string", 1, OPT_VERSION),
@@ -1064,6 +1068,10 @@ static void usage(void)
 	printf("      --reconnect-timeout=SECONDS %s\n", _("Reconnection retry timeout (default is 300 seconds)"));
 	printf("      --resolve=HOST:IP           %s\n", _("Use IP when connecting to HOST"));
 	printf("      --sni=HOST                  %s\n", _("Always send HOST as TLS client SNI (domain fronting)"));
+	printf("      --tls-hs-record-frag=SIZE   %s\n", _("TLS handshake Record size for fragmentation"));
+	printf("                                  %s\n", _("(zero means no fragmentation in TLS Record layer)"));
+	printf("      --tls-hs-tcp-frag=SIZE      %s\n", _("TLS handshake TCP segment size for fragmentation"));
+	printf("                                  %s\n", _("(zero means no segmentation in TCP layer)"));
 	printf("      --passtos                   %s\n", _("Copy TOS / TCLASS field into DTLS and ESP packets"));
 	printf("      --dtls-local-port=PORT      %s\n", _("Set local port for DTLS and ESP datagrams"));
 
@@ -1585,6 +1593,8 @@ static int autocomplete(int argc, char **argv)
 			case OPT_AUTHGROUP: /* --authgroup */
 			case OPT_RESOLVE: /* --resolve */
 			case OPT_SNI: /* --sni */
+			case OPT_TLS_REC_FRAG: /* --tls-hs-record-frag */
+			case OPT_TLS_TCP_FRAG: /* --tls-hs-tcp-frag */
 			case OPT_USERAGENT: /* --useragent */
 			case OPT_VERSION: /* --version-string */
 			case OPT_FORCE_DPD: /* --force-dpd */
@@ -2007,6 +2017,27 @@ int main(int argc, char *argv[])
 			break;
 		case OPT_SNI:
 			openconnect_set_sni(vpninfo, config_arg);
+			break;
+		case OPT_TLS_REC_FRAG:
+#if defined(OPENCONNECT_OPENSSL) && OPENSSL_VERSION_NUMBER < 0x11000000L
+
+			fprintf(stderr, _("The version of your OpenSSL doesn't support fragmentation. "
+			"Ignoring this option\n"));
+			break;
+#endif
+
+			assert_nonnull_config_arg("tls-hs-record-frag", config_arg);
+			openconnect_set_tls_hs_rec_frag_size(vpninfo, atoi(config_arg));
+			break;
+		case OPT_TLS_TCP_FRAG:
+#if defined(OPENCONNECT_OPENSSL) && OPENSSL_VERSION_NUMBER < 0x11000000L
+			fprintf(stderr, _("The version of your OpenSSL doesn't support fragmentation. "
+			"Ignoring this option\n"));
+			break;
+#endif
+
+			assert_nonnull_config_arg("tls-hs-tcp-frag", config_arg);
+			openconnect_set_tls_hs_tcp_frag_size(vpninfo, atoi(config_arg));
 			break;
 		case OPT_NO_DTLS:
 			openconnect_disable_dtls(vpninfo);

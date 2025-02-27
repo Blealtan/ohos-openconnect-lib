@@ -101,6 +101,8 @@ struct openconnect_info *openconnect_vpninfo_new(const char *useragent,
 	vpninfo->try_http_auth = 1;
 	vpninfo->proxy_auth[AUTH_TYPE_BASIC].state = AUTH_DEFAULT_DISABLED;
 	vpninfo->http_auth[AUTH_TYPE_BASIC].state = AUTH_DEFAULT_DISABLED;
+	vpninfo->tls_hs_record_frag_size = 0;
+	vpninfo->tls_hs_tcp_frag_size = 0;
 	openconnect_set_reported_os(vpninfo, NULL);
 #ifdef HAVE_EPOLL
 	vpninfo->epoll_fd = epoll_create1(EPOLL_CLOEXEC);
@@ -891,6 +893,18 @@ int openconnect_set_sni(struct openconnect_info *vpninfo,
 	UTF8CHECK(sni);
 
 	STRDUP(vpninfo->sni, sni);
+	return 0;
+}
+
+int openconnect_set_tls_hs_rec_frag_size(struct openconnect_info *vpninfo, int size)
+{
+	vpninfo->tls_hs_record_frag_size = size;
+	return 0;
+}
+
+int openconnect_set_tls_hs_tcp_frag_size(struct openconnect_info *vpninfo, int size)
+{
+	vpninfo->tls_hs_tcp_frag_size = size;
 	return 0;
 }
 

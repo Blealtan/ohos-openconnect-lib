@@ -1467,6 +1467,28 @@ JNIEXPORT void JNICALL Java_org_infradead_libopenconnect_LibOpenConnect_setSNI(
 	SET_STRING_END();
 }
 
+JNIEXPORT void JNICALL Java_org_infradead_libopenconnect_LibOpenConnect_setTLSHSRecFragSize(
+	JNIEnv *jenv, jobject jobj, jint arg)
+{
+	struct libctx *ctx = getctx(jenv, jobj);
+
+	if (!ctx)
+		return;
+
+	openconnect_set_tls_hs_rec_frag_size(ctx->vpninfo, arg);
+}
+
+JNIEXPORT void JNICALL Java_org_infradead_libopenconnect_LibOpenConnect_setTLSHSTCPFragSize(
+	JNIEnv *jenv, jobject jobj, jint arg)
+{
+	struct libctx *ctx = getctx(jenv, jobj);
+
+	if (!ctx)
+		return;
+
+        openconnect_set_tls_hs_tcp_frag_size(ctx->vpninfo, arg);
+}
+
 JNIEXPORT void JNICALL Java_org_infradead_libopenconnect_LibOpenConnect_setCAFile(
 	JNIEnv *jenv, jobject jobj, jstring jarg)
 {

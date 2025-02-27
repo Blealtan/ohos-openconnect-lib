@@ -130,6 +130,9 @@ OPENCONNECT_5_8 {
 OPENCONNECT_5_9 {
  global:
 	openconnect_set_sni;
+	openconnect_set_tls_hs_rec_frag_size;
+	openconnect_set_tls_hs_tcp_frag_size;
+
 } OPENCONNECT_5_8;
 
 OPENCONNECT_PRIVATE {
