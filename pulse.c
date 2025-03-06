@@ -78,6 +78,7 @@
 #define PROMPT_USERNAME		2
 #define PROMPT_PASSWORD		4
 #define PROMPT_GTC_NEXT		0x10000
+#define PROMPT_JUNIPER_2021	0x20000
 
 /* Request codes for the Juniper Expanded/2 auth requests. */
 #define J2_PASSCHANGE	0x43
@@ -1012,7 +1013,6 @@ static int pulse_request_user_auth(struct openconnect_info *vpninfo, struct oc_t
 {
 	struct oc_auth_form f;
 	struct oc_form_opt o[2];
-	unsigned char eap_avp[23];
 	int l;
 	int ret;
 
@@ -1054,7 +1054,9 @@ static int pulse_request_user_auth(struct openconnect_info *vpninfo, struct oc_t
 	}
 	if (o[1]._value) {
 		l = strlen(o[1]._value);
-		if (l > 253) {
+		 /* For PROMPT_JUNIPER_2021, official client truncates password
+		  * at 18 characters. */
+		if (l > ((prompt_flags & PROMPT_JUNIPER_2021) ? 18 : 253)) {
 			free_pass(&o[1]._value);
 			return -EINVAL;
 		}
@@ -1065,32 +1067,60 @@ static int pulse_request_user_auth(struct openconnect_info *vpninfo, struct oc_t
 		l = 0;
 	}
 
-	/* AVP flags+mandatory+length */
-	store_be32(eap_avp, AVP_CODE_EAP_MESSAGE);
-	store_be32(eap_avp + 4, (AVP_MANDATORY << 24) + sizeof(eap_avp) + l);
+	if (prompt_flags & PROMPT_JUNIPER_2021) {
+		unsigned char eap_avp[21];
 
-	/* EAP header: code/ident/len */
-	eap_avp[8] = EAP_RESPONSE;
-	eap_avp[9] = eap_ident;
-	store_be16(eap_avp + 10, l + 15); /* EAP length */
-	store_be32(eap_avp + 12, EXPANDED_JUNIPER);
-	store_be32(eap_avp + 16, 2);
+		/* AVP flags+mandatory+length */
+		store_be32(eap_avp, AVP_CODE_EAP_MESSAGE);
+		store_be32(eap_avp + 4, (AVP_MANDATORY << 24) + 39);
 
-	/* EAP Juniper/2 payload: 02 02 <len> <password> */
-	eap_avp[20] = eap_avp[21] = 0x02;
-	eap_avp[22] = l + 2; /* Why 2? */
-	buf_append_bytes(reqbuf, eap_avp, sizeof(eap_avp));
-	if (o[1]._value) {
-		buf_append_bytes(reqbuf, o[1]._value, l);
-		free_pass(&o[1]._value);
-	}
+		/* EAP header: code/ident/len */
+		eap_avp[8] = EAP_RESPONSE;
+		eap_avp[9] = eap_ident;
+		store_be16(eap_avp + 10, 31); /* EAP length */
+		store_be32(eap_avp + 12, EXPANDED_JUNIPER);
+		store_be32(eap_avp + 16, 5);
 
-	/* Padding */
-	if ((sizeof(eap_avp) + l) & 3) {
-		uint32_t pad = 0;
+		/* EAP payload: 01 <password> */
+		eap_avp[20] = 0x01;
+		buf_append_bytes(reqbuf, eap_avp, sizeof(eap_avp));
+		if (o[1]._value) {
+			buf_append_bytes(reqbuf, o[1]._value, l);
+			free_pass(&o[1]._value);
+		}
 
-		buf_append_bytes(reqbuf, &pad,
-				 4 - ((sizeof(eap_avp) + l) & 3));
+		memset(eap_avp, 0, sizeof(eap_avp));
+		buf_append_bytes(reqbuf, &eap_avp, 19 - l);
+	} else {
+		unsigned char eap_avp[23];
+
+		/* AVP flags+mandatory+length */
+		store_be32(eap_avp, AVP_CODE_EAP_MESSAGE);
+		store_be32(eap_avp + 4, (AVP_MANDATORY << 24) + sizeof(eap_avp) + l);
+
+		/* EAP header: code/ident/len */
+		eap_avp[8] = EAP_RESPONSE;
+		eap_avp[9] = eap_ident;
+		store_be16(eap_avp + 10, l + 15); /* EAP length */
+		store_be32(eap_avp + 12, EXPANDED_JUNIPER);
+		store_be32(eap_avp + 16, 2);
+
+		/* EAP Juniper/2 payload: 02 02 <len> <password> */
+		eap_avp[20] = eap_avp[21] = 0x02;
+		eap_avp[22] = l + 2; /* Why 2? */
+		buf_append_bytes(reqbuf, eap_avp, sizeof(eap_avp));
+		if (o[1]._value) {
+			buf_append_bytes(reqbuf, o[1]._value, l);
+			free_pass(&o[1]._value);
+		}
+
+		/* Padding */
+		if ((sizeof(eap_avp) + l) & 3) {
+			uint32_t pad = 0;
+
+			buf_append_bytes(reqbuf, &pad,
+					 4 - ((sizeof(eap_avp) + l) & 3));
+		}
 	}
 
 	ret = 0;
@@ -1840,6 +1870,22 @@ static int pulse_authenticate(struct openconnect_info *vpninfo, int connecting)
 						     _("Pulse server requested Host Checker; not yet supported\n"
 						       "Try Juniper mode (--protocol=nc)\n"));
 					goto bad_eap;
+
+				case 5: /* Recent Juniper password */
+					j2_found = 1;
+					j2_code = avp_c[12];
+					prompt_flags |= PROMPT_JUNIPER_2021;
+					if (j2_code == J2_PASSREQ) {
+						/* No idea what remaining 5 bytes do. */
+						if (avp_len != 18)
+							goto auth_unknown;
+					} else {
+						/* Unclear if other codes match "J2" codes.
+						 * I have observed 0x02 for "new PIN",
+						 * but no other codes. */
+						goto auth_unknown;
+					}
+					break;
 
 				default:
 					goto auth_unknown;
