@@ -129,6 +129,8 @@ else
     fail "$PID" "Did not negotiate IP6CP successfully."
 fi
 
+sleep 3  # pppd exited with idle timeout. Give socat time to exit too.
+
 cleanup
 
 exit 0
