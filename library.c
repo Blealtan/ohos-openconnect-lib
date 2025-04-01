@@ -1530,23 +1530,24 @@ int openconnect_set_csd_environ(struct openconnect_info *vpninfo,
 int openconnect_check_peer_cert_hash(struct openconnect_info *vpninfo,
 				     const char *old_hash)
 {
-	char *fingerprint = NULL;
+	char *fingerprint_sha1 = NULL;
+	char *fingerprint_sha256 = NULL;
 	const unsigned min_match_len = 4;
 	unsigned old_len, fingerprint_len;
 	int case_sensitive = 0;
-	int ret = 0;
+	int ret = 1;
 
 	if (strchr(old_hash, ':')) {
 		/* These are hashes of the public key not the full cert. */
 		if (strncmp(old_hash, "sha1:", 5) == 0) {
 			old_hash += 5;
-			fingerprint = openconnect_bin2hex(NULL, vpninfo->peer_cert_sha1_raw, sizeof(vpninfo->peer_cert_sha1_raw));
+			fingerprint_sha1 = openconnect_bin2hex(NULL, vpninfo->peer_cert_sha1_raw, sizeof(vpninfo->peer_cert_sha1_raw));
 		} else if (strncmp(old_hash, "sha256:", 7) == 0) {
 			old_hash += 7;
-			fingerprint = openconnect_bin2hex(NULL, vpninfo->peer_cert_sha256_raw, sizeof(vpninfo->peer_cert_sha256_raw));
+			fingerprint_sha256 = openconnect_bin2hex(NULL, vpninfo->peer_cert_sha256_raw, sizeof(vpninfo->peer_cert_sha256_raw));
 		} else if (strncmp(old_hash, "pin-sha256:", 11) == 0) {
 			old_hash += 11;
-			fingerprint = openconnect_bin2base64(NULL, vpninfo->peer_cert_sha256_raw, sizeof(vpninfo->peer_cert_sha256_raw));
+			fingerprint_sha256 = openconnect_bin2base64(NULL, vpninfo->peer_cert_sha256_raw, sizeof(vpninfo->peer_cert_sha256_raw));
 			case_sensitive = 1;
 		} else {
 			vpn_progress(vpninfo, PRG_ERR, _("Unknown certificate hash: %s.\n"), old_hash);
@@ -1557,37 +1558,51 @@ int openconnect_check_peer_cert_hash(struct openconnect_info *vpninfo,
 		unsigned char *cert;
 		int len;
 		unsigned char sha1_bin[SHA1_SIZE];
-
+		unsigned char sha256_bin[SHA256_SIZE];
 		len = openconnect_get_peer_cert_DER(vpninfo, &cert);
 		if (len < 0)
 			return len;
 
-		if (openconnect_sha1(sha1_bin, cert, len)) {
+		if (openconnect_sha1(sha1_bin, cert, len) || openconnect_sha256(sha256_bin, cert, len)){
 			free(cert);
 			return -EIO;
 		}
 
 		free(cert);
-		fingerprint = openconnect_bin2hex(NULL, sha1_bin, sizeof(sha1_bin));
+		fingerprint_sha1 = openconnect_bin2hex(NULL, sha1_bin, sizeof(sha1_bin));
+		fingerprint_sha256 = openconnect_bin2hex(NULL, sha256_bin, sizeof(sha256_bin));
 	}
 
-	if (!fingerprint)
+	if (!fingerprint_sha1 && !fingerprint_sha256)
 		return -EIO;
 
 	old_len = strlen(old_hash);
-	fingerprint_len = strlen(fingerprint);
 
-	if (old_len > fingerprint_len)
-		ret = 1;
-	else if (case_sensitive ? strncmp(old_hash, fingerprint, old_len) :
-		 strncasecmp(old_hash, fingerprint, old_len))
-		ret = 1;
-	else if (old_len < min_match_len) {
-		vpn_progress(vpninfo, PRG_ERR, _("The size of the provided fingerprint is less than the minimum required (%u).\n"), min_match_len);
-		ret = 1;
+	/* Check against both SHA-1 and SHA-256 fingerprints */
+	if (fingerprint_sha1) {
+		fingerprint_len = strlen(fingerprint_sha1);
+		if (old_len <= fingerprint_len && old_len >= min_match_len &&
+				(case_sensitive ? strncmp(old_hash, fingerprint_sha1, old_len) :
+				 strncasecmp(old_hash, fingerprint_sha1, old_len)) == 0){
+			ret = 0;
+		}
 	}
 
-	free(fingerprint);
+	if (fingerprint_sha256) {
+		fingerprint_len = strlen(fingerprint_sha256);
+		if (old_len <= fingerprint_len && old_len >= min_match_len &&
+				(case_sensitive ? strncmp(old_hash, fingerprint_sha256, old_len) :
+				 strncasecmp(old_hash, fingerprint_sha256, old_len)) == 0){
+			ret = 0;
+		}
+	}
+
+	if (ret != 0 && old_len < min_match_len) {
+		vpn_progress(vpninfo, PRG_ERR, _("The size of the provided fingerprint is less than the minimum required (%u).\n"), min_match_len);
+	}
+
+	free(fingerprint_sha1);
+	free(fingerprint_sha256);
 	return ret;
 }
 
