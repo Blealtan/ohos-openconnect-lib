@@ -15,6 +15,7 @@
 <ul>
    <li><b>OpenConnect HEAD</b>
      <ul>
+       <li>Allow SHA256 of the binary certificate in servercert flag (<a href="https://gitlab.com/openconnect/openconnect/-/issues/799">#799</a>).</li>
        <li>Fix Cisco Anyconnect STRAP channel bindings with TLSv1.3 (<a href="https://gitlab.com/openconnect/openconnect/-/issues/659">#659</a>).</li>
        <li>Fix ASN.1 encoding of TPMv2 ECDSA signatures with GnuTLS &amp;lt; 3.6.0</li>
        <li>Handle Pulse configuration packets that cannot fit in a single TLS frame (<a href="https://gitlab.com/openconnect/openconnect/-/issues/617">#617</a>, <a href="https://gitlab.com/openconnect/openconnect/-/merge_requests/480">!480</a>).</li>
