@@ -17,6 +17,7 @@ noinst_DATA = openconnect-installer-$(INSTALLER_SUFFIX).exe
 endif
 
 lib_LTLIBRARIES = libopenconnect.la
+bin_PROGRAMS = gp_browser_helper
 sbin_PROGRAMS = openconnect
 man8_MANS = openconnect.8
 bin_PROGRAMS :=
@@ -25,6 +26,12 @@ noinst_PROGRAMS :=
 
 AM_CFLAGS = @WFLAGS@
 AM_CPPFLAGS = -DLOCALEDIR="\"$(localedir)\""
+
+# GlobalProtect Browser Helper
+gp_browser_helper_SOURCES: gp_browser_helper.c
+
+desktopdir = $(datadir)/applications
+dist_desktop_DATA = gp_browser_helper.desktop
 
 openconnect_SOURCES = xml.c main.c
 openconnect_CFLAGS = $(AM_CFLAGS) $(SSL_CFLAGS) $(DTLS_SSL_CFLAGS) \

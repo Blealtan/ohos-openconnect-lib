@@ -176,6 +176,7 @@ static const struct vpn_proto openconnect_protos[] = {
 		.obtain_cookie = gpst_obtain_cookie,
 		.sso_detect_done = gpst_sso_detect_done,
 		.udp_protocol = "ESP",
+		.handle_external_browser = gpst_handle_external_browser,
 #ifdef HAVE_ESP
 		.udp_setup = esp_setup,
 		.udp_mainloop = esp_mainloop,
@@ -1708,15 +1709,20 @@ retry:
 		vpninfo->sso_cookie_value = NULL;
 		vpninfo->sso_username = NULL;
 
-		/* Handle the special Cisco external browser mode */
-		if (vpninfo->sso_browser_mode && !strcmp(vpninfo->sso_browser_mode, "external")) {
-			ret = handle_external_browser(vpninfo);
-		} else if (vpninfo->open_webview) {
-			ret = vpninfo->open_webview(vpninfo, vpninfo->sso_login, vpninfo->cbdata);
-		} else {
-			vpn_progress(vpninfo, PRG_ERR,
-				     _("No SSO handler\n")); /* XX: print more debugging info */
-			ret = -EINVAL;
+		if (vpninfo->proto->handle_external_browser)
+			ret = vpninfo->proto->handle_external_browser(vpninfo);
+
+		if (ret != 0) {
+			/* Handle the special Cisco external browser mode */
+			if (vpninfo->sso_browser_mode && !strcmp(vpninfo->sso_browser_mode, "external")) {
+				ret = handle_external_browser(vpninfo);
+			} else if (vpninfo->open_webview) {
+				ret = vpninfo->open_webview(vpninfo, vpninfo->sso_login, vpninfo->cbdata);
+			} else {
+				vpn_progress(vpninfo, PRG_ERR,
+					     _("No SSO handler\n")); /* XX: print more debugging info */
+				ret = -EINVAL;
+			}
 		}
 		if (!ret) {
 			for (opt = form->opts; opt; opt = opt->next) {

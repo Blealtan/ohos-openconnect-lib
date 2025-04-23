@@ -863,6 +863,9 @@ struct vpn_proto {
 
 	/* Catch probe packet confirming the (UDP) session */
 	int (*udp_catch_probe)(struct openconnect_info *vpninfo, struct pkt *p);
+
+	/* External browser */
+	int (*handle_external_browser)(struct openconnect_info *vpninfo);
 };
 
 static inline struct pkt *dequeue_packet(struct pkt_q *q)
@@ -1402,6 +1405,7 @@ int gpst_mainloop(struct openconnect_info *vpninfo, int *timeout, int readable);
 int gpst_esp_send_probes(struct openconnect_info *vpninfo);
 int gpst_esp_catch_probe(struct openconnect_info *vpninfo, struct pkt *pkt);
 int gpst_sso_detect_done(struct openconnect_info *vpninfo, const struct oc_webview_result *result);
+int gpst_handle_external_browser(struct openconnect_info *vpninfo);
 
 /* lzs.c */
 int lzs_decompress(unsigned char *dst, int dstlen, const unsigned char *src, int srclen);
