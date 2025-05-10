@@ -91,9 +91,9 @@ $(OC_SYSROOT):
 # Build libxml2 with minimal configuration for OpenConnect
 #
 # http://xmlsoft.org/news.html
-LIBXML2_VER := 2.13.4
+LIBXML2_VER := 2.13.8
 LIBXML2_TAR := libxml2-$(LIBXML2_VER).tar.xz
-LIBXML2_SHA := 65d042e1c8010243e617efb02afda20b85c2160acdbfbcb5b26b80cec6515650
+LIBXML2_SHA := 55369e84948c6920c2a82dedd3b03bbd4bf721121271d7954ffe6dc82f9bb3f9
 LIBXML2_SRC := sources/libxml2-$(LIBXML2_VER)
 LIBXML2_BUILD := $(TRIPLET)/libxml2
 
@@ -102,7 +102,7 @@ $(LIBXML2_TAR):
 
 $(LIBXML2_SRC)/configure: $(LIBXML2_TAR)
 	mkdir -p sources
-	tar Jxf $<  -C sources
+	tar xfJ $< -C sources
 	touch $@
 
 $(LIBXML2_BUILD)/Makefile: $(OC_SYSROOT) $(LIBXML2_SRC)/configure
