@@ -197,6 +197,7 @@ enum {
 	OPT_NO_XMLPOST,
 	OPT_PIDFILE,
 	OPT_PASSWORD_ON_STDIN,
+	OPT_PASSWORD_IN_ENV,
 	OPT_PRINTCOOKIE,
 	OPT_RECONNECT_TIMEOUT,
 	OPT_SERVERCERT,
@@ -283,6 +284,7 @@ static const struct option long_options[] = {
 	OPTION("xmlconfig", 1, 'x'),
 	OPTION("cookie-on-stdin", 0, OPT_COOKIE_ON_STDIN),
 	OPTION("passwd-on-stdin", 0, OPT_PASSWORD_ON_STDIN),
+	OPTION("passwd-in-env", 0, OPT_PASSWORD_IN_ENV),
 	OPTION("no-passwd", 0, OPT_NO_PASSWD),
 	OPTION("reconnect-timeout", 1, OPT_RECONNECT_TIMEOUT),
 	OPTION("dtls-ciphers", 1, OPT_DTLS_CIPHERS),
@@ -808,6 +810,21 @@ static void read_stdin(char **string, int hidden, int allow_fail)
 	*string = convert_to_utf8(buf, 1);
 }
 
+static char *read_from_env(const char *varname) {
+	const char* value = getenv(varname);
+	if (value) {
+		size_t num_chars = strlen(value);
+		void *buf = calloc(1 + num_chars, sizeof(char)); // Ensure null-terminated
+		if (!buf) {
+			fprintf(stderr, _("Allocation failure for string from environment\n"));
+			exit(1);
+		}
+		memcpy(buf, value, num_chars);
+		return buf;
+	}
+	return NULL;
+}
+
 static void handle_signal(int sig)
 {
 	char cmd;
@@ -1028,6 +1045,7 @@ static void usage(void)
 	printf("      --no-passwd                 %s\n", _("Disable password/SecurID authentication"));
 	printf("      --non-inter                 %s\n", _("Do not expect user input; exit if it is required"));
 	printf("      --passwd-on-stdin           %s\n", _("Read password from standard input"));
+	printf("      --passwd-in-env             %s\n", _("Read password from PASSWD environment variable"));
 	printf("      --authgroup=GROUP           %s\n", _("Select GROUP from authentication dropdown (may be known"));
 	printf("                                  %s\n", _("as \"realm\", \"domain\", \"gateway\"; protocol-dependent)"));
 	printf("  -F, --form-entry=FORM:OPT=VALUE %s\n", _("Provide authentication form responses"));
@@ -2029,6 +2047,9 @@ int main(int argc, char *argv[])
 		case OPT_PASSWORD_ON_STDIN:
 			read_stdin(&password, 0, 0);
 			allow_stdin_read = 1;
+			break;
+		case OPT_PASSWORD_IN_ENV:
+			password = read_from_env("PASSWD");
 			break;
 		case OPT_NO_PASSWD:
 			vpninfo->nopasswd = 1;
