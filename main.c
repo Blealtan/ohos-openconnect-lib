@@ -48,7 +48,6 @@
 #include <wtypes.h>
 #include <wincon.h>
 #else
-#include <sys/utsname.h>
 #include <pwd.h>
 #include <termios.h>
 #endif
@@ -1796,7 +1795,6 @@ int main(int argc, char *argv[])
 #endif
 #ifndef _WIN32
 	struct sigaction sa;
-	struct utsname utsbuf;
 #endif
 
 #ifdef ENABLE_NLS
@@ -1875,10 +1873,6 @@ int main(int argc, char *argv[])
 	vpninfo->use_tun_script = 0;
 	vpninfo->uid = getuid();
 	vpninfo->gid = getgid();
-
-	if (!uname(&utsbuf)) {
-		openconnect_set_localname(vpninfo, utsbuf.nodename);
-	}
 #endif
 
 	while ((opt = next_option(argc, argv, &config_arg))) {

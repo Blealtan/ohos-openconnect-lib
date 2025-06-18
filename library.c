@@ -43,6 +43,10 @@
 #include <stdlib.h>
 #include <ctype.h>
 
+#ifndef _WIN32
+#include <sys/utsname.h>
+#endif
+
 struct openconnect_info *openconnect_vpninfo_new(const char *useragent,
 						 openconnect_validate_peer_cert_vfn validate_peer_cert,
 						 openconnect_write_new_config_vfn write_new_config,
@@ -51,6 +55,9 @@ struct openconnect_info *openconnect_vpninfo_new(const char *useragent,
 						 void *privdata)
 {
 	struct openconnect_info *vpninfo = calloc(1, sizeof(*vpninfo));
+#ifndef _WIN32
+	struct utsname utsbuf;
+#endif
 #ifdef HAVE_ICONV
 	char *charset = nl_langinfo(CODESET);
 #endif
@@ -89,6 +96,17 @@ struct openconnect_info *openconnect_vpninfo_new(const char *useragent,
 	vpninfo->req_compr = COMPR_STATELESS;
 	vpninfo->max_qlen = 32;	  /* >=16 will enable vhost-net on Linux */
 	vpninfo->localname = strdup("localhost");
+#ifndef _WIN32
+	if (!uname(&utsbuf)) {
+		char *localname = openconnect_legacy_to_utf8 (vpninfo, utsbuf.nodename);
+
+		if (localname) {
+			openconnect_set_localname(vpninfo, localname);
+			if (localname != utsbuf.nodename)
+				free(localname);
+                }
+	}
+#endif
 	vpninfo->port = 443;
 	vpninfo->useragent = openconnect_create_useragent(useragent);
 	vpninfo->validate_peer_cert = validate_peer_cert;
