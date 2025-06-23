@@ -347,7 +347,7 @@ static int start_dtls_anon_handshake(struct openconnect_info *vpninfo, gnutls_se
 	 * precisely the same cert that we get from the HTTPS service,
 	 * but we tried that for EAP-TTLS in the Pulse protocol and the
 	 * theory was disproven, so we ended up doing this there too.
-         */
+	 */
 	gnutls_credentials_set(dtls_ssl, GNUTLS_CRD_CERTIFICATE, vpninfo->https_cred);
 
 	/* The F5 BIG-IP server before v16, will crap itself if we

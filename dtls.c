@@ -555,17 +555,17 @@ static int probe_mtu(struct openconnect_info *vpninfo, unsigned char *buf)
 		gettimeofday(&now_tv, NULL);
 
 		if (now_tv.tv_sec > start_tv.tv_sec + 10) {
-                        if (absolute_min == min) {
-                                /* Hm, we never got *anything* back successfully? */
-                                vpn_progress(vpninfo, PRG_ERR,
-                                             _("Too long time in MTU detect loop; assuming negotiated MTU.\n"));
-                                goto fail;
-                        } else {
-                                vpn_progress(vpninfo, PRG_ERR,
-                                             _("Too long time in MTU detect loop; MTU set to %d.\n"), min);
+			if (absolute_min == min) {
+				/* Hm, we never got *anything* back successfully? */
+				vpn_progress(vpninfo, PRG_ERR,
+				             _("Too long time in MTU detect loop; assuming negotiated MTU.\n"));
+				goto fail;
+			} else {
+				vpn_progress(vpninfo, PRG_ERR,
+				             _("Too long time in MTU detect loop; MTU set to %d.\n"), min);
 				ret = min;
 				goto out;
-                        }
+			}
 		}
 
 

@@ -282,12 +282,12 @@ int openconnect_get_supported_protocols(struct oc_vpn_proto **protos)
 	struct oc_vpn_proto *pr;
 	int i, j;
 
-        /* The original version of this function included an all-zero
-         * sentinel value at the end of the array, so we must continue
-         * to do so for ABI compatibility even though it's
-         * functionally redundant as a marker of the array's length,
-         * along with the explicit length in the return value.
-         */
+	/* The original version of this function included an all-zero
+	 * sentinel value at the end of the array, so we must continue
+	 * to do so for ABI compatibility even though it's
+	 * functionally redundant as a marker of the array's length,
+	 * along with the explicit length in the return value.
+	 */
 	*protos = pr = calloc(NR_PROTOS + 1, sizeof(*pr));
 	if (!pr)
 		return -ENOMEM;
@@ -1485,7 +1485,7 @@ const char *openconnect_get_dtls_cipher(struct openconnect_info *vpninfo)
 			return NULL;
 #endif
 	}
-    return vpninfo->dtls_cipher_desc;
+	return vpninfo->dtls_cipher_desc;
 }
 
 int openconnect_set_csd_environ(struct openconnect_info *vpninfo,

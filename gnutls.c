@@ -2376,31 +2376,31 @@ int openconnect_open_https(struct openconnect_info *vpninfo)
 				       vpninfo->hostname,
 				       strlen(vpninfo->hostname));
 
-       /*
-	* If a ClientHello is between 256 and 511 bytes, the
-	* server cannot distinguish between a SSLv2 formatted
-	* packet and a SSLv3 formatted packet.
-	*
-	* F5 BIG-IP reverse proxies in particular will
-	* silently drop an ambiguous ClientHello.
-	*
-	* GnuTLS fixes this in v3.2.9+ by padding ClientHello
-	* packets to at least 512 bytes if %COMPAT or %DUMBFW
-	* is specified.
-	*
-	* Discussion:
-	* https://www.ietf.org/mail-archive/web/tls/current/msg10423.html
-	*
-	* GnuTLS commits:
-	* b6d29bb1737f96ac44a8ef9cc9fe7f9837e20465
-	* a9bd8c4d3a639c40adb964349297f891f583a21b
-	* 531bec47037e882af32963f8461988f8c724919e
-	* 7c45ebbdd877cd994b6b938bd6faef19558a01e1
-	* 8d28901a3ebd2589d0fc9941475d50f04047f6fe
-	* 28065ce3896b1b0f87972d0bce9b17641ebb69b9
-	*/
+	/*
+	 * If a ClientHello is between 256 and 511 bytes, the
+	 * server cannot distinguish between a SSLv2 formatted
+	 * packet and a SSLv3 formatted packet.
+	 *
+	 * F5 BIG-IP reverse proxies in particular will
+	 * silently drop an ambiguous ClientHello.
+	 *
+	 * GnuTLS fixes this in v3.2.9+ by padding ClientHello
+	 * packets to at least 512 bytes if %COMPAT or %DUMBFW
+	 * is specified.
+	 *
+	 * Discussion:
+	 * https://www.ietf.org/mail-archive/web/tls/current/msg10423.html
+	 *
+	 * GnuTLS commits:
+	 * b6d29bb1737f96ac44a8ef9cc9fe7f9837e20465
+	 * a9bd8c4d3a639c40adb964349297f891f583a21b
+	 * 531bec47037e882af32963f8461988f8c724919e
+	 * 7c45ebbdd877cd994b6b938bd6faef19558a01e1
+	 * 8d28901a3ebd2589d0fc9941475d50f04047f6fe
+	 * 28065ce3896b1b0f87972d0bce9b17641ebb69b9
+	 */
 
-        if (!vpninfo->ciphersuite_config) {
+	if (!vpninfo->ciphersuite_config) {
 		struct oc_text_buf *buf = buf_alloc();
 #ifdef DEFAULT_PRIO
 		buf_append(buf, "%s", DEFAULT_PRIO ":%COMPAT");
@@ -2444,7 +2444,7 @@ int openconnect_open_https(struct openconnect_info *vpninfo)
 		vpninfo->ciphersuite_config = buf->data;
 		buf->data = NULL;
 		buf_free(buf);
-        }
+	}
 
 	err = gnutls_priority_set_direct(vpninfo->https_sess,
 					 vpninfo->ciphersuite_config, NULL);

@@ -318,7 +318,7 @@ static unsigned int psk_callback(SSL *ssl, const char *hint, char *identity,
 #ifndef HAVE_SSL_CIPHER_FIND
 static const SSL_CIPHER *SSL_CIPHER_find(SSL *ssl, const unsigned char *ptr)
 {
-    return ssl->method->get_cipher_by_char(ptr);
+	return ssl->method->get_cipher_by_char(ptr);
 }
 #endif
 

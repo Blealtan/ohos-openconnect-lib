@@ -1277,19 +1277,19 @@ static int run_csd_script(struct openconnect_info *vpninfo, char *buf, int bufle
 
 		return ret;
 	} else {
-                /* in child: will be reaped by init */
-                char scertbuf[MD5_SIZE * 2 + 1];
-                char ccertbuf[MD5_SIZE * 2 + 1];
-                char *csd_argv[32];
-                int i = 0;
+		/* in child: will be reaped by init */
+		char scertbuf[MD5_SIZE * 2 + 1];
+		char ccertbuf[MD5_SIZE * 2 + 1];
+		char *csd_argv[32];
+		int i = 0;
 
-                if (set_csd_user(vpninfo) < 0)
-                        exit(1);
-                if (getuid() == 0 && !vpninfo->csd_wrapper) {
-                        fprintf(stderr, _("Warning: you are running insecure CSD code with root privileges\n"
-                                          "\t Use command line option \"--csd-user\"\n"));
-                }
-                /*
+		if (set_csd_user(vpninfo) < 0)
+			exit(1);
+		if (getuid() == 0 && !vpninfo->csd_wrapper) {
+			fprintf(stderr, _("Warning: you are running insecure CSD code with root privileges\n"
+			                  "\t Use command line option \"--csd-user\"\n"));
+		}
+		/*
 		 * Spurious stdout output from the CSD trojan will break both
 		 * the NM tool and the various cookieonly modes.
 		 * Also, gnome-shell *closes* stderr so attempt to cope with that
@@ -1304,50 +1304,50 @@ static int run_csd_script(struct openconnect_info *vpninfo, char *buf, int bufle
 				close(nulfd);
 			}
 		}
-                dup2(2, 1);
-                if (vpninfo->csd_wrapper)
-                        csd_argv[i++] = openconnect_utf8_to_legacy(vpninfo,
-                                                                   vpninfo->csd_wrapper);
-                csd_argv[i++] = fname;
-                csd_argv[i++] = (char *)"-ticket";
-                if (asprintf(&csd_argv[i++], "\"%s\"", vpninfo->csd_ticket) == -1)
-                        goto out;
-                csd_argv[i++] = (char *)"-stub";
-                csd_argv[i++] = (char *)"\"0\"";
-                csd_argv[i++] = (char *)"-group";
-                if (asprintf(&csd_argv[i++], "\"%s\"", vpninfo->authgroup?:"") == -1)
-                        goto out;
+		dup2(2, 1);
+		if (vpninfo->csd_wrapper)
+			csd_argv[i++] = openconnect_utf8_to_legacy(vpninfo,
+			                                           vpninfo->csd_wrapper);
+		csd_argv[i++] = fname;
+		csd_argv[i++] = (char *)"-ticket";
+		if (asprintf(&csd_argv[i++], "\"%s\"", vpninfo->csd_ticket) == -1)
+			goto out;
+		csd_argv[i++] = (char *)"-stub";
+		csd_argv[i++] = (char *)"\"0\"";
+		csd_argv[i++] = (char *)"-group";
+		if (asprintf(&csd_argv[i++], "\"%s\"", vpninfo->authgroup?:"") == -1)
+			goto out;
 
-                openconnect_local_cert_md5(vpninfo, ccertbuf);
-                scertbuf[0] = 0;
-                get_cert_md5_fingerprint(vpninfo, vpninfo->peer_cert, scertbuf);
-                csd_argv[i++] = (char *)"-certhash";
-                if (asprintf(&csd_argv[i++], "\"%s:%s\"", scertbuf, ccertbuf) == -1)
-                        goto out;
+		openconnect_local_cert_md5(vpninfo, ccertbuf);
+		scertbuf[0] = 0;
+		get_cert_md5_fingerprint(vpninfo, vpninfo->peer_cert, scertbuf);
+		csd_argv[i++] = (char *)"-certhash";
+		if (asprintf(&csd_argv[i++], "\"%s:%s\"", scertbuf, ccertbuf) == -1)
+			goto out;
 
 
-                csd_argv[i++] = (char *)"-url";
-                if (asprintf(&csd_argv[i++], "\"https://%s%s\"", openconnect_get_hostname(vpninfo), vpninfo->csd_starturl) == -1)
-                        goto out;
+		csd_argv[i++] = (char *)"-url";
+		if (asprintf(&csd_argv[i++], "\"https://%s%s\"", openconnect_get_hostname(vpninfo), vpninfo->csd_starturl) == -1)
+			goto out;
 
-                csd_argv[i++] = (char *)"-langselen";
-                csd_argv[i++] = NULL;
+		csd_argv[i++] = (char *)"-langselen";
+		csd_argv[i++] = NULL;
 
-                if (setenv("CSD_SHA256", openconnect_get_peer_cert_hash(vpninfo)+11, 1))  /* remove initial 'pin-sha256:' */
-                        goto out;
-                if (setenv("CSD_TOKEN", vpninfo->csd_token, 1))
-                        goto out;
-                if (setenv("CSD_HOSTNAME", openconnect_get_hostname(vpninfo), 1))
-                        goto out;
+		if (setenv("CSD_SHA256", openconnect_get_peer_cert_hash(vpninfo)+11, 1))  /* remove initial 'pin-sha256:' */
+			goto out;
+		if (setenv("CSD_TOKEN", vpninfo->csd_token, 1))
+			goto out;
+		if (setenv("CSD_HOSTNAME", openconnect_get_hostname(vpninfo), 1))
+			goto out;
 
-                apply_script_env(vpninfo->csd_env);
+		apply_script_env(vpninfo->csd_env);
 
-                execv(csd_argv[0], csd_argv);
+		execv(csd_argv[0], csd_argv);
 
-        out:
-                vpn_progress(vpninfo, PRG_ERR,
-                             _("Failed to exec CSD script %s\n"), vpninfo->csd_wrapper ?: fname);
-                exit(1);
+	out:
+		vpn_progress(vpninfo, PRG_ERR,
+		             _("Failed to exec CSD script %s\n"), vpninfo->csd_wrapper ?: fname);
+		exit(1);
 	}
 
 #endif /* !_WIN32 && !__native_client__ */

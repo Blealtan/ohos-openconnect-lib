@@ -737,7 +737,7 @@ static void print_supported_protocols(void)
 	int n;
 
 	n = openconnect_get_supported_protocols(&protos);
-        if (n>=0) {
+	if (n>=0) {
 		printf(_("Supported protocols:"));
 		for (p=protos; n; p++, n--) {
 			printf("%s%s%s", sep, p->name, p==protos ? _(" (default)") : "");
@@ -754,7 +754,7 @@ static void print_supported_protocols_usage(void)
 	int n;
 
 	n = openconnect_get_supported_protocols(&protos);
-        if (n>=0) {
+	if (n>=0) {
 		printf("\n%s:\n", _("Set VPN protocol"));
 		for (p=protos; n; p++, n--)
 			printf("      --protocol=%-16s %s%s\n",

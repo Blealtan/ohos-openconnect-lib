@@ -533,7 +533,7 @@ static int parse_options(struct openconnect_info *vpninfo, char *buf, int len,
 			int st = xmlnode_bool_or_int_value(xml_node);
 			vpn_progress(vpninfo, PRG_INFO, _("Got SplitTunneling0 value of %d\n"), st);
 			/* XX: Should we ignore split-{in,ex}cludes if this is zero? */
-                }
+		}
 		/* XX: This is an objectively stupid way to use XML, a hierarchical data format. */
 		else if (   (!strncmp((char *)xml_node->name, "DNS", 3) && isdigit(xml_node->name[3]))
 			 || (!strncmp((char *)xml_node->name, "DNS6_", 5) && isdigit(xml_node->name[5])) ) {
@@ -626,7 +626,7 @@ static int parse_options(struct openconnect_info *vpninfo, char *buf, int len,
 
 	if (ret || (*ipv4 < 1 && *ipv6 < 1) || !*ur_z || !*session_id) {
 		free_optlist(new_opts);
-                free_split_routes(&new_ip_info);
+		free_split_routes(&new_ip_info);
 	err:
 		vpn_progress(vpninfo, PRG_ERR,
 			     _("Failed to find VPN options\n"));
@@ -661,8 +661,8 @@ static int get_ip_address(struct openconnect_info *vpninfo, char *header, char *
 		if (!vpninfo->ip_info.addr6 && !vpninfo->ip_info.netmask6)
 			inet_pton(AF_INET6, val, &ppp->out_ipv6_addr);
 	}
-        /* XX: The server's IP address(es) X-VPN-server-{IP,IPv6} are also
-         * sent, but the utility of these is unclear. As remarked in oncp.c,
+	/* XX: The server's IP address(es) X-VPN-server-{IP,IPv6} are also
+	 * sent, but the utility of these is unclear. As remarked in oncp.c,
 	 * "this is a tunnel; having a gateway is meaningless." */
 	return 0;
 }

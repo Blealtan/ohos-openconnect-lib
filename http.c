@@ -686,13 +686,13 @@ int handle_redirect(struct openconnect_info *vpninfo)
 		free(vpninfo->redirect_url);
 		vpninfo->redirect_url = NULL;
 		return 0;
-        } else if (vpninfo->redirect_url[0] == '/') {
-                /* Absolute redirect within same host */
-                free(vpninfo->urlpath);
-                vpninfo->urlpath = strdup(vpninfo->redirect_url + 1);
-                free(vpninfo->redirect_url);
-                vpninfo->redirect_url = NULL;
-                return 0;
+	} else if (vpninfo->redirect_url[0] == '/') {
+		/* Absolute redirect within same host */
+		free(vpninfo->urlpath);
+		vpninfo->urlpath = strdup(vpninfo->redirect_url + 1);
+		free(vpninfo->redirect_url);
+		vpninfo->redirect_url = NULL;
+		return 0;
 	} else if (strstr(vpninfo->redirect_url, "://")) {
 		vpn_progress(vpninfo, PRG_ERR,
 			     _("Cannot follow redirection to non-https URL '%s'\n"),

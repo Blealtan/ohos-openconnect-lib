@@ -30,16 +30,16 @@
 #include <sec_api/stdlib_s.h> /* errno_t, size_t */
 #ifndef HAVE_GETENV_S_DECL
 errno_t getenv_s(
-    size_t     *ret_required_buf_size,
-    char       *buf,
-    size_t      buf_size_in_bytes,
-    const char *name
+	size_t     *ret_required_buf_size,
+	char       *buf,
+	size_t      buf_size_in_bytes,
+	const char *name
 );
 #endif
 #ifndef HAVE_PUTENV_S_DECL
 errno_t _putenv_s(
-   const char *varname,
-   const char *value_string
+	const char *varname,
+	const char *value_string
 );
 #endif
 #endif

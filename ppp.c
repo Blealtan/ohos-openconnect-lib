@@ -630,7 +630,7 @@ static int queue_config_request(struct openconnect_info *vpninfo, int proto)
 	}
 
 out:
-        buf_free(buf);
+	buf_free(buf);
 	return ret;
 }
 
@@ -790,7 +790,7 @@ static int handle_config_packet(struct openconnect_info *vpninfo,
 		len = load_be16(p + 2);
 	}
 
-        if (code > 0 && code <= 11)
+	if (code > 0 && code <= 11)
 		vpn_progress(vpninfo, PRG_TRACE, _("Received %s/id %d %s from server\n"), proto_names(proto), id, lcp_names[code]);
 	switch (code) {
 	case CONFREQ:

@@ -47,10 +47,10 @@ static int ntlm_sspi(struct openconnect_info *vpninfo, int proxy,
 		     struct http_auth_state *auth_state,
 		     struct oc_text_buf *buf, const char *challenge)
 {
-        SECURITY_STATUS status;
-        SecBufferDesc input_desc, output_desc;
-        SecBuffer in_token, out_token;
-        ULONG ret_flags;
+	SECURITY_STATUS status;
+	SecBufferDesc input_desc, output_desc;
+	SecBuffer in_token, out_token;
+	ULONG ret_flags;
 
 	if (challenge) {
 		int token_len = -EINVAL;
@@ -66,13 +66,13 @@ static int ntlm_sspi(struct openconnect_info *vpninfo, int proxy,
 		in_token.cbBuffer = token_len;
 	}
 
-        output_desc.cBuffers = 1;
-        output_desc.pBuffers = &out_token;
-        output_desc.ulVersion = SECBUFFER_VERSION;
+	output_desc.cBuffers = 1;
+	output_desc.pBuffers = &out_token;
+	output_desc.ulVersion = SECBUFFER_VERSION;
 
-        out_token.BufferType = SECBUFFER_TOKEN;
-        out_token.cbBuffer = 0;
-        out_token.pvBuffer = NULL;
+	out_token.BufferType = SECBUFFER_TOKEN;
+	out_token.cbBuffer = 0;
+	out_token.pvBuffer = NULL;
 
 	status = InitializeSecurityContextW(&auth_state->ntlm_sspi_cred,
 					    challenge ? &auth_state->ntlm_sspi_ctx : NULL,
@@ -102,7 +102,7 @@ static int ntlm_helper_spawn(struct openconnect_info *vpninfo, int proxy,
 			     struct http_auth_state *auth_state,
 			     struct oc_text_buf *buf)
 {
-        SECURITY_STATUS status;
+	SECURITY_STATUS status;
 	int ret;
 
 	status = AcquireCredentialsHandleW(NULL, (SEC_WCHAR *)L"NTLM",
@@ -738,7 +738,7 @@ static void setup_schedule (const unsigned char *key_56, DES_KS ks)
 
 #define LM_PASSWORD_MAGIC "\x4B\x47\x53\x21\x40\x23\x24\x25" \
                           "\x4B\x47\x53\x21\x40\x23\x24\x25" \
-			  "\x00\x00\x00\x00\x00"
+                          "\x00\x00\x00\x00\x00"
 
 static void ntlm_lanmanager_hash (const char *password, char hash[21])
 {

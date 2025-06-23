@@ -1089,10 +1089,10 @@ int gpst_setup(struct openconnect_info *vpninfo)
 	if (ret)
 		goto out;
 
-        /* XX: last_trojan is used both as a sentinel to detect the
-         * first time we check/submit HIP, and for the mainloop to timeout
-         * when periodic re-checking is required.
-         */
+	/* XX: last_trojan is used both as a sentinel to detect the
+	 * first time we check/submit HIP, and for the mainloop to timeout
+	 * when periodic re-checking is required.
+	 */
 	vpninfo->last_trojan = time(NULL);
 
 	/* Default HIP re-checking to 3600 seconds unless already set by
