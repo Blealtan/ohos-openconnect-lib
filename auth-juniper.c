@@ -114,7 +114,7 @@ int oncp_send_tncc_command(struct openconnect_info *vpninfo, int start)
 		return -EIO;
 	}
 
-       /* Mainloop timers need to know the last Trojan was invoked */
+	/* Mainloop timers need to know the last Trojan was invoked */
 	vpninfo->last_trojan = time(NULL);
 	return buf_free(buf);
 }

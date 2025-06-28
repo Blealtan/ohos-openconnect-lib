@@ -89,7 +89,7 @@ int calculate_mtu(struct openconnect_info *vpninfo, int is_udp,
 
 	vpn_progress(vpninfo, PRG_TRACE, _("Using base_mtu of %d\n"), base_mtu);
 
-        /* base_mtu is now (we hope) the PMTU between our external network interface
+	/* base_mtu is now (we hope) the PMTU between our external network interface
 	 * and the VPN gateway */
 
 	if (!mtu) {
@@ -106,7 +106,7 @@ int calculate_mtu(struct openconnect_info *vpninfo, int is_udp,
 	vpn_progress(vpninfo, PRG_TRACE, _("After removing %s/IPv%d headers, MTU of %d\n"),
 		     (is_udp ? "UDP" : "TCP"), vpninfo->peer_addr->sa_family == AF_INET6 ? 6 : 4, mtu);
 
-        /* MTU is now (we hope) the number of payload bytes that can fit in a UDP or
+	/* MTU is now (we hope) the number of payload bytes that can fit in a UDP or
 	 * TCP packet exchanged with the VPN gateway. */
 
 	mtu -= unpadded_overhead; /* remove protocol-specific overhead that isn't affected by padding */

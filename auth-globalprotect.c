@@ -253,7 +253,7 @@ static int challenge_cb(struct openconnect_info *vpninfo, char *prompt, char *in
 	 * Currently using the heuristic that if the password field in
 	 * the preceding form wasn't treated as a token field, treat this
 	 * as a token field.
-        */
+	 */
 	if (!can_gen_tokencode(vpninfo, form, opt2) && opt2->type == OC_FORM_OPT_PASSWORD)
 		opt2->type = OC_FORM_OPT_TOKEN;
 	else
@@ -486,7 +486,7 @@ static int parse_portal_xml(struct openconnect_info *vpninfo, xmlNode *xml_node,
 	 *   or repeated --servercert in order to allow non-interactive
 	 *   authentication to gateways whose certs aren't trusted by the
 	 *   system but ARE trusted by the portal (see example at
-         *   https://github.com/dlenski/openconnect/issues/128).
+	 *   https://github.com/dlenski/openconnect/issues/128).
 	 */
 	if (xmlnode_is_named(xml_node, "policy")) {
 		for (x = xml_node->children; x; x = x->next) {
@@ -810,7 +810,7 @@ int gpst_obtain_cookie(struct openconnect_info *vpninfo)
 	int result;
 
 	/* An alternate password/secret field may be specified in the "URL path" (or --usergroup).
-        * Known possibilities are:
+	 * Known possibilities are:
 	 *     /portal:portal-userauthcookie
 	 *     /gateway:prelogin-cookie
 	 */
